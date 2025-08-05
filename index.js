@@ -19,22 +19,27 @@ const defaultSettings = {
     {
       name: '扫雷',
       icon: '💣',
-      url: 'minesweeper.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
     },
     {
       name: '贪吃蛇',
       icon: '🐍',
-      url: 'Gluttonous_Snake.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
     },
     {
       name: '飞行棋',
       icon: '🎯',
-      url: 'Flight_chess.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
     },
     {
       name: '种田',
       icon: '🌾',
-      url: 'Farming.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+    },
+    {
+      name: '彩虹猫',
+      icon: '🌈',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
     },
   ],
   // 设置默认位置为右下角
@@ -362,5 +367,6 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
 
 
