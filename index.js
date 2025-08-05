@@ -14,32 +14,32 @@ const defaultSettings = {
     {
       name: '数独',
       icon: '🎲',
-      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
+      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/shudoku.html',
     },
     {
       name: '扫雷',
       icon: '💣',
-      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
+      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/minesweeper.html',
     },
     {
       name: '贪吃蛇',
       icon: '🐍',
-      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
+      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Gluttonous_Snake.html',
     },
     {
       name: '飞行棋',
       icon: '🎯',
-      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
+      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Flight_chess.html',
     },
     {
       name: '种田',
       icon: '🌾',
-      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Farming.html',
     },
     {
       name: '彩虹猫',
       icon: '🌈',
-      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Nyan_Cat.html',
     },
   ],
   iconPosition: { x: 20, y: 20 },
@@ -154,6 +154,12 @@ function getGameUrl(gameUrl) {
 
 // 创建游戏面板
 function createGamePanel() {
+  // 检查是否已存在面板
+  const existingPanel = document.querySelector('.game-panel');
+  if (existingPanel) {
+    existingPanel.remove();
+  }
+
   const panel = document.createElement('div');
   panel.className = 'game-panel';
   panel.dataset.type = 'panel';
@@ -308,6 +314,12 @@ function showAddGameDialog() {
 
 // 创建游戏按钮
 function createGameButton() {
+  // 检查是否已存在按钮
+  const existingButton = document.getElementById('gameButton');
+  if (existingButton) {
+    return existingButton;
+  }
+
   const button = document.createElement('button');
   button.id = 'gameButton';
   button.className = 'game-icon-button';
@@ -340,6 +352,7 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
 
 
 
