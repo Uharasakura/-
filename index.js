@@ -5,13 +5,16 @@ const { extensionSettings, saveSettingsDebounced } = context;
 // 定义扩展名称
 const EXTENSION_NAME = 'game_collection';
 
+// 获取扩展文件夹路径
+const EXTENSION_DIR = new URL('.', import.meta.url).pathname;
+
 // 默认设置
 const defaultSettings = {
   games: [
     {
       name: '数独',
       icon: '🎲',
-      url: 'shudoku.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
     },
     {
       name: '扫雷',
@@ -34,6 +37,8 @@ const defaultSettings = {
       url: 'Farming.html',
     },
   ],
+  iconPosition: { x: 20, y: 20 },
+  panelPosition: { x: 100, y: 100 },
 };
 
 // 获取设置
@@ -50,10 +55,103 @@ function saveSettings() {
   saveSettingsDebounced();
 }
 
+// 使元素可拖拽
+function makeDraggable(element, onDragEnd = null) {
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  element.addEventListener('mousedown', dragStart);
+  element.addEventListener('mousemove', drag);
+  element.addEventListener('mouseup', dragEnd);
+  element.addEventListener('mouseleave', dragEnd);
+
+  element.addEventListener('touchstart', dragStart);
+  element.addEventListener('touchmove', drag);
+  element.addEventListener('touchend', dragEnd);
+
+  function dragStart(e) {
+    if (e.type === 'mousedown') {
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+    } else {
+      initialX = e.touches[0].clientX - xOffset;
+      initialY = e.touches[0].clientY - yOffset;
+    }
+
+    if (e.target === element) {
+      isDragging = true;
+    }
+  }
+
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+
+      if (e.type === 'mousemove') {
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+      } else {
+        currentX = e.touches[0].clientX - initialX;
+        currentY = e.touches[0].clientY - initialY;
+      }
+
+      xOffset = currentX;
+      yOffset = currentY;
+
+      setTranslate(currentX, currentY, element);
+    }
+  }
+
+  function dragEnd() {
+    if (isDragging && onDragEnd) {
+      onDragEnd(currentX, currentY);
+    }
+
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
+  }
+
+  function setTranslate(xPos, yPos, el) {
+    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+  }
+
+  // 设置初始位置
+  if (element.dataset.type === 'icon') {
+    const { iconPosition } = getSettings();
+    setTranslate(iconPosition.x, iconPosition.y, element);
+    xOffset = iconPosition.x;
+    yOffset = iconPosition.y;
+    initialX = iconPosition.x;
+    initialY = iconPosition.y;
+  } else if (element.dataset.type === 'panel') {
+    const { panelPosition } = getSettings();
+    setTranslate(panelPosition.x, panelPosition.y, element);
+    xOffset = panelPosition.x;
+    yOffset = panelPosition.y;
+    initialX = panelPosition.x;
+    initialY = panelPosition.y;
+  }
+}
+
+// 获取游戏完整URL
+function getGameUrl(gameUrl) {
+  if (gameUrl.startsWith('http://') || gameUrl.startsWith('https://')) {
+    return gameUrl;
+  }
+  return EXTENSION_DIR + gameUrl;
+}
+
 // 创建游戏面板
 function createGamePanel() {
   const panel = document.createElement('div');
   panel.className = 'game-panel';
+  panel.dataset.type = 'panel';
   panel.innerHTML = `
         <div class="game-panel-header">
             <h2 class="game-panel-title">小游戏合集</h2>
@@ -66,7 +164,7 @@ function createGamePanel() {
             ${getSettings()
               .games.map(
                 game => `
-                <div class="game-item" data-url="${game.url}">
+                <div class="game-item" data-url="${getGameUrl(game.url)}">
                     <div class="game-icon">${game.icon}</div>
                     <p class="game-name">${game.name}</p>
                 </div>
@@ -95,7 +193,7 @@ function createGamePanel() {
 
   closeButton.addEventListener('click', () => {
     panel.remove();
-    gameButton.style.display = 'block';
+    gameButton.style.display = 'flex';
   });
 
   gameItems.forEach(item => {
@@ -104,6 +202,8 @@ function createGamePanel() {
       const gameFrame = document.createElement('iframe');
       gameFrame.src = url;
       gameFrame.className = 'game-container';
+      gameFrame.allow = 'fullscreen';
+      gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
 
       gameContainer.innerHTML = '';
       gameContainer.appendChild(gameFrame);
@@ -128,6 +228,14 @@ function createGamePanel() {
   addGameButton.addEventListener('click', showAddGameDialog);
 
   document.body.appendChild(panel);
+
+  // 使面板可拖拽
+  makeDraggable(panel, (x, y) => {
+    const settings = getSettings();
+    settings.panelPosition = { x, y };
+    saveSettings();
+  });
+
   return panel;
 }
 
@@ -197,34 +305,9 @@ function showAddGameDialog() {
 function createGameButton() {
   const button = document.createElement('button');
   button.id = 'gameButton';
+  button.className = 'game-icon-button';
+  button.dataset.type = 'icon';
   button.innerHTML = '🎮';
-  button.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-    `;
-
-  button.addEventListener('mouseover', () => {
-    button.style.transform = 'scale(1.1)';
-  });
-
-  button.addEventListener('mouseout', () => {
-    button.style.transform = 'scale(1)';
-  });
 
   button.addEventListener('click', () => {
     button.style.display = 'none';
@@ -232,6 +315,14 @@ function createGameButton() {
   });
 
   document.body.appendChild(button);
+
+  // 使图标可拖拽
+  makeDraggable(button, (x, y) => {
+    const settings = getSettings();
+    settings.iconPosition = { x, y };
+    saveSettings();
+  });
+
   return button;
 }
 
@@ -244,3 +335,4 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
