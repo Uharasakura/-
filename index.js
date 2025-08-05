@@ -1,9 +1,12 @@
-/**
- * 游戏合集扩展
- */
+// 获取SillyTavern上下文
+const context = SillyTavern.getContext();
+const { extensionSettings, saveSettingsDebounced } = context;
 
-// 扩展名称
+// 定义扩展名称
 const EXTENSION_NAME = 'game_collection';
+
+// 获取扩展文件夹路径
+const EXTENSION_DIR = new URL('.', import.meta.url).pathname;
 
 // 默认设置
 const defaultSettings = {
@@ -11,371 +14,328 @@ const defaultSettings = {
     {
       name: '数独',
       icon: '🎲',
-      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/shudoku.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
     },
     {
       name: '扫雷',
       icon: '💣',
-      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/minesweeper.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
     },
     {
       name: '贪吃蛇',
       icon: '🐍',
-      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Gluttonous_Snake.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
     },
     {
       name: '飞行棋',
       icon: '🎯',
-      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Flight_chess.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
     },
     {
       name: '种田',
       icon: '🌾',
-      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Farming.html',
-    },
-    {
-      name: '彩虹猫',
-      icon: '🌈',
-      url: 'https://cdn.jsdelivr.net/gh/Uharasakura/-/Nyan_Cat.html',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
     },
   ],
   iconPosition: { x: 20, y: 20 },
   panelPosition: { x: 100, y: 100 },
 };
 
-/**
- * 扩展类
- */
-class GameCollection {
-  constructor() {
-    // 获取SillyTavern上下文
-    const context = SillyTavern.getContext();
-    this.extensionSettings = context.extensionSettings;
-    this.saveSettingsDebounced = context.saveSettingsDebounced;
-
-    // 初始化状态
-    this.gameButton = null;
-    this.gamePanel = null;
-    this.isDragging = false;
-    this.currentX = 0;
-    this.currentY = 0;
-    this.initialX = 0;
-    this.initialY = 0;
-    this.xOffset = 0;
-    this.yOffset = 0;
+// 获取设置
+function getSettings() {
+  if (!extensionSettings[EXTENSION_NAME]) {
+    extensionSettings[EXTENSION_NAME] = Object.assign({}, defaultSettings);
+    saveSettingsDebounced();
   }
+  return extensionSettings[EXTENSION_NAME];
+}
 
-  /**
-   * 获取设置
-   */
-  getSettings() {
-    if (!this.extensionSettings[EXTENSION_NAME]) {
-      this.extensionSettings[EXTENSION_NAME] = Object.assign({}, defaultSettings);
-      this.saveSettingsDebounced();
+// 保存设置
+function saveSettings() {
+  saveSettingsDebounced();
+}
+
+// 使元素可拖拽
+function makeDraggable(element, onDragEnd = null) {
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  element.addEventListener('mousedown', dragStart);
+  element.addEventListener('mousemove', drag);
+  element.addEventListener('mouseup', dragEnd);
+  element.addEventListener('mouseleave', dragEnd);
+
+  element.addEventListener('touchstart', dragStart);
+  element.addEventListener('touchmove', drag);
+  element.addEventListener('touchend', dragEnd);
+
+  function dragStart(e) {
+    if (e.type === 'mousedown') {
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+    } else {
+      initialX = e.touches[0].clientX - xOffset;
+      initialY = e.touches[0].clientY - yOffset;
     }
-    return this.extensionSettings[EXTENSION_NAME];
+
+    if (e.target === element) {
+      isDragging = true;
+    }
   }
 
-  /**
-   * 保存设置
-   */
-  saveSettings() {
-    this.saveSettingsDebounced();
-  }
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
 
-  /**
-   * 使元素可拖拽
-   */
-  makeDraggable(element, onDragEnd = null) {
-    const dragStart = e => {
-      if (e.type === 'mousedown') {
-        this.initialX = e.clientX - this.xOffset;
-        this.initialY = e.clientY - this.yOffset;
+      if (e.type === 'mousemove') {
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
       } else {
-        this.initialX = e.touches[0].clientX - this.xOffset;
-        this.initialY = e.touches[0].clientY - this.yOffset;
+        currentX = e.touches[0].clientX - initialX;
+        currentY = e.touches[0].clientY - initialY;
       }
 
-      if (e.target === element) {
-        this.isDragging = true;
-      }
-    };
+      xOffset = currentX;
+      yOffset = currentY;
 
-    const drag = e => {
-      if (this.isDragging) {
-        e.preventDefault();
-
-        if (e.type === 'mousemove') {
-          this.currentX = e.clientX - this.initialX;
-          this.currentY = e.clientY - this.initialY;
-        } else {
-          this.currentX = e.touches[0].clientX - this.initialX;
-          this.currentY = e.touches[0].clientY - this.initialY;
-        }
-
-        this.xOffset = this.currentX;
-        this.yOffset = this.currentY;
-
-        this.setTranslate(this.currentX, this.currentY, element);
-      }
-    };
-
-    const dragEnd = () => {
-      if (this.isDragging && onDragEnd) {
-        onDragEnd(this.currentX, this.currentY);
-      }
-
-      this.initialX = this.currentX;
-      this.initialY = this.currentY;
-      this.isDragging = false;
-    };
-
-    element.addEventListener('mousedown', dragStart);
-    element.addEventListener('mousemove', drag);
-    element.addEventListener('mouseup', dragEnd);
-    element.addEventListener('mouseleave', dragEnd);
-
-    element.addEventListener('touchstart', dragStart);
-    element.addEventListener('touchmove', drag);
-    element.addEventListener('touchend', dragEnd);
-
-    // 设置初始位置
-    if (element.dataset.type === 'icon') {
-      const { iconPosition } = this.getSettings();
-      this.setTranslate(iconPosition.x, iconPosition.y, element);
-      this.xOffset = iconPosition.x;
-      this.yOffset = iconPosition.y;
-      this.initialX = iconPosition.x;
-      this.initialY = iconPosition.y;
-    } else if (element.dataset.type === 'panel') {
-      const { panelPosition } = this.getSettings();
-      this.setTranslate(panelPosition.x, panelPosition.y, element);
-      this.xOffset = panelPosition.x;
-      this.yOffset = panelPosition.y;
-      this.initialX = panelPosition.x;
-      this.initialY = panelPosition.y;
+      setTranslate(currentX, currentY, element);
     }
   }
 
-  /**
-   * 设置元素位置
-   */
-  setTranslate(xPos, yPos, el) {
+  function dragEnd() {
+    if (isDragging && onDragEnd) {
+      onDragEnd(currentX, currentY);
+    }
+
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
+  }
+
+  function setTranslate(xPos, yPos, el) {
     el.style.transform = `translate(${xPos}px, ${yPos}px)`;
   }
 
-  /**
-   * 创建游戏面板
-   */
-  createGamePanel() {
-    // 移除现有面板
-    if (this.gamePanel) {
-      this.gamePanel.remove();
-    }
-
-    const panel = document.createElement('div');
-    panel.className = 'game-panel';
-    panel.dataset.type = 'panel';
-    panel.innerHTML = `
-      <div class="game-panel-header">
-        <h2 class="game-panel-title">小游戏合集</h2>
-        <div class="game-panel-controls">
-          <button class="game-panel-button minimize-button" title="最小化">➖</button>
-          <button class="game-panel-button close-button" title="关闭">✖</button>
-        </div>
-      </div>
-      <div class="game-grid">
-        ${this.getSettings()
-          .games.map(
-            game => `
-            <div class="game-item" data-url="${game.url}">
-              <div class="game-icon">${game.icon}</div>
-              <p class="game-name">${game.name}</p>
-            </div>
-          `,
-          )
-          .join('')}
-        <div class="add-game-button">
-          <span class="add-game-icon">➕</span>
-          <p class="add-game-text">添加游戏</p>
-        </div>
-      </div>
-      <div class="game-container" style="display: none;"></div>
-    `;
-
-    // 添加事件监听器
-    const minimizeButton = panel.querySelector('.minimize-button');
-    const closeButton = panel.querySelector('.close-button');
-    const gameItems = panel.querySelectorAll('.game-item');
-    const addGameButton = panel.querySelector('.add-game-button');
-    const gameContainer = panel.querySelector('.game-container');
-
-    minimizeButton.addEventListener('click', () => {
-      panel.classList.toggle('minimized');
-      minimizeButton.textContent = panel.classList.contains('minimized') ? '➕' : '➖';
-    });
-
-    closeButton.addEventListener('click', () => {
-      panel.remove();
-      this.gamePanel = null;
-      if (this.gameButton) {
-        this.gameButton.style.display = 'flex';
-      }
-    });
-
-    gameItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const url = item.dataset.url;
-        const gameFrame = document.createElement('iframe');
-        gameFrame.src = url;
-        gameFrame.className = 'game-container';
-        gameFrame.allow = 'fullscreen';
-        gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
-
-        gameContainer.innerHTML = '';
-        gameContainer.appendChild(gameFrame);
-        gameContainer.style.display = 'block';
-
-        panel.querySelector('.game-grid').style.display = 'none';
-
-        // 添加返回按钮
-        const backButton = document.createElement('button');
-        backButton.className = 'game-panel-button';
-        backButton.textContent = '返回';
-        backButton.style.marginBottom = '10px';
-        backButton.addEventListener('click', () => {
-          gameContainer.style.display = 'none';
-          panel.querySelector('.game-grid').style.display = 'grid';
-        });
-
-        gameContainer.insertBefore(backButton, gameFrame);
-      });
-    });
-
-    addGameButton.addEventListener('click', () => this.showAddGameDialog());
-
-    document.body.appendChild(panel);
-    this.gamePanel = panel;
-
-    // 使面板可拖拽
-    this.makeDraggable(panel, (x, y) => {
-      const settings = this.getSettings();
-      settings.panelPosition = { x, y };
-      this.saveSettings();
-    });
-  }
-
-  /**
-   * 创建添加游戏对话框
-   */
-  showAddGameDialog() {
-    const dialog = document.createElement('div');
-    dialog.className = 'add-game-dialog';
-    dialog.innerHTML = `
-      <form class="add-game-form">
-        <div class="form-group">
-          <label class="form-label">游戏名称</label>
-          <input type="text" class="form-input" name="name" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">图标 (emoji)</label>
-          <input type="text" class="form-input" name="icon" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">游戏URL</label>
-          <input type="url" class="form-input" name="url" required>
-        </div>
-        <div class="form-buttons">
-          <button type="button" class="form-button cancel">取消</button>
-          <button type="submit" class="form-button submit">添加</button>
-        </div>
-      </form>
-    `;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'overlay active';
-
-    document.body.appendChild(overlay);
-    document.body.appendChild(dialog);
-
-    const form = dialog.querySelector('form');
-    const cancelButton = dialog.querySelector('.cancel');
-
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const newGame = {
-        name: formData.get('name'),
-        icon: formData.get('icon'),
-        url: formData.get('url'),
-      };
-
-      const settings = this.getSettings();
-      settings.games.push(newGame);
-      this.saveSettings();
-
-      // 重新创建游戏面板
-      this.createGamePanel();
-
-      dialog.remove();
-      overlay.remove();
-    });
-
-    cancelButton.addEventListener('click', () => {
-      dialog.remove();
-      overlay.remove();
-    });
-  }
-
-  /**
-   * 创建游戏按钮
-   */
-  createGameButton() {
-    if (this.gameButton) {
-      return;
-    }
-
-    const button = document.createElement('button');
-    button.id = 'gameButton';
-    button.className = 'game-icon-button';
-    button.dataset.type = 'icon';
-    button.innerHTML = '🎮';
-
-    button.addEventListener('click', () => {
-      button.style.display = 'none';
-      this.createGamePanel();
-    });
-
-    document.body.appendChild(button);
-    this.gameButton = button;
-
-    // 使图标可拖拽
-    this.makeDraggable(button, (x, y) => {
-      const settings = this.getSettings();
-      settings.iconPosition = { x, y };
-      this.saveSettings();
-    });
-  }
-
-  /**
-   * 初始化扩展
-   */
-  init() {
-    // 初始化设置
-    this.getSettings();
-    // 创建游戏按钮
-    this.createGameButton();
+  // 设置初始位置
+  if (element.dataset.type === 'icon') {
+    const { iconPosition } = getSettings();
+    setTranslate(iconPosition.x, iconPosition.y, element);
+    xOffset = iconPosition.x;
+    yOffset = iconPosition.y;
+    initialX = iconPosition.x;
+    initialY = iconPosition.y;
+  } else if (element.dataset.type === 'panel') {
+    const { panelPosition } = getSettings();
+    setTranslate(panelPosition.x, panelPosition.y, element);
+    xOffset = panelPosition.x;
+    yOffset = panelPosition.y;
+    initialX = panelPosition.x;
+    initialY = panelPosition.y;
   }
 }
 
-// 创建扩展实例
-const gameCollection = new GameCollection();
+// 获取游戏完整URL
+function getGameUrl(gameUrl) {
+  if (gameUrl.startsWith('http://') || gameUrl.startsWith('https://')) {
+    return gameUrl;
+  }
+  return EXTENSION_DIR + gameUrl;
+}
+
+// 创建游戏面板
+function createGamePanel() {
+  const panel = document.createElement('div');
+  panel.className = 'game-panel';
+  panel.dataset.type = 'panel';
+  panel.innerHTML = `
+        <div class="game-panel-header">
+            <h2 class="game-panel-title">小游戏合集</h2>
+            <div class="game-panel-controls">
+                <button class="game-panel-button minimize-button" title="最小化">➖</button>
+                <button class="game-panel-button close-button" title="关闭">✖</button>
+            </div>
+        </div>
+        <div class="game-grid">
+            ${getSettings()
+              .games.map(
+                game => `
+                <div class="game-item" data-url="${getGameUrl(game.url)}">
+                    <div class="game-icon">${game.icon}</div>
+                    <p class="game-name">${game.name}</p>
+                </div>
+            `,
+              )
+              .join('')}
+            <div class="add-game-button">
+                <span class="add-game-icon">➕</span>
+                <p class="add-game-text">添加游戏</p>
+            </div>
+        </div>
+        <div class="game-container" style="display: none;"></div>
+    `;
+
+  // 添加事件监听器
+  const minimizeButton = panel.querySelector('.minimize-button');
+  const closeButton = panel.querySelector('.close-button');
+  const gameItems = panel.querySelectorAll('.game-item');
+  const addGameButton = panel.querySelector('.add-game-button');
+  const gameContainer = panel.querySelector('.game-container');
+
+  minimizeButton.addEventListener('click', () => {
+    panel.classList.toggle('minimized');
+    minimizeButton.textContent = panel.classList.contains('minimized') ? '➕' : '➖';
+  });
+
+  closeButton.addEventListener('click', () => {
+    panel.remove();
+    gameButton.style.display = 'flex';
+  });
+
+  gameItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.dataset.url;
+      const gameFrame = document.createElement('iframe');
+      gameFrame.src = url;
+      gameFrame.className = 'game-container';
+      gameFrame.allow = 'fullscreen';
+      gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
+
+      gameContainer.innerHTML = '';
+      gameContainer.appendChild(gameFrame);
+      gameContainer.style.display = 'block';
+
+      panel.querySelector('.game-grid').style.display = 'none';
+
+      // 添加返回按钮
+      const backButton = document.createElement('button');
+      backButton.className = 'game-panel-button';
+      backButton.textContent = '返回';
+      backButton.style.marginBottom = '10px';
+      backButton.addEventListener('click', () => {
+        gameContainer.style.display = 'none';
+        panel.querySelector('.game-grid').style.display = 'grid';
+      });
+
+      gameContainer.insertBefore(backButton, gameFrame);
+    });
+  });
+
+  addGameButton.addEventListener('click', showAddGameDialog);
+
+  document.body.appendChild(panel);
+
+  // 使面板可拖拽
+  makeDraggable(panel, (x, y) => {
+    const settings = getSettings();
+    settings.panelPosition = { x, y };
+    saveSettings();
+  });
+
+  return panel;
+}
+
+// 创建添加游戏对话框
+function showAddGameDialog() {
+  const dialog = document.createElement('div');
+  dialog.className = 'add-game-dialog';
+  dialog.innerHTML = `
+        <form class="add-game-form">
+            <div class="form-group">
+                <label class="form-label">游戏名称</label>
+                <input type="text" class="form-input" name="name" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">图标 (emoji)</label>
+                <input type="text" class="form-input" name="icon" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">游戏URL</label>
+                <input type="url" class="form-input" name="url" required>
+            </div>
+            <div class="form-buttons">
+                <button type="button" class="form-button cancel">取消</button>
+                <button type="submit" class="form-button submit">添加</button>
+            </div>
+        </form>
+    `;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay active';
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(dialog);
+
+  const form = dialog.querySelector('form');
+  const cancelButton = dialog.querySelector('.cancel');
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const newGame = {
+      name: formData.get('name'),
+      icon: formData.get('icon'),
+      url: formData.get('url'),
+    };
+
+    const settings = getSettings();
+    settings.games.push(newGame);
+    saveSettings();
+
+    // 重新创建游戏面板
+    document.querySelector('.game-panel').remove();
+    createGamePanel();
+
+    closeDialog();
+  });
+
+  cancelButton.addEventListener('click', closeDialog);
+
+  function closeDialog() {
+    dialog.remove();
+    overlay.remove();
+  }
+}
+
+// 创建游戏按钮
+function createGameButton() {
+  const button = document.createElement('button');
+  button.id = 'gameButton';
+  button.className = 'game-icon-button';
+  button.dataset.type = 'icon';
+  button.innerHTML = '🎮';
+
+  button.addEventListener('click', () => {
+    button.style.display = 'none';
+    createGamePanel();
+  });
+
+  document.body.appendChild(button);
+
+  // 使图标可拖拽
+  makeDraggable(button, (x, y) => {
+    const settings = getSettings();
+    settings.iconPosition = { x, y };
+    saveSettings();
+  });
+
+  return button;
+}
+
+// 初始化
+let gameButton;
 
 // 监听APP_READY事件
-SillyTavern.getContext().eventSource.on(SillyTavern.getContext().event_types.APP_READY, () => {
+context.eventSource.on(context.event_types.APP_READY, () => {
   console.log('Game Collection Extension Ready');
-  gameCollection.init();
+  getSettings(); // 初始化设置
+  gameButton = createGameButton();
 });
+
 
 
 
