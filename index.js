@@ -326,6 +326,12 @@ function showAddGameDialog() {
 
 // 创建游戏按钮
 function createGameButton() {
+  // 检查是否已存在游戏按钮
+  const existingButton = document.getElementById('gameButton');
+  if (existingButton) {
+    return existingButton;
+  }
+
   const button = document.createElement('button');
   button.id = 'gameButton';
   button.className = 'game-icon-button';
@@ -352,12 +358,23 @@ function createGameButton() {
 // 初始化
 let gameButton;
 
-// 监听APP_READY事件
+// 移除之前的事件监听器
+context.eventSource.removeListener(context.event_types.APP_READY);
+
+// 添加新的事件监听器
 context.eventSource.on(context.event_types.APP_READY, () => {
   console.log('Game Collection Extension Ready');
   getSettings(); // 初始化设置
+
+  // 移除已存在的游戏按钮
+  const existingButton = document.getElementById('gameButton');
+  if (existingButton) {
+    existingButton.remove();
+  }
+
   gameButton = createGameButton();
 });
+
 
 
 
