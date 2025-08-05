@@ -6,9 +6,20 @@
     <title>Nyan Cat Game</title>
     <style>
       :root {
+        /* 基础尺寸变量 */
         --viewport-scale: min(1, max(0.5, calc(100vw / 1920)));
-        --cat-size: clamp(120px, min(20vw, 20vh), min(25vw, 25vh));
+        --cat-size: clamp(100px, min(18vw, 18vh), min(22vw, 22vh));
+        --font-size-small: clamp(12px, 2.5vw, 14px);
+        --font-size-normal: clamp(14px, 3vw, 18px);
+        --font-size-large: clamp(20px, 4vw, 24px);
+        --font-size-xlarge: clamp(24px, 6vw, 36px);
+        --spacing-small: clamp(5px, 1.5vw, 8px);
+        --spacing-normal: clamp(10px, 2vw, 20px);
+        --spacing-large: clamp(20px, 5vw, 40px);
+        --control-size: clamp(35px, 8vw, 45px);
       }
+
+      /* 重置和基础样式 */
       html,
       body {
         margin: 0;
@@ -20,21 +31,23 @@
         font-family: Arial, sans-serif;
         touch-action: none;
       }
+
+      /* 游戏容器 */
       .game-container {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
         overflow: hidden;
       }
+
+      /* 游戏画布 */
       #gameCanvas {
         position: absolute;
-        top: 0;
-        left: 0;
+        inset: 0;
         width: 100%;
         height: 100%;
       }
+
+      /* 猫咪角色 */
       #nyanCat {
         position: absolute;
         width: var(--cat-size);
@@ -47,75 +60,104 @@
         object-fit: contain;
         filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
       }
+
+      /* 分数显示 */
       .score {
         position: fixed;
-        top: clamp(10px, 3vh, 30px);
-        right: clamp(10px, 3vw, 30px);
+        top: var(--spacing-normal);
+        right: var(--spacing-normal);
         color: white;
-        font-size: clamp(16px, 4vw, 24px);
+        font-size: var(--font-size-large);
         z-index: 3;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        padding: var(--spacing-small);
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        backdrop-filter: blur(3px);
       }
+
+      /* 菜单和游戏结束界面 */
       .menu,
       .game-over {
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.85);
         color: white;
-        padding: clamp(20px, 5vw, 40px);
-        border-radius: clamp(10px, 2vw, 20px);
+        padding: var(--spacing-large);
+        border-radius: clamp(12px, 3vw, 24px);
         text-align: center;
         z-index: 4;
-        backdrop-filter: blur(5px);
-        width: clamp(280px, 80vw, 500px);
+        backdrop-filter: blur(8px);
+        width: min(90%, 500px);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
       }
+
       .game-over {
         display: none;
       }
+
+      /* 按钮样式 */
       .btn {
-        margin: 10px;
-        padding: clamp(10px, 2vw, 20px);
+        margin: var(--spacing-normal);
+        padding: var(--spacing-normal) var(--spacing-large);
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         background: #ff69b4;
         color: white;
         cursor: pointer;
-        font-size: clamp(14px, 3vw, 18px);
+        font-size: var(--font-size-normal);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
       }
+
       .btn:hover {
-        transform: scale(1.1);
+        transform: translateY(-2px);
         background: #ff8ac5;
+        box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
       }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      /* 标题样式 */
       .title {
-        font-size: clamp(24px, 6vw, 36px);
+        font-size: var(--font-size-xlarge);
         color: #ff69b4;
         text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+        margin-bottom: var(--spacing-normal);
       }
+
+      /* 音频控制按钮 */
       .audio-control {
         position: fixed;
-        top: 20px;
-        left: 20px;
+        top: var(--spacing-normal);
+        left: var(--spacing-normal);
         z-index: 1000;
         background: rgba(0, 0, 0, 0.6);
-        padding: 10px;
+        width: var(--control-size);
+        height: var(--control-size);
         border-radius: 50%;
         cursor: pointer;
-        width: 40px;
-        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       }
+
       .audio-control:hover {
         transform: scale(1.1);
         background: rgba(255, 105, 180, 0.6);
+        box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
       }
+
       .audio-control i {
         color: white;
-        font-size: 20px;
+        font-size: var(--font-size-normal);
       }
 
       .star {
@@ -230,12 +272,34 @@
             const lastObstacle = gameState.obstacles[gameState.obstacles.length - 1];
             this.x = lastObstacle ? Math.max(lastObstacle.x + dims.obstacleGap, canvas.width) : canvas.width;
 
-            // 优化垂直位置，避免完全挡住
+            // 优化垂直位置分布
             const availableSpace = canvas.height - this.height;
-            const safeZone = dims.catSize * 2; // 确保至少有2个猫咪高度的安全通道
-            const minY = safeZone;
-            const maxY = availableSpace - safeZone;
-            this.y = Math.random() * (maxY - minY) + minY;
+            const catSafeZone = dims.catSize * 1.5; // 猫咪安全区域
+
+            // 将屏幕垂直方向分为三个区域：上、中、下
+            const topZone = { min: catSafeZone, max: canvas.height * 0.33 };
+            const middleZone = { min: canvas.height * 0.33, max: canvas.height * 0.66 };
+            const bottomZone = { min: canvas.height * 0.66, max: canvas.height - catSafeZone };
+
+            // 随机选择一个区域
+            const zoneRandom = Math.random();
+            let selectedZone;
+
+            if (zoneRandom < 0.4) {
+              // 40%概率在上部或下部
+              selectedZone = Math.random() < 0.5 ? topZone : bottomZone;
+            } else {
+              // 60%概率在中部
+              selectedZone = middleZone;
+            }
+
+            // 在选定区域内随机生成位置
+            this.y = Math.random() * (selectedZone.max - selectedZone.min) + selectedZone.min;
+
+            // 确保不会完全堵住通道
+            if (this.height > canvas.height * 0.4) {
+              this.height = canvas.height * 0.4;
+            }
 
             this.speed = dims.speed;
           }
