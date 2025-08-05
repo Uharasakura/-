@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>像素风扫雷</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        image-rendering: pixelated;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: #c6c6c6;
+        font-family: 'Courier New', monospace;
+      }
+
+      .game-container {
+        background-color: #858585;
+        padding: 16px;
+        border: 4px solid;
+        border-color: #ffffff #404040 #404040 #ffffff;
+      }
+
+      .header {
+        background-color: #c6c6c6;
+        padding: 8px;
+        margin-bottom: 16px;
+        border: 4px solid;
+        border-color: #ffffff #404040 #404040 #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .counter {
+        background-color: #000;
+        color: #f00;
+        padding: 4px 8px;
+        font-size: 24px;
+        font-weight: bold;
+        font-family: 'Digital', monospace;
+      }
+
+      .reset-button {
+        width: 32px;
+        height: 32px;
+        background-color: #c6c6c6;
+        border: 4px solid;
+        border-color: #ffffff #404040 #404040 #ffffff;
+        cursor: pointer;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .reset-button:active {
+        border-color: #404040 #ffffff #ffffff #404040;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(9, 32px);
+        grid-template-rows: repeat(9, 32px);
+        gap: 1px;
+        background-color: #858585;
+      }
+
+      .cell {
+        width: 32px;
+        height: 32px;
+        background-color: #c6c6c6;
+        border: 4px solid;
+        border-color: #ffffff #404040 #404040 #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 20px;
+      }
+
+      .cell.revealed {
+        border: 1px solid #808080;
+        background-color: #c6c6c6;
+      }
+
+      .cell.flagged::before {
+        content: '🚩';
+        font-size: 20px;
+      }
+
+      .cell.mine {
+        background-color: #ff0000;
+      }
+
+      .cell.mine::before {
+        content: '💣';
+        font-size: 20px;
+      }
+
+      .number-1 {
+        color: #0000ff;
+      }
+      .number-2 {
+        color: #008000;
+      }
+      .number-3 {
+        color: #ff0000;
+      }
+      .number-4 {
+        color: #000080;
+      }
+      .number-5 {
+        color: #800000;
+      }
+      .number-6 {
+        color: #008080;
+      }
+      .number-7 {
+        color: #000000;
+      }
+      .number-8 {
+        color: #808080;
+      }
+
+      .difficulty-select {
+        margin-bottom: 20px;
+      }
+
+      .difficulty-select button {
+        padding: 8px 16px;
+        margin: 0 8px;
+        background-color: #c6c6c6;
+        border: 4px solid;
+        border-color: #ffffff #404040 #404040 #ffffff;
+        cursor: pointer;
+        font-family: 'Courier New', monospace;
+      }
+
+      .difficulty-select button:active {
+        border-color: #404040 #ffffff #ffffff #404040;
+      }
+
+      .game-over {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="difficulty-select">
+      <button onclick="setDifficulty('easy')">简单 9x9</button>
+      <button onclick="setDifficulty('medium')">中等 16x16</button>
+      <button onclick="setDifficulty('hard')">困难 30x16</button>
+    </div>
+    <div class="game-container">
+      <div class="header">
+        <div class="counter" id="mine-counter">010</div>
+        <button class="reset-button" onclick="resetGame()">😊</button>
+        <div class="counter" id="timer">000</div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <div class="game-over" id="game-over">
+      <h2 id="game-over-text"></h2>
+      <button onclick="resetGame()" style="margin-top: 10px">重新开始</button>
+    </div>
+
+    <script>
+      let config = {
+        easy: { rows: 9, cols: 9, mines: 10 },
+        medium: { rows: 16, cols: 16, mines: 40 },
+        hard: { rows: 16, cols: 30, mines: 99 },
+      };
+
+      let currentDifficulty = 'easy';
+      let grid = [];
+      let gameOver = false;
+      let firstClick = true;
+      let timer = 0;
+      let timerInterval;
+      let minesLeft;
+      let revealedCells = 0;
+
+      function setDifficulty(difficulty) {
+        currentDifficulty = difficulty;
+        resetGame();
+      }
+
+      function createGrid() {
+        const { rows, cols } = config[currentDifficulty];
+        grid = [];
+        for (let i = 0; i < rows; i++) {
+          grid[i] = [];
+          for (let j = 0; j < cols; j++) {
+            grid[i][j] = {
+              isMine: false,
+              isRevealed: false,
+              isFlagged: false,
+              neighborMines: 0,
+            };
+          }
+        }
+      }
+
+      function placeMines(firstRow, firstCol) {
+        const { rows, cols, mines } = config[currentDifficulty];
+        let minesPlaced = 0;
+
+        while (minesPlaced < mines) {
+          const row = Math.floor(Math.random() * rows);
+          const col = Math.floor(Math.random() * cols);
+
+          // 避免在第一次点击的位置及其周围放置地雷
+          if (!grid[row][col].isMine && (Math.abs(row - firstRow) > 1 || Math.abs(col - firstCol) > 1)) {
+            grid[row][col].isMine = true;
+            minesPlaced++;
+          }
+        }
+
+        // 计算每个格子周围的地雷数
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            if (!grid[i][j].isMine) {
+              grid[i][j].neighborMines = countNeighborMines(i, j);
+            }
+          }
+        }
+      }
+
+      function countNeighborMines(row, col) {
+        let count = 0;
+        for (let i = -1; i <= 1; i++) {
+          for (let j = -1; j <= 1; j++) {
+            const newRow = row + i;
+            const newCol = col + j;
+            if (
+              newRow >= 0 &&
+              newRow < config[currentDifficulty].rows &&
+              newCol >= 0 &&
+              newCol < config[currentDifficulty].cols &&
+              grid[newRow][newCol].isMine
+            ) {
+              count++;
+            }
+          }
+        }
+        return count;
+      }
+
+      function updateDisplay() {
+        const gridElement = document.getElementById('grid');
+        const { rows, cols } = config[currentDifficulty];
+
+        gridElement.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+        gridElement.style.gridTemplateRows = `repeat(${rows}, 32px)`;
+        gridElement.innerHTML = '';
+
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = i;
+            cell.dataset.col = j;
+
+            if (grid[i][j].isRevealed) {
+              cell.classList.add('revealed');
+              if (grid[i][j].isMine) {
+                cell.classList.add('mine');
+              } else if (grid[i][j].neighborMines > 0) {
+                cell.textContent = grid[i][j].neighborMines;
+                cell.classList.add(`number-${grid[i][j].neighborMines}`);
+              }
+            } else if (grid[i][j].isFlagged) {
+              cell.classList.add('flagged');
+            }
+
+            cell.addEventListener('click', () => handleClick(i, j));
+            cell.addEventListener('contextmenu', e => {
+              e.preventDefault();
+              handleRightClick(i, j);
+            });
+
+            gridElement.appendChild(cell);
+          }
+        }
+
+        document.getElementById('mine-counter').textContent = minesLeft.toString().padStart(3, '0');
+      }
+
+      function revealCell(row, col) {
+        if (
+          row < 0 ||
+          row >= config[currentDifficulty].rows ||
+          col < 0 ||
+          col >= config[currentDifficulty].cols ||
+          grid[row][col].isRevealed ||
+          grid[row][col].isFlagged
+        ) {
+          return;
+        }
+
+        grid[row][col].isRevealed = true;
+        revealedCells++;
+
+        if (grid[row][col].neighborMines === 0) {
+          // 如果是空格，递归显示周围的格子
+          for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+              revealCell(row + i, col + j);
+            }
+          }
+        }
+      }
+
+      function handleClick(row, col) {
+        if (gameOver || grid[row][col].isFlagged) return;
+
+        if (firstClick) {
+          firstClick = false;
+          placeMines(row, col);
+          startTimer();
+        }
+
+        if (grid[row][col].isMine) {
+          gameOver = true;
+          revealAllMines();
+          endGame(false);
+          return;
+        }
+
+        revealCell(row, col);
+        updateDisplay();
+
+        // 检查是否胜利
+        const totalCells = config[currentDifficulty].rows * config[currentDifficulty].cols;
+        if (revealedCells === totalCells - config[currentDifficulty].mines) {
+          gameOver = true;
+          endGame(true);
+        }
+      }
+
+      function handleRightClick(row, col) {
+        if (gameOver || grid[row][col].isRevealed) return;
+
+        grid[row][col].isFlagged = !grid[row][col].isFlagged;
+        minesLeft += grid[row][col].isFlagged ? -1 : 1;
+        updateDisplay();
+      }
+
+      function revealAllMines() {
+        const { rows, cols } = config[currentDifficulty];
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            if (grid[i][j].isMine) {
+              grid[i][j].isRevealed = true;
+            }
+          }
+        }
+        updateDisplay();
+      }
+
+      function startTimer() {
+        timerInterval = setInterval(() => {
+          timer++;
+          document.getElementById('timer').textContent = timer.toString().padStart(3, '0');
+        }, 1000);
+      }
+
+      function endGame(won) {
+        clearInterval(timerInterval);
+        const gameOverElement = document.getElementById('game-over');
+        const gameOverText = document.getElementById('game-over-text');
+        const resetButton = document.querySelector('.reset-button');
+
+        gameOverElement.style.display = 'block';
+        gameOverText.textContent = won ? '恭喜你赢了！' : '游戏结束！';
+        resetButton.textContent = won ? '😎' : '😵';
+      }
+
+      function resetGame() {
+        clearInterval(timerInterval);
+        gameOver = false;
+        firstClick = true;
+        timer = 0;
+        revealedCells = 0;
+        minesLeft = config[currentDifficulty].mines;
+
+        document.getElementById('timer').textContent = '000';
+        document.getElementById('game-over').style.display = 'none';
+        document.querySelector('.reset-button').textContent = '😊';
+
+        createGrid();
+        updateDisplay();
+      }
+
+      // 初始化游戏
+      resetGame();
+    </script>
+  </body>
+</html>
