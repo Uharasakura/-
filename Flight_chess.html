@@ -5,29 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>飞行棋小游戏</title>
     <style>
+      :root {
+        --cell-size: clamp(30px, 8vw, 60px);
+        --font-size-normal: clamp(14px, 3vw, 18px);
+        --font-size-large: clamp(20px, 4vw, 24px);
+        --font-size-xlarge: clamp(30px, 6vw, 40px);
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #f0f0f0;
+      }
+
       .game-container {
+        width: 95%;
         max-width: 800px;
-        margin: 20px auto;
-        padding: 20px;
+        margin: 10px auto;
+        padding: clamp(10px, 3vw, 20px);
         background: #f5f5f5;
         border-radius: 10px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
       }
+
       .board {
         display: grid;
         grid-template-columns: repeat(8, 1fr);
-        gap: 5px;
-        margin: 20px 0;
+        gap: clamp(2px, 1vw, 5px);
+        margin: clamp(10px, 3vw, 20px) 0;
+        justify-content: center;
       }
+
       .cell {
-        width: 60px;
-        height: 60px;
+        width: var(--cell-size);
+        height: var(--cell-size);
         border: 2px solid #ddd;
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
+        font-size: var(--font-size-large);
         background: white;
         position: relative;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -72,9 +94,12 @@
       }
       .player {
         position: absolute;
-        font-size: 30px;
+        font-size: var(--font-size-xlarge);
         z-index: 2;
         transition: all 0.5s ease;
+        transform: translate(-50%, -50%);
+        left: 50%;
+        top: 50%;
       }
       .player1 {
         color: #f44336;
@@ -84,18 +109,22 @@
       }
       .controls {
         text-align: center;
-        margin: 20px 0;
+        margin: clamp(10px, 3vw, 20px) 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
       }
       .btn {
-        padding: 10px 20px;
-        margin: 0 10px;
-        font-size: 16px;
+        padding: clamp(8px, 2vw, 10px) clamp(15px, 4vw, 20px);
+        font-size: var(--font-size-normal);
         border: none;
         border-radius: 5px;
         cursor: pointer;
         background: #4caf50;
         color: white;
         transition: all 0.3s ease;
+        white-space: nowrap;
       }
       .btn:hover {
         transform: translateY(-2px);
@@ -109,12 +138,12 @@
       }
       .status {
         text-align: center;
-        font-size: 18px;
-        margin: 10px 0;
+        font-size: var(--font-size-normal);
+        margin: clamp(5px, 2vw, 10px) 0;
       }
       .dice {
-        font-size: 40px;
-        margin: 10px 0;
+        font-size: var(--font-size-xlarge);
+        margin: clamp(5px, 2vw, 10px) 0;
         text-align: center;
         transition: transform 0.3s ease;
       }
@@ -128,7 +157,8 @@
         left: 50%;
         transform: translate(-50%, -50%);
         background: white;
-        padding: 20px;
+        width: min(90%, 400px);
+        padding: clamp(15px, 4vw, 20px);
         border-radius: 10px;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         z-index: 1000;
@@ -162,8 +192,34 @@
         display: block;
       }
       .effect-icon {
-        font-size: 40px;
-        margin: 10px 0;
+        font-size: var(--font-size-xlarge);
+        margin: clamp(5px, 2vw, 10px) 0;
+      }
+
+      @media (max-width: 480px) {
+        :root {
+          --cell-size: clamp(25px, 10vw, 35px);
+          --font-size-normal: clamp(12px, 3.5vw, 16px);
+          --font-size-large: clamp(16px, 4.5vw, 20px);
+          --font-size-xlarge: clamp(24px, 7vw, 32px);
+        }
+
+        .game-container {
+          width: 98%;
+          padding: 10px;
+        }
+
+        .board {
+          gap: 2px;
+        }
+
+        .controls {
+          gap: 5px;
+        }
+
+        .btn {
+          padding: 8px 15px;
+        }
       }
     </style>
   </head>
@@ -428,3 +484,4 @@
     </script>
   </body>
 </html>
+
