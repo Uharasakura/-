@@ -1,15 +1,7 @@
-/**
- * 游戏合集扩展
- */
+import { extension_settings } from '../../../extensions.js';
+import { dragElement } from '../../../utils.js';
 
-// 获取SillyTavern上下文
-const context = SillyTavern.getContext();
-const { extensionSettings, saveSettingsDebounced } = context;
-
-// 定义扩展名称
-const EXTENSION_NAME = 'game_collection';
-
-// 默认设置
+const extensionName = 'game_collection';
 const defaultSettings = {
   games: [
     {
@@ -43,117 +35,111 @@ const defaultSettings = {
       url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
     },
   ],
-  iconPosition: { x: 20, y: 20 },
 };
 
-// 获取设置
-function getSettings() {
-  if (!extensionSettings[EXTENSION_NAME]) {
-    extensionSettings[EXTENSION_NAME] = Object.assign({}, defaultSettings);
-    saveSettingsDebounced();
-  }
-  return extensionSettings[EXTENSION_NAME];
+// 初始化设置
+if (!extension_settings[extensionName]) {
+  extension_settings[extensionName] = defaultSettings;
 }
 
-// 保存设置
-function saveSettings() {
-  saveSettingsDebounced();
-}
-
-// 创建游戏按钮
-function createGameButton() {
-  const button = document.createElement('button');
-  button.id = 'gameButton';
-  button.style.cssText = `
-    position: fixed;
-    left: ${getSettings().iconPosition.x}px;
-    top: ${getSettings().iconPosition.y}px;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 24px;
-    cursor: move;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-  `;
+// 创建扩展按钮
+function createExtensionButton() {
+  const button = document.createElement('div');
+  button.classList.add('game-extension-button');
   button.innerHTML = '🎮';
   button.title = '小游戏合集';
-
-  // 添加拖拽功能
-  let isDragging = false;
-  let currentX;
-  let currentY;
-  let initialX;
-  let initialY;
-
-  button.addEventListener('mousedown', e => {
-    isDragging = true;
-    initialX = e.clientX - getSettings().iconPosition.x;
-    initialY = e.clientY - getSettings().iconPosition.y;
-    button.style.cursor = 'grabbing';
+  button.addEventListener('click', () => {
+    toggleGamePanel();
   });
-
-  document.addEventListener('mousemove', e => {
-    if (isDragging) {
-      e.preventDefault();
-      currentX = e.clientX - initialX;
-      currentY = e.clientY - initialY;
-
-      // 确保图标不会超出视口
-      currentX = Math.min(Math.max(0, currentX), window.innerWidth - 48);
-      currentY = Math.min(Math.max(0, currentY), window.innerHeight - 48);
-
-      button.style.left = `${currentX}px`;
-      button.style.top = `${currentY}px`;
-    }
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      button.style.cursor = 'move';
-
-      // 保存新位置
-      const settings = getSettings();
-      settings.iconPosition = { x: currentX, y: currentY };
-      saveSettings();
-    }
-  });
-
-  // 点击事件（非拖拽）
-  let clickStartTime;
-  button.addEventListener('mousedown', () => {
-    clickStartTime = Date.now();
-  });
-
-  button.addEventListener('mouseup', () => {
-    const clickDuration = Date.now() - clickStartTime;
-    if (clickDuration < 200) {
-      // 小于200ms认为是点击而不是拖拽
-      createGamePanel();
-    }
-  });
-
+  dragElement(button);
   document.body.appendChild(button);
-  return button;
 }
 
-// 初始化
-let gameButton;
+// 创建游戏面板
+function createGamePanel() {
+  const panel = document.createElement('div');
+  panel.classList.add('game-panel');
+  panel.innerHTML = `
+        <div class="game-panel-header">
+            <div class="game-panel-title">小游戏合集</div>
+            <div class="game-panel-controls">
+                <div class="game-panel-button minimize">_</div>
+                <div class="game-panel-button close">×</div>
+            </div>
+        </div>
+        <div class="game-panel-content">
+            <div class="game-grid">
+                ${extension_settings[extensionName].games
+                  .map(
+                    game => `
+                    <div class="game-item" data-url="${game.url}">
+                        <div class="game-icon">${game.icon}</div>
+                        <div class="game-name">${game.name}</div>
+                    </div>
+                `,
+                  )
+                  .join('')}
+            </div>
+        </div>
+    `;
 
-// 监听APP_READY事件
+  // 添加事件监听
+  const closeButton = panel.querySelector('.close');
+  closeButton.addEventListener('click', () => {
+    panel.remove();
+  });
+
+  const minimizeButton = panel.querySelector('.minimize');
+  minimizeButton.addEventListener('click', () => {
+    panel.classList.toggle('minimized');
+  });
+
+  const gameItems = panel.querySelectorAll('.game-item');
+  gameItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.dataset.url;
+      openGame(url);
+    });
+  });
+
+  dragElement(panel);
+  document.body.appendChild(panel);
+}
+
+// 打开游戏
+function openGame(url) {
+  const gameContainer = document.createElement('div');
+  gameContainer.classList.add('game-container');
+  gameContainer.innerHTML = `
+        <div class="game-container-header">
+            <div class="game-container-button back">返回</div>
+        </div>
+        <iframe src="${url}" frameborder="0" allowfullscreen></iframe>
+    `;
+
+  const backButton = gameContainer.querySelector('.back');
+  backButton.addEventListener('click', () => {
+    gameContainer.remove();
+  });
+
+  document.body.appendChild(gameContainer);
+}
+
+// 切换游戏面板
+function toggleGamePanel() {
+  const existingPanel = document.querySelector('.game-panel');
+  if (existingPanel) {
+    existingPanel.remove();
+  } else {
+    createGamePanel();
+  }
+}
+
+// 监听页面加载完成
 window.addEventListener('load', () => {
-  console.log('Game Collection Extension Ready');
-  getSettings(); // 初始化设置
-  gameButton = createGameButton();
+  createExtensionButton();
 });
+
 
 
 
