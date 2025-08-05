@@ -7,6 +7,12 @@
   "version": "1.0.0",
   "homePage": "https://github.com/3538352833/tavern_helper_template",
   "auto_update": true,
-  "extension_type": "floating"
+  "extension_type": "floating",
+  "menu_item": {
+    "title": "小游戏",
+    "icon": "🎮",
+    "position": "bottom"
+  }
 }
+
 
