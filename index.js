@@ -154,6 +154,12 @@ function getGameUrl(gameUrl) {
 
 // 创建游戏面板
 function createGamePanel() {
+  // 移除已存在的面板
+  const existingPanel = document.querySelector('.game-panel');
+  if (existingPanel) {
+    existingPanel.remove();
+  }
+
   const panel = document.createElement('div');
   panel.className = 'game-panel';
   panel.dataset.type = 'panel';
@@ -207,10 +213,23 @@ function createGamePanel() {
       const gameFrame = document.createElement('iframe');
       gameFrame.src = url;
       gameFrame.className = 'game-container';
-      gameFrame.allow = 'fullscreen';
-      gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
+      gameFrame.allow = 'fullscreen; autoplay; clipboard-write';
+      gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-downloads';
+
+      // 添加加载提示
+      const loadingDiv = document.createElement('div');
+      loadingDiv.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 18px;
+      `;
+      loadingDiv.textContent = '游戏加载中...';
 
       gameContainer.innerHTML = '';
+      gameContainer.appendChild(loadingDiv);
       gameContainer.appendChild(gameFrame);
       gameContainer.style.display = 'block';
 
@@ -226,7 +245,12 @@ function createGamePanel() {
         panel.querySelector('.game-grid').style.display = 'grid';
       });
 
-      gameContainer.insertBefore(backButton, gameFrame);
+      gameContainer.insertBefore(backButton, loadingDiv);
+
+      // 监听游戏加载完成
+      gameFrame.addEventListener('load', () => {
+        loadingDiv.remove();
+      });
     });
   });
 
@@ -292,7 +316,6 @@ function showAddGameDialog() {
     saveSettings();
 
     // 重新创建游戏面板
-    document.querySelector('.game-panel').remove();
     createGamePanel();
 
     closeDialog();
@@ -308,6 +331,12 @@ function showAddGameDialog() {
 
 // 创建游戏按钮
 function createGameButton() {
+  // 移除已存在的按钮
+  const existingButton = document.getElementById('gameButton');
+  if (existingButton) {
+    existingButton.remove();
+  }
+
   const button = document.createElement('button');
   button.id = 'gameButton';
   button.className = 'game-icon-button';
@@ -340,6 +369,7 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
 
 
 
