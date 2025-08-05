@@ -37,8 +37,9 @@ const defaultSettings = {
       url: 'Farming.html',
     },
   ],
-  iconPosition: { x: 20, y: 20 },
-  panelPosition: { x: 100, y: 100 },
+  // 设置默认位置为右下角
+  iconPosition: { x: window.innerWidth - 100, y: window.innerHeight - 100 },
+  panelPosition: { x: 50, y: 50 },
 };
 
 // 获取设置
@@ -55,6 +56,17 @@ function saveSettings() {
   saveSettingsDebounced();
 }
 
+// 确保位置在可视区域内
+function ensureInViewport(x, y, width, height) {
+  const maxX = window.innerWidth - width;
+  const maxY = window.innerHeight - height;
+
+  return {
+    x: Math.min(Math.max(0, x), maxX),
+    y: Math.min(Math.max(0, y), maxY),
+  };
+}
+
 // 使元素可拖拽
 function makeDraggable(element, onDragEnd = null) {
   let isDragging = false;
@@ -66,13 +78,12 @@ function makeDraggable(element, onDragEnd = null) {
   let yOffset = 0;
 
   element.addEventListener('mousedown', dragStart);
-  element.addEventListener('mousemove', drag);
-  element.addEventListener('mouseup', dragEnd);
-  element.addEventListener('mouseleave', dragEnd);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
 
   element.addEventListener('touchstart', dragStart);
-  element.addEventListener('touchmove', drag);
-  element.addEventListener('touchend', dragEnd);
+  document.addEventListener('touchmove', drag);
+  document.addEventListener('touchend', dragEnd);
 
   function dragStart(e) {
     if (e.type === 'mousedown') {
@@ -83,7 +94,7 @@ function makeDraggable(element, onDragEnd = null) {
       initialY = e.touches[0].clientY - yOffset;
     }
 
-    if (e.target === element) {
+    if (e.target === element || e.target.parentElement === element) {
       isDragging = true;
     }
   }
@@ -100,6 +111,10 @@ function makeDraggable(element, onDragEnd = null) {
         currentY = e.touches[0].clientY - initialY;
       }
 
+      // 确保元素在可视区域内
+      const pos = ensureInViewport(currentX, currentY, element.offsetWidth, element.offsetHeight);
+      currentX = pos.x;
+      currentY = pos.y;
       xOffset = currentX;
       yOffset = currentY;
 
@@ -124,18 +139,20 @@ function makeDraggable(element, onDragEnd = null) {
   // 设置初始位置
   if (element.dataset.type === 'icon') {
     const { iconPosition } = getSettings();
-    setTranslate(iconPosition.x, iconPosition.y, element);
-    xOffset = iconPosition.x;
-    yOffset = iconPosition.y;
-    initialX = iconPosition.x;
-    initialY = iconPosition.y;
+    const pos = ensureInViewport(iconPosition.x, iconPosition.y, element.offsetWidth, element.offsetHeight);
+    setTranslate(pos.x, pos.y, element);
+    xOffset = pos.x;
+    yOffset = pos.y;
+    initialX = pos.x;
+    initialY = pos.y;
   } else if (element.dataset.type === 'panel') {
     const { panelPosition } = getSettings();
-    setTranslate(panelPosition.x, panelPosition.y, element);
-    xOffset = panelPosition.x;
-    yOffset = panelPosition.y;
-    initialX = panelPosition.x;
-    initialY = panelPosition.y;
+    const pos = ensureInViewport(panelPosition.x, panelPosition.y, element.offsetWidth, element.offsetHeight);
+    setTranslate(pos.x, pos.y, element);
+    xOffset = pos.x;
+    yOffset = pos.y;
+    initialX = pos.x;
+    initialY = pos.y;
   }
 }
 
@@ -205,11 +222,17 @@ function createGamePanel() {
       gameFrame.allow = 'fullscreen';
       gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
 
-      gameContainer.innerHTML = '';
-      gameContainer.appendChild(gameFrame);
-      gameContainer.style.display = 'block';
+      // 设置游戏容器样式
+      gameContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        height: calc(100% - 60px);
+        width: 100%;
+        overflow: hidden;
+      `;
 
-      panel.querySelector('.game-grid').style.display = 'none';
+      gameContainer.innerHTML = '';
 
       // 添加返回按钮
       const backButton = document.createElement('button');
@@ -221,7 +244,11 @@ function createGamePanel() {
         panel.querySelector('.game-grid').style.display = 'grid';
       });
 
-      gameContainer.insertBefore(backButton, gameFrame);
+      gameContainer.appendChild(backButton);
+      gameContainer.appendChild(gameFrame);
+      gameContainer.style.display = 'flex';
+
+      panel.querySelector('.game-grid').style.display = 'none';
     });
   });
 
@@ -335,4 +362,5 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
 
