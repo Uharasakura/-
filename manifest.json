@@ -6,5 +6,7 @@
   "author": "3538352833",
   "version": "1.0.0",
   "homePage": "https://github.com/3538352833/tavern_helper_template",
-  "auto_update": true
+  "auto_update": true,
+  "extension_type": "floating"
 }
+
