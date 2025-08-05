@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>护眼数独</title>
     <style>
+      :root {
+        --cell-size: clamp(30px, 8vw, 50px);
+        --font-size-small: clamp(12px, 2.5vw, 14px);
+        --font-size-normal: clamp(14px, 3vw, 16px);
+        --font-size-large: clamp(18px, 4vw, 20px);
+        --font-size-xlarge: clamp(20px, 5vw, 24px);
+        --spacing-small: clamp(5px, 1.5vw, 8px);
+        --spacing-normal: clamp(8px, 2vw, 10px);
+        --spacing-large: clamp(15px, 3vw, 20px);
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -20,42 +31,47 @@
         background-color: #f0f2eb;
         font-family: 'Arial', sans-serif;
         color: #2c3338;
+        padding: var(--spacing-normal);
       }
 
       .game-container {
         background-color: #e8ede1;
-        padding: 20px;
+        padding: var(--spacing-large);
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: min(95%, 600px);
+        margin: 0 auto;
       }
 
       .header {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: var(--spacing-large);
       }
 
       .header h1 {
         color: #4a5568;
-        margin-bottom: 10px;
-        font-size: 24px;
+        margin-bottom: var(--spacing-normal);
+        font-size: var(--font-size-xlarge);
       }
 
       .controls {
         display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: var(--spacing-large);
+        gap: var(--spacing-normal);
       }
 
       button {
-        padding: 8px 16px;
+        padding: var(--spacing-small) var(--spacing-normal);
         background-color: #d5e0c9;
         border: none;
         border-radius: 6px;
         color: #2c3338;
         cursor: pointer;
-        font-size: 14px;
+        font-size: var(--font-size-small);
         transition: background-color 0.2s;
+        white-space: nowrap;
       }
 
       button:hover {
@@ -63,30 +79,34 @@
       }
 
       .difficulty-select {
-        padding: 8px;
+        padding: var(--spacing-small);
         border: 1px solid #d5e0c9;
         border-radius: 6px;
         background-color: #fff;
         color: #2c3338;
+        font-size: var(--font-size-small);
       }
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(9, 50px);
+        grid-template-columns: repeat(9, var(--cell-size));
         gap: 1px;
         background-color: #b8c4a4;
         padding: 2px;
         border-radius: 8px;
+        margin: 0 auto;
+        max-width: 100%;
+        overflow: auto;
       }
 
       .cell {
-        width: 50px;
-        height: 50px;
+        width: var(--cell-size);
+        height: var(--cell-size);
         background-color: #f5f7f2;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: var(--font-size-large);
         font-weight: bold;
         cursor: pointer;
         transition: background-color 0.2s;
@@ -124,21 +144,26 @@
       .number-pad {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-        margin-top: 20px;
-        padding: 10px;
+        gap: var(--spacing-normal);
+        margin-top: var(--spacing-large);
+        padding: var(--spacing-normal);
         background-color: #e8ede1;
         border-radius: 8px;
+        width: 100%;
       }
 
       .number-btn {
-        padding: 10px;
+        padding: var(--spacing-normal);
         background-color: #d5e0c9;
         border: none;
         border-radius: 6px;
-        font-size: 18px;
+        font-size: var(--font-size-large);
         color: #2c3338;
         cursor: pointer;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .number-btn:hover {
@@ -146,17 +171,18 @@
       }
 
       .timer {
-        font-size: 20px;
+        font-size: var(--font-size-large);
         color: #4a5568;
-        margin: 10px 0;
+        margin: var(--spacing-normal) 0;
       }
 
       .message {
-        margin-top: 20px;
-        padding: 10px;
+        margin-top: var(--spacing-large);
+        padding: var(--spacing-normal);
         border-radius: 6px;
         text-align: center;
         display: none;
+        font-size: var(--font-size-normal);
       }
 
       .message.success {
@@ -167,6 +193,37 @@
       .message.error {
         background-color: #fed7d7;
         color: #c53030;
+      }
+
+      @media (max-width: 480px) {
+        :root {
+          --cell-size: clamp(25px, 9vw, 35px);
+          --font-size-small: clamp(10px, 3vw, 12px);
+          --font-size-normal: clamp(12px, 3.5vw, 14px);
+          --font-size-large: clamp(14px, 4vw, 16px);
+          --font-size-xlarge: clamp(16px, 4.5vw, 18px);
+          --spacing-small: 4px;
+          --spacing-normal: 6px;
+          --spacing-large: 12px;
+        }
+
+        .game-container {
+          padding: var(--spacing-normal);
+          width: 98%;
+        }
+
+        .controls {
+          gap: var(--spacing-small);
+        }
+
+        .number-pad {
+          gap: var(--spacing-small);
+          padding: var(--spacing-small);
+        }
+
+        .number-btn {
+          padding: var(--spacing-small);
+        }
       }
     </style>
   </head>
@@ -473,3 +530,4 @@
     </script>
   </body>
 </html>
+
