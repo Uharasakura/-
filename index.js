@@ -51,24 +51,6 @@ function getSettings() {
   if (!extensionSettings[EXTENSION_NAME]) {
     extensionSettings[EXTENSION_NAME] = Object.assign({}, defaultSettings);
     saveSettingsDebounced();
-  } else {
-    // 检查是否有新游戏需要添加
-    const currentGames = extensionSettings[EXTENSION_NAME].games;
-    const defaultGames = defaultSettings.games;
-    let hasNewGames = false;
-
-    defaultGames.forEach(defaultGame => {
-      const exists = currentGames.some(game => game.name === defaultGame.name && game.url === defaultGame.url);
-
-      if (!exists) {
-        currentGames.push(defaultGame);
-        hasNewGames = true;
-      }
-    });
-
-    if (hasNewGames) {
-      saveSettingsDebounced();
-    }
   }
   return extensionSettings[EXTENSION_NAME];
 }
@@ -326,12 +308,6 @@ function showAddGameDialog() {
 
 // 创建游戏按钮
 function createGameButton() {
-  // 检查是否已存在游戏按钮
-  const existingButton = document.getElementById('gameButton');
-  if (existingButton) {
-    return existingButton;
-  }
-
   const button = document.createElement('button');
   button.id = 'gameButton';
   button.className = 'game-icon-button';
@@ -358,20 +334,10 @@ function createGameButton() {
 // 初始化
 let gameButton;
 
-// 移除之前的事件监听器
-context.eventSource.removeListener(context.event_types.APP_READY);
-
-// 添加新的事件监听器
+// 监听APP_READY事件
 context.eventSource.on(context.event_types.APP_READY, () => {
   console.log('Game Collection Extension Ready');
   getSettings(); // 初始化设置
-
-  // 移除已存在的游戏按钮
-  const existingButton = document.getElementById('gameButton');
-  if (existingButton) {
-    existingButton.remove();
-  }
-
   gameButton = createGameButton();
 });
 
