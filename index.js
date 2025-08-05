@@ -36,6 +36,11 @@ const defaultSettings = {
       icon: '🌾',
       url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
     },
+    {
+      name: '彩虹猫',
+      icon: '🌈',
+      url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+    },
   ],
   iconPosition: { x: 20, y: 20 },
   panelPosition: { x: 100, y: 100 },
