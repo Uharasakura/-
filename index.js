@@ -115,38 +115,6 @@ function ensureInViewport(x, y, width, height) {
   };
 }
 
-// 创建右键菜单项
-function createContextMenuItem() {
-  const menuItem = document.createElement('div');
-  menuItem.className = 'list-group-item flex-container flexGap5';
-  menuItem.innerHTML = `
-    <div class="menu_button menu_button_icon">🎮</div>
-    <div class="menu_button">小游戏</div>
-  `;
-
-  menuItem.addEventListener('click', () => {
-    const settings = getSettings();
-    settings.iconVisible = !settings.iconVisible;
-    saveSettings();
-    toggleGameButton();
-  });
-
-  return menuItem;
-}
-
-// 切换游戏图标显示状态
-function toggleGameButton() {
-  const settings = getSettings();
-  if (settings.iconVisible) {
-    if (!gameButton) {
-      gameButton = createGameButton();
-    }
-    gameButton.style.display = 'flex';
-  } else if (gameButton) {
-    gameButton.style.display = 'none';
-  }
-}
-
 // 使元素可拖拽
 function makeDraggable(element, onDragEnd = null) {
   let isDragging = false;
@@ -281,6 +249,183 @@ function createGameButton() {
   return button;
 }
 
+// 创建游戏面板
+function createGamePanel() {
+  const panel = document.createElement('div');
+  panel.className = 'game-panel';
+  panel.dataset.type = 'panel';
+  panel.innerHTML = `
+        <div class="game-panel-header">
+            <h2 class="game-panel-title">小游戏合集</h2>
+            <div class="game-panel-controls">
+                <button class="game-panel-button minimize-button" title="最小化">➖</button>
+                <button class="game-panel-button close-button" title="关闭">✖</button>
+            </div>
+        </div>
+        <div class="game-grid">
+            ${getSettings()
+              .games.map(
+                game => `
+                <div class="game-item" data-url="${game.url}">
+                    <div class="game-icon">${game.icon}</div>
+                    <p class="game-name">${game.name}</p>
+                </div>
+            `,
+              )
+              .join('')}
+            <div class="add-game-button">
+                <span class="add-game-icon">➕</span>
+                <p class="add-game-text">添加游戏</p>
+            </div>
+        </div>
+        <div class="game-container" style="display: none;"></div>
+    `;
+
+  // 添加事件监听器
+  const minimizeButton = panel.querySelector('.minimize-button');
+  const closeButton = panel.querySelector('.close-button');
+  const gameItems = panel.querySelectorAll('.game-item');
+  const addGameButton = panel.querySelector('.add-game-button');
+  const gameContainer = panel.querySelector('.game-container');
+
+  minimizeButton.addEventListener('click', () => {
+    panel.classList.toggle('minimized');
+    minimizeButton.textContent = panel.classList.contains('minimized') ? '➕' : '➖';
+  });
+
+  closeButton.addEventListener('click', () => {
+    panel.remove();
+    gameButton.style.display = 'flex';
+  });
+
+  gameItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.dataset.url;
+      const gameFrame = document.createElement('iframe');
+      gameFrame.src = url;
+      gameFrame.className = 'game-container';
+      gameFrame.allow = 'fullscreen';
+      gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
+
+      // 设置游戏容器样式
+      gameContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        height: calc(100% - 60px);
+        width: 100%;
+        overflow: hidden;
+      `;
+
+      gameContainer.innerHTML = '';
+
+      // 添加返回按钮
+      const backButton = document.createElement('button');
+      backButton.className = 'game-panel-button';
+      backButton.textContent = '返回';
+      backButton.style.marginBottom = '10px';
+      backButton.addEventListener('click', () => {
+        gameContainer.style.display = 'none';
+        panel.querySelector('.game-grid').style.display = 'grid';
+      });
+
+      gameContainer.appendChild(backButton);
+      gameContainer.appendChild(gameFrame);
+      gameContainer.style.display = 'flex';
+
+      panel.querySelector('.game-grid').style.display = 'none';
+    });
+  });
+
+  addGameButton.addEventListener('click', showAddGameDialog);
+
+  document.body.appendChild(panel);
+
+  // 使面板可拖拽
+  makeDraggable(panel, (x, y) => {
+    const settings = getSettings();
+    settings.panel = { x, y };
+    saveSettings();
+  });
+
+  return panel;
+}
+
+// 创建添加游戏对话框
+function showAddGameDialog() {
+  const dialog = document.createElement('div');
+  dialog.className = 'add-game-dialog';
+  dialog.innerHTML = `
+        <form class="add-game-form">
+            <div class="form-group">
+                <label class="form-label">游戏名称</label>
+                <input type="text" class="form-input" name="name" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">图标 (emoji)</label>
+                <input type="text" class="form-input" name="icon" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">游戏URL</label>
+                <input type="url" class="form-input" name="url" required>
+            </div>
+            <div class="form-buttons">
+                <button type="button" class="form-button cancel">取消</button>
+                <button type="submit" class="form-button submit">添加</button>
+            </div>
+        </form>
+    `;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay active';
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(dialog);
+
+  const form = dialog.querySelector('form');
+  const cancelButton = dialog.querySelector('.cancel');
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const newGame = {
+      name: formData.get('name'),
+      icon: formData.get('icon'),
+      url: formData.get('url'),
+    };
+
+    const settings = getSettings();
+    settings.games.push(newGame);
+    saveSettings();
+
+    // 重新创建游戏面板
+    document.querySelector('.game-panel').remove();
+    createGamePanel();
+
+    closeDialog();
+  });
+
+  cancelButton.addEventListener('click', closeDialog);
+
+  function closeDialog() {
+    dialog.remove();
+    overlay.remove();
+  }
+}
+
+// 切换游戏图标显示状态
+function toggleGameButton() {
+  const settings = getSettings();
+  if (settings.iconVisible) {
+    if (!gameButton) {
+      gameButton = createGameButton();
+    }
+    gameButton.style.display = 'flex';
+  } else if (gameButton) {
+    gameButton.style.display = 'none';
+  }
+}
+
 // 初始化
 let gameButton;
 
@@ -288,16 +433,11 @@ let gameButton;
 context.eventSource.on(context.event_types.APP_READY, () => {
   console.log('Game Collection Extension Ready');
 
-  // 添加右键菜单项
-  const rightClickMenu = document.querySelector('#right-click-menu .list-group');
-  if (rightClickMenu) {
-    rightClickMenu.appendChild(createContextMenuItem());
-  }
-
   // 初始化设置并显示图标
   getSettings();
   toggleGameButton();
 });
+
 
 
 
