@@ -51,6 +51,24 @@ function getSettings() {
   if (!extensionSettings[EXTENSION_NAME]) {
     extensionSettings[EXTENSION_NAME] = Object.assign({}, defaultSettings);
     saveSettingsDebounced();
+  } else {
+    // 检查是否有新游戏需要添加
+    const currentGames = extensionSettings[EXTENSION_NAME].games;
+    const defaultGames = defaultSettings.games;
+    let hasNewGames = false;
+
+    defaultGames.forEach(defaultGame => {
+      const exists = currentGames.some(game => game.name === defaultGame.name && game.url === defaultGame.url);
+
+      if (!exists) {
+        currentGames.push(defaultGame);
+        hasNewGames = true;
+      }
+    });
+
+    if (hasNewGames) {
+      saveSettingsDebounced();
+    }
   }
   return extensionSettings[EXTENSION_NAME];
 }
@@ -340,6 +358,8 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
+
 
 
 
