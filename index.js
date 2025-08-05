@@ -1,7 +1,10 @@
 import { extension_settings } from '../../../extensions.js';
-import { dragElement } from '../../../utils.js';
+import { registerSlashCommand } from '../../../slash-commands.js';
 
 const extensionName = 'game_collection';
+let gameExtension;
+
+// 默认设置
 const defaultSettings = {
   games: [
     {
@@ -40,35 +43,6 @@ const defaultSettings = {
 // 初始化设置
 if (!extension_settings[extensionName]) {
   extension_settings[extensionName] = defaultSettings;
-}
-
-// 创建扩展按钮
-function createExtensionButton() {
-  // 移除已存在的按钮
-  const existingButton = document.querySelector('.game-extension-button');
-  if (existingButton) {
-    existingButton.remove();
-  }
-
-  const button = document.createElement('div');
-  button.classList.add('game-extension-button');
-  button.innerHTML = '🎮';
-  button.title = '小游戏合集';
-  button.addEventListener('click', () => {
-    toggleGamePanel();
-  });
-
-  // 添加拖拽功能
-  dragElement(button);
-
-  // 确保按钮在其他元素之上
-  document.body.appendChild(button);
-
-  // 添加动画效果
-  setTimeout(() => {
-    button.style.opacity = '1';
-    button.style.transform = 'translate(-50%, 50%) scale(1)';
-  }, 100);
 }
 
 // 创建游戏面板
@@ -118,8 +92,7 @@ function createGamePanel() {
     });
   });
 
-  dragElement(panel);
-  document.body.appendChild(panel);
+  return panel;
 }
 
 // 打开游戏
@@ -141,28 +114,33 @@ function openGame(url) {
   document.body.appendChild(gameContainer);
 }
 
-// 切换游戏面板
-function toggleGamePanel() {
-  const existingPanel = document.querySelector('.game-panel');
-  if (existingPanel) {
-    existingPanel.remove();
-  } else {
-    createGamePanel();
+// 注册扩展
+window.addEventListener('load', async () => {
+  // 等待 SillyTavern 加载完成
+  while (!window.SillyTavern) {
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
-}
 
-// 监听页面加载完成
-window.addEventListener('DOMContentLoaded', () => {
-  createExtensionButton();
+  // 创建扩展容器
+  const container = new SillyTavern.Extension();
+
+  // 创建浮动图标
+  const floatingIcon = container.createFloatingButton('🎮');
+  floatingIcon.onclick = () => {
+    const panel = createGamePanel();
+    document.body.appendChild(panel);
+  };
+
+  // 注册斜杠命令
+  registerSlashCommand('game', args => {
+    const panel = createGamePanel();
+    document.body.appendChild(panel);
+    return '';
+  });
+
+  gameExtension = container;
 });
 
-// 监听 ST 的 APP_READY 事件
-document.addEventListener('click', () => {
-  // 确保按钮存在
-  if (!document.querySelector('.game-extension-button')) {
-    createExtensionButton();
-  }
-});
 
 
 
