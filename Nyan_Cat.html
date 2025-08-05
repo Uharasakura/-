@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nyan Cat Game</title>
+    <style>
+      :root {
+        --viewport-scale: min(1, max(0.5, calc(100vw / 1920)));
+        --cat-size: clamp(120px, min(20vw, 20vh), min(25vw, 25vh));
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 60vh;
+        overflow: hidden;
+        background: #000;
+        font-family: Arial, sans-serif;
+        touch-action: none;
+      }
+      .game-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #gameCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #nyanCat {
+        position: absolute;
+        width: var(--cat-size);
+        height: var(--cat-size);
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        pointer-events: none;
+        image-rendering: pixelated;
+        will-change: transform;
+        object-fit: contain;
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+      }
+      .score {
+        position: fixed;
+        top: clamp(10px, 3vh, 30px);
+        right: clamp(10px, 3vw, 30px);
+        color: white;
+        font-size: clamp(16px, 4vw, 24px);
+        z-index: 3;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+      .menu,
+      .game-over {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: clamp(20px, 5vw, 40px);
+        border-radius: clamp(10px, 2vw, 20px);
+        text-align: center;
+        z-index: 4;
+        backdrop-filter: blur(5px);
+        width: clamp(280px, 80vw, 500px);
+      }
+      .game-over {
+        display: none;
+      }
+      .btn {
+        margin: 10px;
+        padding: clamp(10px, 2vw, 20px);
+        border: none;
+        border-radius: 8px;
+        background: #ff69b4;
+        color: white;
+        cursor: pointer;
+        font-size: clamp(14px, 3vw, 18px);
+      }
+      .btn:hover {
+        transform: scale(1.1);
+        background: #ff8ac5;
+      }
+      .title {
+        font-size: clamp(24px, 6vw, 36px);
+        color: #ff69b4;
+        text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+      }
+      .audio-control {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 10px;
+        border-radius: 50%;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+      }
+      .audio-control:hover {
+        transform: scale(1.1);
+        background: rgba(255, 105, 180, 0.6);
+      }
+      .audio-control i {
+        color: white;
+        font-size: 20px;
+      }
+
+      .star {
+        position: absolute;
+        background: white;
+        border-radius: 50%;
+        animation: twinkle 1s infinite alternate;
+      }
+      @keyframes twinkle {
+        0% {
+          opacity: 0.2;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <audio id="bgm" loop>
+      <source src="https://files.catbox.moe/eifyn7.mp3" type="audio/mpeg" />
+    </audio>
+
+    <div class="audio-control" id="audioControl">
+      <i>🔊</i>
+    </div>
+
+    <div class="game-container">
+      <canvas id="gameCanvas"></canvas>
+      <img id="nyanCat" src="https://files.catbox.moe/zauopb.gif" alt="Nyan Cat" />
+      <div class="score">得分: <span id="scoreValue">0</span></div>
+      <div id="startMenu" class="menu">
+        <h1 class="title">Nyan Cat</h1>
+        <div>长按空格键或点击屏幕让Nyan Cat持续上升<br />松开后会自然下落<br />避开障碍物，获得高分！</div>
+        <button class="btn" onclick="startGame()">开始游戏</button>
+      </div>
+      <div class="game-over" id="gameOver">
+        <h2 class="title">游戏结束</h2>
+        <p>最终得分: <span id="finalScore">0</span></p>
+        <button class="btn" onclick="restartGame()">重新开始</button>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const nyanCat = document.getElementById('nyanCat');
+        const bgm = document.getElementById('bgm');
+        const audioControl = document.getElementById('audioControl');
+        let isPlaying = false;
+
+        // 游戏状态
+        let gameState = {
+          catY: window.innerHeight / 2,
+          velocity: 0,
+          gravity: 0.4,
+          flyForce: -0.3,
+          maxUpwardSpeed: -4,
+          isFlying: false,
+          score: 0,
+          isGameOver: false,
+          isGameStarted: false,
+          isPaused: false,
+          stars: [],
+          obstacles: [],
+          lastUpdateTime: 0,
+        };
+
+        // 控制状态
+        let controlState = {
+          spacePressed: false,
+          mousePressed: false,
+          touchActive: false,
+        };
+
+        // 游戏尺寸计算
+        function calculateGameDimensions() {
+          const vw = document.documentElement.clientWidth;
+          const vh = document.documentElement.clientHeight;
+          const isMobile = vw <= 768;
+          const scale = Math.min(1, Math.max(0.5, Math.min(vw / 1920, vh / 1080)));
+          const catSize = isMobile
+            ? Math.max(80, Math.min(vw * 0.15, vh * 0.15))
+            : Math.max(120, Math.min(vw * 0.2, vh * 0.2));
+
+          return {
+            catSize,
+            obstacleWidth: Math.min(20 * scale, vw * 0.03) * (isMobile ? 0.8 : 1.2),
+            obstacleGap: Math.min(300 * scale, vw * 0.3),
+            jumpForce: -8 * scale * (isMobile ? 1 : 1.2),
+            gravity: 0.4 * scale * (isMobile ? 1 : 1.2),
+            speed: 4 * scale * (isMobile ? 0.8 : 1),
+            scale,
+          };
+        }
+
+        // 障碍物类
+        class Obstacle {
+          constructor() {
+            const dims = calculateGameDimensions();
+            const isMobile = window.innerWidth <= 768;
+            this.width = dims.obstacleWidth;
+
+            // 优化障碍物高度
+            const maxHeight = canvas.height * (isMobile ? 0.35 : 0.4);
+            const minHeight = maxHeight * 0.4; // 保证有足够空间通过
+            this.height = minHeight + Math.random() * (maxHeight - minHeight);
+
+            // 确保障碍物之间有足够空间
+            const lastObstacle = gameState.obstacles[gameState.obstacles.length - 1];
+            this.x = lastObstacle ? Math.max(lastObstacle.x + dims.obstacleGap, canvas.width) : canvas.width;
+
+            // 优化垂直位置，避免完全挡住
+            const availableSpace = canvas.height - this.height;
+            const safeZone = dims.catSize * 2; // 确保至少有2个猫咪高度的安全通道
+            const minY = safeZone;
+            const maxY = availableSpace - safeZone;
+            this.y = Math.random() * (maxY - minY) + minY;
+
+            this.speed = dims.speed;
+          }
+
+          update() {
+            this.x -= this.speed;
+            return this.x + this.width < 0;
+          }
+
+          draw() {
+            ctx.fillStyle = '#ff69b4';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+          }
+
+          checkCollision(catX, catY) {
+            const dims = calculateGameDimensions();
+            const catSize = dims.catSize * (window.innerWidth <= 768 ? 0.7 : 0.6);
+            return (
+              catX + catSize * 0.7 > this.x &&
+              catX + catSize * 0.3 < this.x + this.width &&
+              catY + catSize * 0.7 > this.y &&
+              catY + catSize * 0.3 < this.y + this.height
+            );
+          }
+        }
+
+        // 星星类
+        class Star {
+          constructor() {
+            this.reset();
+          }
+
+          reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 3 + 1;
+            this.speed = Math.random() * 2 + 1;
+          }
+
+          update() {
+            this.x -= this.speed;
+            if (this.x < 0) {
+              this.reset();
+              this.x = canvas.width;
+            }
+          }
+
+          draw() {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // 事件处理
+        function setupEventListeners() {
+          const handleInput = (type, active, e) => {
+            e?.preventDefault();
+            if (!gameState.isGameStarted || gameState.isGameOver) return;
+            controlState[type] = active;
+          };
+
+          document.addEventListener(
+            'keydown',
+            e => {
+              if (e.code === 'Space' || e.key === ' ') handleInput('spacePressed', true, e);
+            },
+            { capture: true },
+          );
+
+          document.addEventListener(
+            'keyup',
+            e => {
+              if (e.code === 'Space' || e.key === ' ') handleInput('spacePressed', false, e);
+            },
+            { capture: true },
+          );
+
+          canvas.addEventListener('mousedown', e => handleInput('mousePressed', true, e));
+          canvas.addEventListener('mouseup', e => handleInput('mousePressed', false, e));
+          canvas.addEventListener('mouseleave', () => handleInput('mousePressed', false));
+
+          canvas.addEventListener('touchstart', e => handleInput('touchActive', true, e), { passive: false });
+          canvas.addEventListener('touchend', e => handleInput('touchActive', false, e), { passive: false });
+
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              gameState.isPaused = true;
+              Object.keys(controlState).forEach(key => (controlState[key] = false));
+              isPlaying && bgm.pause();
+            } else {
+              gameState.isPaused = false;
+              gameState.lastUpdateTime = 0;
+              isPlaying && bgm.play();
+            }
+          });
+
+          window.addEventListener('resize', () => {
+            canvas.width = document.documentElement.clientWidth;
+            canvas.height = document.documentElement.clientHeight;
+            const dims = calculateGameDimensions();
+            document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
+          });
+        }
+
+        // 简化的星星系统
+        function createStars() {
+          return Array.from({ length: 100 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2 + 1,
+            speed: Math.random() * 1.5 + 0.5,
+          }));
+        }
+
+        function updateStars() {
+          gameState.stars.forEach(star => {
+            star.x -= star.speed;
+            if (star.x < 0) {
+              star.x = canvas.width;
+              star.y = Math.random() * canvas.height;
+            }
+          });
+        }
+
+        function drawStars() {
+          ctx.fillStyle = 'white';
+          gameState.stars.forEach(star => {
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        // 游戏逻辑
+        function update(currentTime) {
+          if (!gameState.isGameStarted || gameState.isGameOver || gameState.isPaused) return;
+
+          const deltaTime = gameState.lastUpdateTime ? (currentTime - gameState.lastUpdateTime) / 16 : 1;
+          gameState.lastUpdateTime = currentTime;
+
+          const dims = calculateGameDimensions();
+          gameState.isFlying = controlState.spacePressed || controlState.mousePressed || controlState.touchActive;
+
+          // 更新猫咪位置
+          if (gameState.isFlying) {
+            gameState.velocity = Math.max(
+              gameState.maxUpwardSpeed * dims.scale,
+              gameState.velocity + gameState.flyForce * dims.scale * deltaTime,
+            );
+          } else {
+            gameState.velocity += gameState.gravity * dims.scale * deltaTime;
+          }
+
+          gameState.catY += gameState.velocity * deltaTime;
+
+          // 边界检查
+          if (gameState.catY < 0) {
+            gameState.catY = 0;
+            gameState.velocity = 0;
+          }
+          if (gameState.catY > canvas.height - dims.catSize) {
+            gameState.catY = canvas.height - dims.catSize;
+            gameState.velocity = 0;
+          }
+
+          // 更新星星
+          updateStars();
+
+          // 优化障碍物生成
+          const lastObstacle = gameState.obstacles[gameState.obstacles.length - 1];
+          const minGap = dims.obstacleGap * 1.2; // 增加最小间距
+
+          if (!lastObstacle || lastObstacle.x + lastObstacle.width < canvas.width - minGap) {
+            // 根据分数调整生成概率
+            const baseChance = 0.01;
+            const scoreMultiplier = Math.min(1 + Math.floor(gameState.score / 1000) * 0.1, 2);
+            if (Math.random() < baseChance * scoreMultiplier) {
+              gameState.obstacles.push(new Obstacle());
+            }
+          }
+
+          // 更新和检查障碍物
+          gameState.obstacles = gameState.obstacles.filter(obstacle => {
+            const isOffscreen = obstacle.update();
+            !isOffscreen && obstacle.checkCollision(100, gameState.catY) && gameOver();
+            return !isOffscreen;
+          });
+
+          // 更新分数
+          gameState.score++;
+          document.getElementById('scoreValue').textContent = Math.floor(gameState.score / 10);
+        }
+
+        function draw() {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          drawStars();
+          gameState.obstacles.forEach(obstacle => obstacle.draw());
+          nyanCat.style.transform = `translate(100px, ${gameState.catY}px)`;
+        }
+
+        function gameLoop() {
+          update(performance.now());
+          draw();
+          requestAnimationFrame(gameLoop);
+        }
+
+        // 游戏控制
+        window.startGame = function () {
+          gameState.isGameStarted = true;
+          gameState.isPaused = false;
+          document.getElementById('startMenu').style.display = 'none';
+          nyanCat.style.display = 'block';
+          gameState.score = 0;
+          document.getElementById('scoreValue').textContent = '0';
+
+          if (bgm) {
+            bgm
+              .play()
+              .then(() => {
+                isPlaying = true;
+                audioControl.innerHTML = '<i>🔊</i>';
+              })
+              .catch(() => (audioControl.innerHTML = '<i>❌</i>'));
+          }
+        };
+
+        window.restartGame = function () {
+          gameState = {
+            catY: window.innerHeight / 2,
+            velocity: 0,
+            gravity: 0.4,
+            flyForce: -0.3,
+            maxUpwardSpeed: -4,
+            isFlying: false,
+            score: 0,
+            isGameOver: false,
+            isGameStarted: true,
+            isPaused: false,
+            stars: createStars(), // 重新创建星星
+            obstacles: [],
+            lastUpdateTime: 0,
+          };
+
+          Object.keys(controlState).forEach(key => (controlState[key] = false));
+          document.getElementById('gameOver').style.display = 'none';
+          bgm.volume = 1.0;
+          isPlaying && bgm.play();
+        };
+
+        function gameOver() {
+          gameState.isGameOver = true;
+          document.getElementById('gameOver').style.display = 'block';
+          document.getElementById('finalScore').textContent = Math.floor(gameState.score / 10);
+          bgm.volume = 0.3;
+        }
+
+        // 音频控制
+        audioControl.onclick = function (e) {
+          e.stopPropagation();
+          if (isPlaying) {
+            bgm.pause();
+            audioControl.innerHTML = '<i>🔈</i>';
+          } else {
+            bgm
+              .play()
+              .then(() => {
+                audioControl.innerHTML = '<i>🔊</i>';
+              })
+              .catch(() => (audioControl.innerHTML = '<i>❌</i>'));
+          }
+          isPlaying = !isPlaying;
+        };
+
+        // 初始化
+        canvas.width = document.documentElement.clientWidth;
+        canvas.height = document.documentElement.clientHeight;
+        nyanCat.style.display = 'none';
+        bgm.volume = 1.0;
+        bgm.load();
+        gameState.stars = createStars(); // 初始化星星
+        setupEventListeners();
+        gameLoop();
+      });
+    </script>
+  </body>
+</html>

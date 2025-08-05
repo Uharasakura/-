@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>飞行棋小游戏</title>
+    <style>
+      .game-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #f5f5f5;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 5px;
+        margin: 20px 0;
+      }
+      .cell {
+        width: 60px;
+        height: 60px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        background: white;
+        position: relative;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+      }
+      .cell:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .cell.start {
+        background: #e3f2fd;
+      }
+      .cell.end {
+        background: #f3e5f5;
+      }
+      .cell.special {
+        background: #fff3e0;
+        animation: pulse 2s infinite;
+      }
+      .cell.mystery {
+        background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+        animation: rainbow 5s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes rainbow {
+        0% {
+          filter: hue-rotate(0deg);
+        }
+        100% {
+          filter: hue-rotate(360deg);
+        }
+      }
+      .player {
+        position: absolute;
+        font-size: 30px;
+        z-index: 2;
+        transition: all 0.5s ease;
+      }
+      .player1 {
+        color: #f44336;
+      }
+      .player2 {
+        color: #2196f3;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px 0;
+      }
+      .btn {
+        padding: 10px 20px;
+        margin: 0 10px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background: #4caf50;
+        color: white;
+        transition: all 0.3s ease;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .status {
+        text-align: center;
+        font-size: 18px;
+        margin: 10px 0;
+      }
+      .dice {
+        font-size: 40px;
+        margin: 10px 0;
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+      .dice:hover {
+        transform: rotate(360deg);
+      }
+      .popup {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        animation: popIn 0.3s ease;
+        text-align: center;
+      }
+      .popup.active {
+        display: block;
+      }
+      @keyframes popIn {
+        from {
+          transform: translate(-50%, -50%) scale(0.5);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+      }
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+      .overlay.active {
+        display: block;
+      }
+      .effect-icon {
+        font-size: 40px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h2 style="text-align: center">🎲 飞行棋 🎲</h2>
+      <div class="status">当前玩家: <span id="currentPlayer">玩家1 🔴</span></div>
+      <div class="dice" id="dice">🎲</div>
+      <div class="board" id="board"></div>
+      <div class="controls">
+        <button class="btn" id="rollDice">掷骰子</button>
+        <button class="btn" id="restart">重新开始</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="popup" id="popup">
+      <div class="effect-icon" id="effectIcon"></div>
+      <h3 id="popupTitle"></h3>
+      <p id="popupContent"></p>
+      <button class="btn" onclick="closePopup()">确定</button>
+    </div>
+
+    <script>
+      $(document).ready(function () {
+        const BOARD_SIZE = 64;
+        const SPECIAL_CELLS = {
+          10: { type: 'forward', steps: 2, icon: '⏩', title: '快速前进', content: '冲啊！前进2格！' },
+          20: { type: 'backward', steps: -2, icon: '⏪', title: '后退', content: '哎呀，后退2格...' },
+          30: { type: 'forward', steps: 3, icon: '🚀', title: '火箭加速', content: '发射！前进3格！' },
+          40: { type: 'backward', steps: -3, icon: '🕳️', title: '掉入陷阱', content: '完蛋，后退3格...' },
+          50: { type: 'forward', steps: 4, icon: '✨', title: '魔法加速', content: '施展魔法，前进4格！' },
+        };
+
+        // 随机特殊格子效果
+        const MYSTERY_EFFECTS = [
+          { type: 'swap', icon: '🔄', title: '位置互换', content: '和对手交换位置！', action: swapPlayers },
+          { type: 'rainbow', icon: '🌈', title: '彩虹跳跃', content: '随机传送到前方1-6格！', action: randomForward },
+          { type: 'reverse', icon: '↩️', title: '倒带时光', content: '回到起点，重新开始！', action: backToStart },
+          { type: 'double', icon: '✌️', title: '双倍前进', content: '下次移动距离翻倍！', action: enableDouble },
+          {
+            type: 'shield',
+            icon: '🛡️',
+            title: '防护罩',
+            content: '获得一次免疫负面效果的机会！',
+            action: enableShield,
+          },
+        ];
+
+        let currentPlayer = 1;
+        let positions = { 1: 0, 2: 0 };
+        let gameEnded = false;
+        let hasDouble = false;
+        let hasShield = { 1: false, 2: false };
+        let mysteryPositions = [];
+
+        // 初始化随机神秘格子
+        function initMysteryTiles() {
+          mysteryPositions = [];
+          const availablePositions = Array.from({ length: BOARD_SIZE - 2 }, (_, i) => i + 1).filter(
+            pos => !SPECIAL_CELLS[pos],
+          );
+
+          // 随机选择5个位置作为神秘格子
+          for (let i = 0; i < 5; i++) {
+            const randomIndex = Math.floor(Math.random() * availablePositions.length);
+            mysteryPositions.push(availablePositions.splice(randomIndex, 1)[0]);
+          }
+        }
+
+        // 显示弹窗
+        function showPopup(icon, title, content) {
+          $('#effectIcon').text(icon);
+          $('#popupTitle').text(title);
+          $('#popupContent').text(content);
+          $('#overlay').addClass('active');
+          $('#popup').addClass('active');
+        }
+
+        // 关闭弹窗
+        window.closePopup = function () {
+          $('#overlay').removeClass('active');
+          $('#popup').removeClass('active');
+        };
+
+        // 特殊效果实现
+        function swapPlayers() {
+          const temp = positions[1];
+          positions[1] = positions[2];
+          positions[2] = temp;
+          updatePlayerPositions();
+        }
+
+        function randomForward() {
+          const steps = Math.floor(Math.random() * 6) + 1;
+          movePlayer(steps);
+        }
+
+        function backToStart() {
+          positions[currentPlayer] = 0;
+          updatePlayerPositions();
+        }
+
+        function enableDouble() {
+          hasDouble = true;
+        }
+
+        function enableShield() {
+          hasShield[currentPlayer] = true;
+        }
+
+        // 初始化游戏板
+        function initBoard() {
+          const board = $('#board');
+          board.empty();
+          initMysteryTiles();
+
+          for (let i = 0; i < BOARD_SIZE; i++) {
+            const cell = $('<div>').addClass('cell').attr('data-index', i);
+
+            if (i === 0) {
+              cell.addClass('start').text('🏁');
+            } else if (i === BOARD_SIZE - 1) {
+              cell.addClass('end').text('🏆');
+            } else if (SPECIAL_CELLS[i]) {
+              cell.addClass('special').text(SPECIAL_CELLS[i].icon).attr('title', SPECIAL_CELLS[i].title);
+            } else if (mysteryPositions.includes(i)) {
+              cell.addClass('mystery').text('❓').attr('title', '神秘格子');
+            } else {
+              cell.text(i);
+            }
+
+            board.append(cell);
+          }
+          updatePlayerPositions();
+        }
+
+        // 更新玩家位置
+        function updatePlayerPositions() {
+          $('.player').remove();
+          if (positions[1] >= 0 && positions[1] < BOARD_SIZE) {
+            $(`.cell[data-index="${positions[1]}"]`).append(
+              $('<div>')
+                .addClass('player player1')
+                .text(hasShield[1] ? '🛡️' : '🔴'),
+            );
+          }
+          if (positions[2] >= 0 && positions[2] < BOARD_SIZE) {
+            $(`.cell[data-index="${positions[2]}"]`).append(
+              $('<div>')
+                .addClass('player player2')
+                .text(hasShield[2] ? '🛡️' : '🔵'),
+            );
+          }
+        }
+
+        // 掷骰子
+        function rollDice() {
+          const number = Math.floor(Math.random() * 6) + 1;
+          const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+          $('#dice').text(diceEmojis[number - 1]);
+          return number;
+        }
+
+        // 移动玩家
+        function movePlayer(steps) {
+          if (hasDouble) {
+            steps *= 2;
+            hasDouble = false;
+          }
+
+          let newPosition = positions[currentPlayer] + steps;
+
+          if (newPosition >= BOARD_SIZE) {
+            newPosition = BOARD_SIZE - 1;
+          } else if (newPosition < 0) {
+            if (hasShield[currentPlayer]) {
+              hasShield[currentPlayer] = false;
+              newPosition = positions[currentPlayer];
+              showPopup('🛡️', '防护罩生效', '免疫了后退效果！');
+              return false;
+            }
+            newPosition = 0;
+          }
+
+          positions[currentPlayer] = newPosition;
+          updatePlayerPositions();
+
+          // 检查特殊格子
+          if (SPECIAL_CELLS[newPosition]) {
+            const special = SPECIAL_CELLS[newPosition];
+            showPopup(special.icon, special.title, special.content);
+            setTimeout(() => {
+              if (special.steps < 0 && hasShield[currentPlayer]) {
+                hasShield[currentPlayer] = false;
+                showPopup('🛡️', '防护罩生效', '免疫了后退效果！');
+              } else {
+                positions[currentPlayer] += special.steps;
+                updatePlayerPositions();
+              }
+              checkWin();
+            }, 1000);
+          }
+          // 检查神秘格子
+          else if (mysteryPositions.includes(newPosition)) {
+            const effect = MYSTERY_EFFECTS[Math.floor(Math.random() * MYSTERY_EFFECTS.length)];
+            showPopup(effect.icon, effect.title, effect.content);
+            setTimeout(() => {
+              effect.action();
+              checkWin();
+            }, 1000);
+          }
+
+          return checkWin();
+        }
+
+        // 检查胜利
+        function checkWin() {
+          if (positions[currentPlayer] >= BOARD_SIZE - 1) {
+            gameEnded = true;
+            const winner = currentPlayer === 1 ? '玩家1 🔴' : '玩家2 🔵';
+            $('#currentPlayer').text(`游戏结束! ${winner} 获胜! 🎉`);
+            $('#rollDice').prop('disabled', true);
+            return true;
+          }
+          return false;
+        }
+
+        // 切换玩家
+        function switchPlayer() {
+          currentPlayer = currentPlayer === 1 ? 2 : 1;
+          $('#currentPlayer').text(currentPlayer === 1 ? '玩家1 🔴' : '玩家2 🔵');
+        }
+
+        // 事件处理
+        $('#rollDice').click(function () {
+          if (gameEnded) return;
+
+          const steps = rollDice();
+          const hasWon = movePlayer(steps);
+
+          if (!hasWon) {
+            setTimeout(switchPlayer, 1000);
+          }
+        });
+
+        $('#restart').click(function () {
+          currentPlayer = 1;
+          positions = { 1: 0, 2: 0 };
+          gameEnded = false;
+          hasDouble = false;
+          hasShield = { 1: false, 2: false };
+          $('#currentPlayer').text('玩家1 🔴');
+          $('#dice').text('🎲');
+          $('#rollDice').prop('disabled', false);
+          initBoard();
+        });
+
+        // 初始化游戏
+        initBoard();
+      });
+    </script>
+  </body>
+</html>
