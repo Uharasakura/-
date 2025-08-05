@@ -44,6 +44,12 @@ if (!extension_settings[extensionName]) {
 
 // 创建扩展按钮
 function createExtensionButton() {
+  // 移除已存在的按钮
+  const existingButton = document.querySelector('.game-extension-button');
+  if (existingButton) {
+    existingButton.remove();
+  }
+
   const button = document.createElement('div');
   button.classList.add('game-extension-button');
   button.innerHTML = '🎮';
@@ -51,8 +57,18 @@ function createExtensionButton() {
   button.addEventListener('click', () => {
     toggleGamePanel();
   });
+
+  // 添加拖拽功能
   dragElement(button);
+
+  // 确保按钮在其他元素之上
   document.body.appendChild(button);
+
+  // 添加动画效果
+  setTimeout(() => {
+    button.style.opacity = '1';
+    button.style.transform = 'translate(-50%, 50%) scale(1)';
+  }, 100);
 }
 
 // 创建游戏面板
@@ -60,28 +76,28 @@ function createGamePanel() {
   const panel = document.createElement('div');
   panel.classList.add('game-panel');
   panel.innerHTML = `
-        <div class="game-panel-header">
-            <div class="game-panel-title">小游戏合集</div>
-            <div class="game-panel-controls">
-                <div class="game-panel-button minimize">_</div>
-                <div class="game-panel-button close">×</div>
-            </div>
-        </div>
-        <div class="game-panel-content">
-            <div class="game-grid">
-                ${extension_settings[extensionName].games
-                  .map(
-                    game => `
-                    <div class="game-item" data-url="${game.url}">
-                        <div class="game-icon">${game.icon}</div>
-                        <div class="game-name">${game.name}</div>
-                    </div>
-                `,
-                  )
-                  .join('')}
-            </div>
-        </div>
-    `;
+    <div class="game-panel-header">
+      <div class="game-panel-title">小游戏合集</div>
+      <div class="game-panel-controls">
+        <div class="game-panel-button minimize">_</div>
+        <div class="game-panel-button close">×</div>
+      </div>
+    </div>
+    <div class="game-panel-content">
+      <div class="game-grid">
+        ${extension_settings[extensionName].games
+          .map(
+            game => `
+          <div class="game-item" data-url="${game.url}">
+            <div class="game-icon">${game.icon}</div>
+            <div class="game-name">${game.name}</div>
+          </div>
+        `,
+          )
+          .join('')}
+      </div>
+    </div>
+  `;
 
   // 添加事件监听
   const closeButton = panel.querySelector('.close');
@@ -111,11 +127,11 @@ function openGame(url) {
   const gameContainer = document.createElement('div');
   gameContainer.classList.add('game-container');
   gameContainer.innerHTML = `
-        <div class="game-container-header">
-            <div class="game-container-button back">返回</div>
-        </div>
-        <iframe src="${url}" frameborder="0" allowfullscreen></iframe>
-    `;
+    <div class="game-container-header">
+      <div class="game-container-button back">返回</div>
+    </div>
+    <iframe src="${url}" frameborder="0" allowfullscreen></iframe>
+  `;
 
   const backButton = gameContainer.querySelector('.back');
   backButton.addEventListener('click', () => {
@@ -136,9 +152,19 @@ function toggleGamePanel() {
 }
 
 // 监听页面加载完成
-window.addEventListener('load', () => {
+window.addEventListener('DOMContentLoaded', () => {
   createExtensionButton();
 });
+
+// 监听 ST 的 APP_READY 事件
+document.addEventListener('click', () => {
+  // 确保按钮存在
+  if (!document.querySelector('.game-extension-button')) {
+    createExtensionButton();
+  }
+});
+
+
 
 
 
