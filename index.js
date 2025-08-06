@@ -185,10 +185,15 @@ function createGameButton() {
   gameButton.innerHTML = '🎮';
   gameButton.title = '游戏合集';
 
-  // 设置初始位置
+  // 设置初始位置，确保在可见区域内
   const settings = getExtensionSettings();
-  gameButton.style.left = `${settings.iconPosition.x}px`;
-  gameButton.style.top = `${settings.iconPosition.y}px`;
+  const maxX = Math.max(0, Math.min(settings.iconPosition.x, window.innerWidth - 50));
+  const maxY = Math.max(0, Math.min(settings.iconPosition.y, window.innerHeight - 50));
+
+  gameButton.style.left = `${maxX}px`;
+  gameButton.style.top = `${maxY}px`;
+
+  console.log(`[Game Collection] Button positioned at: ${maxX}, ${maxY}`);
 
   // 添加点击事件
   gameButton.addEventListener('click', () => {
@@ -209,6 +214,10 @@ function createGameButton() {
   });
 
   document.body.appendChild(gameButton);
+
+  console.log(`[Game Collection] Button created and added to DOM`);
+  console.log(`[Game Collection] Button element:`, gameButton);
+  console.log(`[Game Collection] Button styles:`, gameButton.style.cssText);
 }
 
 /**
@@ -687,7 +696,19 @@ function initializeExtension() {
   console.log('[Game Collection] Extension initializing...');
 
   // 初始化设置
-  getExtensionSettings();
+  const settings = getExtensionSettings();
+
+  // 检查并修复按钮位置（防止跑到屏幕外）
+  if (
+    settings.iconPosition.x < 0 ||
+    settings.iconPosition.x > window.innerWidth - 50 ||
+    settings.iconPosition.y < 0 ||
+    settings.iconPosition.y > window.innerHeight - 50
+  ) {
+    console.log('[Game Collection] Resetting button position to default');
+    settings.iconPosition = { x: 20, y: 20 };
+    saveExtensionSettings();
+  }
 
   // 创建游戏按钮
   createGameButton();
@@ -717,6 +738,7 @@ eventSource.on(event_types.APP_READY, initializeExtension);
 
 // 导出清理函数供其他地方调用
 window.gameCollectionCleanup = cleanupExtension;
+
 
 
 
