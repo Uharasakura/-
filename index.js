@@ -89,7 +89,7 @@ function makeDraggable(element, onDragEnd = null) {
       initialY = e.touches[0].clientY - yOffset;
     }
 
-    if (e.target === element) {
+    if (e.target === element || e.target.closest('.game-panel-header')) {
       isDragging = true;
     }
   }
@@ -136,12 +136,11 @@ function makeDraggable(element, onDragEnd = null) {
     initialX = iconPosition.x;
     initialY = iconPosition.y;
   } else if (element.dataset.type === 'panel') {
-    const { panelPosition } = getSettings();
-    setTranslate(panelPosition.x, panelPosition.y, element);
-    xOffset = panelPosition.x;
-    yOffset = panelPosition.y;
-    initialX = panelPosition.x;
-    initialY = panelPosition.y;
+    // 面板使用绝对定位，不需要初始transform
+    xOffset = 0;
+    yOffset = 0;
+    initialX = 0;
+    initialY = 0;
   }
 }
 
@@ -158,6 +157,21 @@ function createGamePanel() {
   const panel = document.createElement('div');
   panel.className = 'game-panel';
   panel.dataset.type = 'panel';
+
+  // 计算屏幕中央位置
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+  const panelWidth = Math.min(600, screenWidth * 0.8);
+  const panelHeight = Math.min(500, screenHeight * 0.8);
+  const centerX = (screenWidth - panelWidth) / 2;
+  const centerY = (screenHeight - panelHeight) / 2;
+
+  // 设置面板初始位置为屏幕中央
+  panel.style.left = `${centerX}px`;
+  panel.style.top = `${centerY}px`;
+  panel.style.width = `${panelWidth}px`;
+  panel.style.height = `${panelHeight}px`;
+
   panel.innerHTML = `
         <div class="game-panel-header">
             <h2 class="game-panel-title">小游戏合集</h2>
@@ -191,6 +205,26 @@ function createGamePanel() {
   const gameItems = panel.querySelectorAll('.game-item');
   const addGameButton = panel.querySelector('.add-game-button');
   const gameContainer = panel.querySelector('.game-container');
+  const panelTitle = panel.querySelector('.game-panel-title');
+
+  // 双击标题栏重置面板位置到屏幕中央
+  panelTitle.addEventListener('dblclick', () => {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const panelWidth = Math.min(600, screenWidth * 0.8);
+    const panelHeight = Math.min(500, screenHeight * 0.8);
+    const centerX = (screenWidth - panelWidth) / 2;
+    const centerY = (screenHeight - panelHeight) / 2;
+
+    panel.style.left = `${centerX}px`;
+    panel.style.top = `${centerY}px`;
+    panel.style.transform = 'none';
+
+    // 保存新位置
+    const settings = getSettings();
+    settings.panelPosition = { x: centerX, y: centerY };
+    saveSettings();
+  });
 
   minimizeButton.addEventListener('click', () => {
     panel.classList.toggle('minimized');
@@ -263,6 +297,7 @@ function createGamePanel() {
             <p><strong>3</strong> - 全屏模式</p>
             <p><strong>ESC</strong> - 退出全屏</p>
             <p><strong>鼠标拖拽</strong> - 移动窗口位置</p>
+            <p><strong>双击标题栏</strong> - 重置面板位置到屏幕中央</p>
           </div>
           <div class="form-buttons">
             <button class="form-button submit" onclick="this.closest('.add-game-dialog').remove(); this.closest('.overlay').remove();">确定</button>
@@ -329,7 +364,12 @@ function createGamePanel() {
   // 使面板可拖拽
   makeDraggable(panel, (x, y) => {
     const settings = getSettings();
-    settings.panelPosition = { x, y };
+    // 计算面板的实际位置
+    const rect = panel.getBoundingClientRect();
+    settings.panelPosition = {
+      x: rect.left,
+      y: rect.top,
+    };
     saveSettings();
   });
 
