@@ -1,65 +1,63 @@
-/**
- * 游戏合集扩展样式
- * 适配SillyTavern主题
- */
-
-/* 游戏按钮 */
-.game-collection-button {
+/* 游戏图标按钮 */
+.game-icon-button {
   position: fixed;
   width: 50px;
   height: 50px;
-  background: var(--SmartThemeBodyColor, #2a2a2a);
-  border: 2px solid var(--SmartThemeBorderColor, #4caf50);
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #4caf50;
   border-radius: 50%;
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  cursor: pointer;
+  cursor: move;
   user-select: none;
-  z-index: 9999;
+  touch-action: none;
+  z-index: 1000;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  opacity: 1 !important;
-  visibility: visible !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.game-collection-button:hover {
+.game-icon-button:hover {
   transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.9);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  background: var(--SmartThemeQuoteColor, #2a2a2a);
-}
-
-.game-collection-button:active {
-  transform: scale(0.95);
 }
 
 /* 游戏面板 */
-.game-collection-panel {
-  position: fixed;
-  background: var(--SmartThemeBodyColor, #1a1a1a);
-  border: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(15px);
-  z-index: 1001;
+.game-panel {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 20px;
+  min-width: 300px;
+  max-width: 80vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.game-collection-panel.minimized {
-  height: 60px !important;
+.game-panel.minimized {
+  height: 60px;
   overflow: hidden;
 }
 
-.game-collection-panel.minimized .game-panel-content {
+.game-panel.minimized .game-grid,
+.game-panel.minimized .game-container {
   display: none;
 }
 
-.game-collection-panel.fullscreen-mode {
+.game-panel.fullscreen-mode {
   opacity: 0.3;
   pointer-events: none;
 }
@@ -69,22 +67,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  background: var(--SmartThemeQuoteColor, #2a2a2a);
-  border-bottom: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  cursor: move;
-  user-select: none;
+  margin-bottom: 10px;
 }
 
 .game-panel-title {
+  font-size: 18px;
+  color: #fff;
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--SmartThemeEmColor, #ffffff);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
 }
 
 .game-panel-title:hover {
-  color: var(--SmartThemeQuoteColor, #4caf50);
+  color: #4caf50;
 }
 
 .game-panel-title::after {
@@ -96,46 +92,31 @@
 
 .game-panel-controls {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
-.game-panel-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  background: var(--SmartThemeBodyColor, #1a1a1a);
-  color: var(--SmartThemeEmColor, #ffffff);
+.game-panel-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  color: #fff;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 5px 10px;
   font-size: 14px;
   transition: all 0.2s ease;
 }
 
-.game-panel-btn:hover {
-  background: var(--SmartThemeBorderColor, #4a4a4a);
+.game-panel-button:hover {
+  background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
-}
-
-.game-panel-btn:active {
-  transform: scale(0.95);
-}
-
-/* 面板内容 */
-.game-panel-content {
-  flex: 1;
-  padding: 20px;
-  overflow: auto;
 }
 
 /* 游戏网格 */
 .game-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 15px;
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -144,8 +125,8 @@
   flex-direction: column;
   align-items: center;
   padding: 15px 10px;
-  background: var(--SmartThemeQuoteColor, #2a2a2a);
-  border: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -153,19 +134,9 @@
 }
 
 .game-item:hover {
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border-color: var(--SmartThemeEmColor, #ffffff);
-}
-
-.game-item.add-game {
-  border: 2px dashed var(--SmartThemeBorderColor, #4a4a4a);
-  background: transparent;
-}
-
-.game-item.add-game:hover {
-  border-color: var(--SmartThemeQuoteColor, #4caf50);
-  background: rgba(76, 175, 80, 0.1);
 }
 
 .game-icon {
@@ -176,95 +147,62 @@
 .game-name {
   font-size: 12px;
   text-align: center;
-  color: var(--SmartThemeEmColor, #ffffff);
+  color: #fff;
   margin: 0;
-  word-break: break-word;
+}
+
+/* 添加游戏按钮 */
+.add-game-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px 10px;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.add-game-button:hover {
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.add-game-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.add-game-text {
+  font-size: 12px;
+  text-align: center;
+  color: #fff;
+  margin: 0;
 }
 
 /* 游戏容器 */
 .game-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.game-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 15px;
-  background: var(--SmartThemeQuoteColor, #2a2a2a);
-  border-bottom: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  gap: 15px;
-}
-
-.game-back-btn {
-  padding: 6px 12px;
-  background: var(--SmartThemeBodyColor, #1a1a1a);
-  border: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  border-radius: 6px;
-  color: var(--SmartThemeEmColor, #ffffff);
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.game-back-btn:hover {
-  background: var(--SmartThemeBorderColor, #4a4a4a);
-}
-
-.game-title {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--SmartThemeEmColor, #ffffff);
-  text-align: center;
-}
-
-.game-controls {
-  display: flex;
-  gap: 5px;
-}
-
-.game-control-btn {
-  width: 28px;
-  height: 28px;
+  width: 100%;
+  height: calc(100% - 60px);
   border: none;
-  border-radius: 4px;
-  background: var(--SmartThemeBodyColor, #1a1a1a);
-  color: var(--SmartThemeEmColor, #ffffff);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.game-control-btn:hover {
-  background: var(--SmartThemeBorderColor, #4a4a4a);
-  transform: scale(1.05);
-}
-
-/* 游戏框架 */
-.game-frame {
-  flex: 1;
-  border: none;
+  border-radius: 8px;
   background: #000;
   transition: all 0.3s ease;
+  position: relative;
 }
 
-.game-frame.minimized {
+.game-container.minimized {
   height: 200px;
-  min-height: 200px;
+  width: 300px;
 }
 
-.game-frame.normal {
-  height: 100%;
-  min-height: 300px;
+.game-container.normal {
+  height: calc(100% - 60px);
+  width: 100%;
 }
 
-.game-frame.fullscreen {
+.game-container.fullscreen {
   position: fixed;
   top: 0;
   left: 0;
@@ -274,46 +212,56 @@
   border-radius: 0;
 }
 
+/* 窗口控制按钮 */
+.game-window-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.game-window-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.game-window-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.05);
+}
+
 /* 对话框 */
-.game-dialog-overlay {
+.overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.7);
+  z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1002;
-  backdrop-filter: blur(5px);
 }
 
-.game-dialog {
-  background: var(--SmartThemeBodyColor, #1a1a1a);
-  border: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  border-radius: 12px;
+.add-game-dialog {
+  background: rgba(0, 0, 0, 0.9);
   padding: 25px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
 }
 
-.game-dialog h3 {
-  margin: 0 0 20px 0;
-  color: var(--SmartThemeEmColor, #ffffff);
-  font-size: 18px;
-}
-
-.game-dialog.error-dialog {
-  border-color: #f44336;
-}
-
-.game-dialog.error-dialog h3 {
-  color: #f44336;
-}
-
-/* 表单样式 */
 .add-game-form {
   display: flex;
   flex-direction: column;
@@ -326,184 +274,87 @@
   gap: 5px;
 }
 
-.form-group label {
-  color: var(--SmartThemeEmColor, #ffffff);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.form-group input {
-  padding: 10px;
-  border: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  border-radius: 6px;
-  background: var(--SmartThemeQuoteColor, #2a2a2a);
-  color: var(--SmartThemeEmColor, #ffffff);
+.form-label {
+  color: #fff;
   font-size: 14px;
 }
 
-.form-group input:focus {
+.form-input {
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+}
+
+.form-input:focus {
   outline: none;
-  border-color: var(--SmartThemeQuoteColor, #4caf50);
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  border-color: #4caf50;
 }
 
 .form-buttons {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 10px;
 }
 
-.form-buttons button {
-  padding: 10px 20px;
+.form-button {
+  padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
 }
 
-.cancel-btn,
-.close-help-btn,
-.close-error-btn {
-  background: var(--SmartThemeBorderColor, #4a4a4a);
-  color: var(--SmartThemeEmColor, #ffffff);
+.form-button.cancel {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
-.cancel-btn:hover,
-.close-help-btn:hover,
-.close-error-btn:hover {
-  background: var(--SmartThemeQuoteColor, #5a5a5a);
-}
-
-.submit-btn {
-  background: var(--SmartThemeQuoteColor, #4caf50);
+.form-button.submit {
+  background: #4caf50;
   color: white;
 }
 
-.submit-btn:hover {
-  background: #45a049;
+.form-button:hover {
+  transform: scale(1.05);
 }
 
-/* 帮助内容 */
-.help-content {
-  color: var(--SmartThemeEmColor, #ffffff);
-  line-height: 1.6;
-}
-
-.help-content ul {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-.help-content kbd {
-  background: var(--SmartThemeQuoteColor, #2a2a2a);
-  border: 1px solid var(--SmartThemeBorderColor, #4a4a4a);
-  border-radius: 3px;
-  padding: 2px 6px;
-  font-family: monospace;
-  font-size: 12px;
+/* 帮助对话框 */
+.help-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  padding: 25px;
+  border-radius: 15px;
+  z-index: 1002;
+  width: 90%;
+  max-width: 400px;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  color: #fff;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .game-collection-panel {
-    width: 95vw !important;
-    height: 90vh !important;
-    left: 2.5vw !important;
-    top: 5vh !important;
-  }
-
-  .game-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-  }
-
-  .game-item {
-    padding: 10px 5px;
-  }
-
-  .game-icon {
-    font-size: 24px;
-  }
-
-  .game-name {
-    font-size: 11px;
-  }
-
-  .game-controls {
+  .game-window-controls {
+    top: 5px;
+    right: 5px;
     gap: 3px;
   }
-
-  .game-control-btn {
-    width: 24px;
-    height: 24px;
+  .game-window-button {
+    padding: 3px 6px;
     font-size: 10px;
   }
-
-  .game-dialog {
-    padding: 20px;
-    max-width: 350px;
+  .game-container.minimized {
+    height: 150px;
+    width: 250px;
   }
-}
-
-/* 滚动条样式 */
-.game-grid::-webkit-scrollbar,
-.game-panel-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.game-grid::-webkit-scrollbar-track,
-.game-panel-content::-webkit-scrollbar-track {
-  background: var(--SmartThemeBodyColor, #1a1a1a);
-}
-
-.game-grid::-webkit-scrollbar-thumb,
-.game-panel-content::-webkit-scrollbar-thumb {
-  background: var(--SmartThemeBorderColor, #4a4a4a);
-  border-radius: 4px;
-}
-
-.game-grid::-webkit-scrollbar-thumb:hover,
-.game-panel-content::-webkit-scrollbar-thumb:hover {
-  background: var(--SmartThemeQuoteColor, #5a5a5a);
-}
-
-/* 动画效果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.game-collection-panel {
-  animation: fadeIn 0.3s ease;
-}
-
-.game-dialog {
-  animation: fadeIn 0.2s ease;
-}
-
-/* 主题适配 */
-[data-theme='dark'] .game-collection-button,
-[data-theme='dark'] .game-collection-panel {
-  --SmartThemeBodyColor: #1a1a1a;
-  --SmartThemeBorderColor: #4a4a4a;
-  --SmartThemeQuoteColor: #2a2a2a;
-  --SmartThemeEmColor: #ffffff;
-}
-
-[data-theme='light'] .game-collection-button,
-[data-theme='light'] .game-collection-panel {
-  --SmartThemeBodyColor: #ffffff;
-  --SmartThemeBorderColor: #cccccc;
-  --SmartThemeQuoteColor: #f5f5f5;
-  --SmartThemeEmColor: #333333;
 }
 
 
