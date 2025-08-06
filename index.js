@@ -146,10 +146,236 @@ function makeDraggable(element, onDragEnd = null) {
 
 // 获取游戏完整URL
 function getGameUrl(gameUrl) {
+  if (!gameUrl) {
+    console.error('Game URL is empty or undefined');
+    return '';
+  }
+
   if (gameUrl.startsWith('http://') || gameUrl.startsWith('https://')) {
+    console.log('Using external URL:', gameUrl);
     return gameUrl;
   }
-  return EXTENSION_DIR + gameUrl;
+
+  const fullUrl = EXTENSION_DIR + gameUrl;
+  console.log('Using local URL:', fullUrl);
+  return fullUrl;
+}
+
+// 更新游戏网格
+function updateGameGrid() {
+  const gameGrid = document.querySelector('.game-grid');
+  if (!gameGrid) return;
+
+  // 重新生成游戏项HTML
+  const gamesHtml = getSettings()
+    .games.map(
+      game => `
+        <div class="game-item" data-url="${getGameUrl(game.url)}">
+            <div class="game-icon">${game.icon}</div>
+            <p class="game-name">${game.name}</p>
+        </div>
+    `,
+    )
+    .join('');
+
+  // 更新游戏网格内容，保留添加按钮
+  gameGrid.innerHTML = `
+    ${gamesHtml}
+    <div class="add-game-button">
+        <span class="add-game-icon">➕</span>
+        <p class="add-game-text">添加游戏</p>
+    </div>
+  `;
+
+  // 重新绑定事件
+  bindGameEvents();
+}
+
+// 绑定游戏事件
+function bindGameEvents() {
+  const gameItems = document.querySelectorAll('.game-item');
+  const addGameButton = document.querySelector('.add-game-button');
+
+  // 为游戏项绑定点击事件
+  gameItems.forEach(item => {
+    // 移除旧的事件监听器（如果存在）
+    item.replaceWith(item.cloneNode(true));
+  });
+
+  // 重新获取更新后的元素
+  const newGameItems = document.querySelectorAll('.game-item');
+  newGameItems.forEach(item => {
+    item.addEventListener('click', handleGameClick);
+  });
+
+  // 为添加按钮绑定事件
+  if (addGameButton) {
+    addGameButton.addEventListener('click', showAddGameDialog);
+  }
+}
+
+// 处理游戏点击事件
+function handleGameClick(event) {
+  const item = event.currentTarget;
+  const url = item.dataset.url;
+
+  console.log('Game clicked:', url); // 调试日志
+
+  if (!url) {
+    console.error('Game URL is missing');
+    return;
+  }
+
+  const panel = document.querySelector('.game-panel');
+  const gameContainer = panel.querySelector('.game-container');
+
+  const gameFrame = document.createElement('iframe');
+  gameFrame.src = url;
+  gameFrame.className = 'game-container normal';
+  gameFrame.allow = 'fullscreen';
+  gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
+
+  // 创建窗口控制按钮
+  const windowControls = document.createElement('div');
+  windowControls.className = 'game-window-controls';
+  windowControls.innerHTML = `
+    <button class="game-window-button minimize-btn" title="最小化 (快捷键: 1)">📱</button>
+    <button class="game-window-button normal-btn" title="正常大小 (快捷键: 2)" style="display: none;">📺</button>
+    <button class="game-window-button fullscreen-btn" title="全屏 (快捷键: 3)">⛶</button>
+    <button class="game-window-button exit-fullscreen-btn" title="退出全屏 (快捷键: ESC)" style="display: none;">⛶</button>
+    <button class="game-window-button help-btn" title="快捷键帮助">❓</button>
+  `;
+
+  gameContainer.innerHTML = '';
+  gameContainer.appendChild(gameFrame);
+  gameContainer.appendChild(windowControls);
+  gameContainer.style.display = 'block';
+
+  panel.querySelector('.game-grid').style.display = 'none';
+
+  // 添加返回按钮
+  const backButton = document.createElement('button');
+  backButton.className = 'game-panel-button';
+  backButton.textContent = '返回';
+  backButton.style.marginBottom = '10px';
+  backButton.addEventListener('click', () => {
+    gameContainer.style.display = 'none';
+    panel.querySelector('.game-grid').style.display = 'grid';
+    // 重置游戏窗口状态
+    gameFrame.className = 'game-container normal';
+    panel.classList.remove('fullscreen-mode');
+  });
+
+  gameContainer.insertBefore(backButton, gameFrame);
+
+  // 绑定窗口控制按钮事件
+  bindWindowControls(windowControls, gameFrame, panel);
+
+  // 监听iframe的load和error事件
+  gameFrame.addEventListener('load', () => {
+    console.log('Game loaded successfully:', url);
+  });
+
+  gameFrame.addEventListener('error', error => {
+    console.error('Failed to load game:', url, error);
+
+    // 显示错误信息给用户
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      background: rgba(255, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      z-index: 1000;
+    `;
+    errorDiv.innerHTML = `
+      <h3>游戏加载失败</h3>
+      <p>无法加载游戏：${url}</p>
+      <p>请检查URL是否正确或网络连接</p>
+      <button onclick="this.parentElement.remove()" style="margin-top: 10px; padding: 5px 10px; background: #fff; border: none; border-radius: 5px; cursor: pointer;">关闭</button>
+    `;
+
+    gameContainer.appendChild(errorDiv);
+  });
+
+  // 添加超时检测
+  setTimeout(() => {
+    if (!gameFrame.contentDocument || gameFrame.contentDocument.readyState !== 'complete') {
+      console.warn('Game loading timeout for:', url);
+    }
+  }, 10000); // 10秒超时
+}
+
+// 绑定窗口控制按钮事件
+function bindWindowControls(windowControls, gameFrame, panel) {
+  const minimizeBtn = windowControls.querySelector('.minimize-btn');
+  const normalBtn = windowControls.querySelector('.normal-btn');
+  const fullscreenBtn = windowControls.querySelector('.fullscreen-btn');
+  const exitFullscreenBtn = windowControls.querySelector('.exit-fullscreen-btn');
+  const helpBtn = windowControls.querySelector('.help-btn');
+
+  // 帮助按钮
+  helpBtn.addEventListener('click', () => {
+    const helpDialog = document.createElement('div');
+    helpDialog.className = 'add-game-dialog';
+    helpDialog.innerHTML = `
+      <h3 style="color: #fff; margin-top: 0;">游戏窗口快捷键</h3>
+      <div style="color: #fff; line-height: 1.6;">
+        <p><strong>1</strong> - 最小化窗口</p>
+        <p><strong>2</strong> - 正常大小</p>
+        <p><strong>3</strong> - 全屏模式</p>
+        <p><strong>ESC</strong> - 退出全屏</p>
+        <p><strong>鼠标拖拽</strong> - 移动窗口位置</p>
+        <p><strong>双击标题栏</strong> - 重置面板位置到屏幕中央</p>
+      </div>
+      <div class="form-buttons">
+        <button class="form-button submit" onclick="this.closest('.add-game-dialog').remove(); this.closest('.overlay').remove();">确定</button>
+      </div>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay active';
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(helpDialog);
+  });
+
+  // 最小化按钮
+  minimizeBtn.addEventListener('click', () => {
+    gameFrame.className = 'game-container minimized';
+    minimizeBtn.style.display = 'none';
+    normalBtn.style.display = 'block';
+    panel.classList.remove('fullscreen-mode');
+  });
+
+  // 正常大小按钮
+  normalBtn.addEventListener('click', () => {
+    gameFrame.className = 'game-container normal';
+    normalBtn.style.display = 'none';
+    minimizeBtn.style.display = 'block';
+    panel.classList.remove('fullscreen-mode');
+  });
+
+  // 全屏按钮
+  fullscreenBtn.addEventListener('click', () => {
+    gameFrame.className = 'game-container fullscreen';
+    fullscreenBtn.style.display = 'none';
+    exitFullscreenBtn.style.display = 'block';
+    panel.classList.add('fullscreen-mode');
+  });
+
+  // 退出全屏按钮
+  exitFullscreenBtn.addEventListener('click', () => {
+    gameFrame.className = 'game-container normal';
+    exitFullscreenBtn.style.display = 'none';
+    fullscreenBtn.style.display = 'block';
+    panel.classList.remove('fullscreen-mode');
+  });
 }
 
 // 创建游戏面板
@@ -236,128 +462,8 @@ function createGamePanel() {
     gameButton.style.display = 'flex';
   });
 
-  gameItems.forEach(item => {
-    item.addEventListener('click', () => {
-      const url = item.dataset.url;
-      const gameFrame = document.createElement('iframe');
-      gameFrame.src = url;
-      gameFrame.className = 'game-container normal';
-      gameFrame.allow = 'fullscreen';
-      gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
-
-      // 创建窗口控制按钮
-      const windowControls = document.createElement('div');
-      windowControls.className = 'game-window-controls';
-      windowControls.innerHTML = `
-        <button class="game-window-button minimize-btn" title="最小化 (快捷键: 1)">📱</button>
-        <button class="game-window-button normal-btn" title="正常大小 (快捷键: 2)" style="display: none;">📺</button>
-        <button class="game-window-button fullscreen-btn" title="全屏 (快捷键: 3)">⛶</button>
-        <button class="game-window-button exit-fullscreen-btn" title="退出全屏 (快捷键: ESC)" style="display: none;">⛶</button>
-        <button class="game-window-button help-btn" title="快捷键帮助">❓</button>
-      `;
-
-      gameContainer.innerHTML = '';
-      gameContainer.appendChild(gameFrame);
-      gameContainer.appendChild(windowControls);
-      gameContainer.style.display = 'block';
-
-      panel.querySelector('.game-grid').style.display = 'none';
-
-      // 添加返回按钮
-      const backButton = document.createElement('button');
-      backButton.className = 'game-panel-button';
-      backButton.textContent = '返回';
-      backButton.style.marginBottom = '10px';
-      backButton.addEventListener('click', () => {
-        gameContainer.style.display = 'none';
-        panel.querySelector('.game-grid').style.display = 'grid';
-        // 重置游戏窗口状态
-        gameFrame.className = 'game-container normal';
-        panel.classList.remove('fullscreen-mode');
-      });
-
-      gameContainer.insertBefore(backButton, gameFrame);
-
-      // 窗口控制按钮事件
-      const minimizeBtn = windowControls.querySelector('.minimize-btn');
-      const normalBtn = windowControls.querySelector('.normal-btn');
-      const fullscreenBtn = windowControls.querySelector('.fullscreen-btn');
-      const exitFullscreenBtn = windowControls.querySelector('.exit-fullscreen-btn');
-      const helpBtn = windowControls.querySelector('.help-btn');
-
-      // 帮助按钮
-      helpBtn.addEventListener('click', () => {
-        const helpDialog = document.createElement('div');
-        helpDialog.className = 'add-game-dialog';
-        helpDialog.innerHTML = `
-          <h3 style="color: #fff; margin-top: 0;">游戏窗口快捷键</h3>
-          <div style="color: #fff; line-height: 1.6;">
-            <p><strong>1</strong> - 最小化窗口</p>
-            <p><strong>2</strong> - 正常大小</p>
-            <p><strong>3</strong> - 全屏模式</p>
-            <p><strong>ESC</strong> - 退出全屏</p>
-            <p><strong>鼠标拖拽</strong> - 移动窗口位置</p>
-            <p><strong>双击标题栏</strong> - 重置面板位置到屏幕中央</p>
-          </div>
-          <div class="form-buttons">
-            <button class="form-button submit" onclick="this.closest('.add-game-dialog').remove(); this.closest('.overlay').remove();">确定</button>
-          </div>
-        `;
-
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay active';
-
-        document.body.appendChild(overlay);
-        document.body.appendChild(helpDialog);
-      });
-
-      // 最小化按钮
-      minimizeBtn.addEventListener('click', () => {
-        gameFrame.className = 'game-container minimized';
-        minimizeBtn.style.display = 'none';
-        normalBtn.style.display = 'block';
-        panel.classList.remove('fullscreen-mode');
-      });
-
-      // 正常大小按钮
-      normalBtn.addEventListener('click', () => {
-        gameFrame.className = 'game-container normal';
-        normalBtn.style.display = 'none';
-        minimizeBtn.style.display = 'block';
-        panel.classList.remove('fullscreen-mode');
-      });
-
-      // 全屏按钮
-      fullscreenBtn.addEventListener('click', () => {
-        gameFrame.className = 'game-container fullscreen';
-        fullscreenBtn.style.display = 'none';
-        exitFullscreenBtn.style.display = 'block';
-        panel.classList.add('fullscreen-mode');
-      });
-
-      // 退出全屏按钮
-      exitFullscreenBtn.addEventListener('click', () => {
-        gameFrame.className = 'game-container normal';
-        exitFullscreenBtn.style.display = 'none';
-        fullscreenBtn.style.display = 'block';
-        panel.classList.remove('fullscreen-mode');
-      });
-
-      // 监听iframe的load事件，确保游戏加载完成
-      gameFrame.addEventListener('load', () => {
-        // 游戏加载完成后的处理
-        console.log('Game loaded successfully');
-      });
-
-      // 监听iframe的错误事件
-      gameFrame.addEventListener('error', () => {
-        console.error('Failed to load game');
-        // 可以在这里添加错误处理逻辑
-      });
-    });
-  });
-
-  addGameButton.addEventListener('click', showAddGameDialog);
+  // 使用统一的事件绑定函数
+  bindGameEvents();
 
   document.body.appendChild(panel);
 
@@ -477,9 +583,8 @@ function showAddGameDialog() {
     settings.games.push(newGame);
     saveSettings();
 
-    // 重新创建游戏面板
-    document.querySelector('.game-panel').remove();
-    createGamePanel();
+    // 更新游戏网格而不是重新创建整个面板
+    updateGameGrid();
 
     closeDialog();
   });
@@ -526,6 +631,7 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
 
 
 
