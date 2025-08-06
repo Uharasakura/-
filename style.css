@@ -242,6 +242,91 @@
   border: none;
   border-radius: 8px;
   background: #000;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* 游戏窗口控制按钮 */
+.game-window-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.game-window-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.game-window-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 游戏窗口大小状态 */
+.game-container.minimized {
+  height: 200px;
+  width: 300px;
+}
+
+.game-container.normal {
+  height: calc(100% - 60px);
+  width: 100%;
+}
+
+.game-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+}
+
+/* 全屏时的遮罩 */
+.game-container.fullscreen::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: -1;
+}
+
+/* 游戏面板在全屏模式下的调整 */
+.game-panel.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  z-index: 10000;
+}
+
+.game-panel.fullscreen-mode .game-grid {
+  display: none;
+}
+
+.game-panel.fullscreen-mode .game-container {
+  height: calc(100vh - 80px);
+  width: calc(100vw - 40px);
+  margin: 20px;
 }
 
 /* 遮罩层 */
@@ -260,6 +345,61 @@
 .overlay.active {
   display: block;
 }
+
+/* 帮助对话框样式 */
+.help-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  padding: 25px;
+  border-radius: 15px;
+  z-index: 1002;
+  width: 90%;
+  max-width: 400px;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.help-dialog h3 {
+  color: #fff;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  text-align: center;
+}
+
+.help-dialog p {
+  color: #fff;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.help-dialog strong {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .game-window-controls {
+    top: 5px;
+    right: 5px;
+    gap: 3px;
+  }
+
+  .game-window-button {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .game-container.minimized {
+    height: 150px;
+    width: 250px;
+  }
+}
+
 
 
 
