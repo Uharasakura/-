@@ -44,6 +44,7 @@ const defaultSettings = {
   ],
   iconPosition: { x: 20, y: 20 },
   panelPosition: { x: 100, y: 100 },
+  gameWindowSize: 'normal', // 'minimized', 'normal', 'fullscreen'
 };
 
 // 获取设置
@@ -206,12 +207,24 @@ function createGamePanel() {
       const url = item.dataset.url;
       const gameFrame = document.createElement('iframe');
       gameFrame.src = url;
-      gameFrame.className = 'game-container';
+      gameFrame.className = 'game-container normal';
       gameFrame.allow = 'fullscreen';
       gameFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
 
+      // 创建窗口控制按钮
+      const windowControls = document.createElement('div');
+      windowControls.className = 'game-window-controls';
+      windowControls.innerHTML = `
+        <button class="game-window-button minimize-btn" title="最小化 (快捷键: 1)">📱</button>
+        <button class="game-window-button normal-btn" title="正常大小 (快捷键: 2)" style="display: none;">📺</button>
+        <button class="game-window-button fullscreen-btn" title="全屏 (快捷键: 3)">⛶</button>
+        <button class="game-window-button exit-fullscreen-btn" title="退出全屏 (快捷键: ESC)" style="display: none;">⛶</button>
+        <button class="game-window-button help-btn" title="快捷键帮助">❓</button>
+      `;
+
       gameContainer.innerHTML = '';
       gameContainer.appendChild(gameFrame);
+      gameContainer.appendChild(windowControls);
       gameContainer.style.display = 'block';
 
       panel.querySelector('.game-grid').style.display = 'none';
@@ -224,9 +237,88 @@ function createGamePanel() {
       backButton.addEventListener('click', () => {
         gameContainer.style.display = 'none';
         panel.querySelector('.game-grid').style.display = 'grid';
+        // 重置游戏窗口状态
+        gameFrame.className = 'game-container normal';
+        panel.classList.remove('fullscreen-mode');
       });
 
       gameContainer.insertBefore(backButton, gameFrame);
+
+      // 窗口控制按钮事件
+      const minimizeBtn = windowControls.querySelector('.minimize-btn');
+      const normalBtn = windowControls.querySelector('.normal-btn');
+      const fullscreenBtn = windowControls.querySelector('.fullscreen-btn');
+      const exitFullscreenBtn = windowControls.querySelector('.exit-fullscreen-btn');
+      const helpBtn = windowControls.querySelector('.help-btn');
+
+      // 帮助按钮
+      helpBtn.addEventListener('click', () => {
+        const helpDialog = document.createElement('div');
+        helpDialog.className = 'add-game-dialog';
+        helpDialog.innerHTML = `
+          <h3 style="color: #fff; margin-top: 0;">游戏窗口快捷键</h3>
+          <div style="color: #fff; line-height: 1.6;">
+            <p><strong>1</strong> - 最小化窗口</p>
+            <p><strong>2</strong> - 正常大小</p>
+            <p><strong>3</strong> - 全屏模式</p>
+            <p><strong>ESC</strong> - 退出全屏</p>
+            <p><strong>鼠标拖拽</strong> - 移动窗口位置</p>
+          </div>
+          <div class="form-buttons">
+            <button class="form-button submit" onclick="this.closest('.add-game-dialog').remove(); this.closest('.overlay').remove();">确定</button>
+          </div>
+        `;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay active';
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(helpDialog);
+      });
+
+      // 最小化按钮
+      minimizeBtn.addEventListener('click', () => {
+        gameFrame.className = 'game-container minimized';
+        minimizeBtn.style.display = 'none';
+        normalBtn.style.display = 'block';
+        panel.classList.remove('fullscreen-mode');
+      });
+
+      // 正常大小按钮
+      normalBtn.addEventListener('click', () => {
+        gameFrame.className = 'game-container normal';
+        normalBtn.style.display = 'none';
+        minimizeBtn.style.display = 'block';
+        panel.classList.remove('fullscreen-mode');
+      });
+
+      // 全屏按钮
+      fullscreenBtn.addEventListener('click', () => {
+        gameFrame.className = 'game-container fullscreen';
+        fullscreenBtn.style.display = 'none';
+        exitFullscreenBtn.style.display = 'block';
+        panel.classList.add('fullscreen-mode');
+      });
+
+      // 退出全屏按钮
+      exitFullscreenBtn.addEventListener('click', () => {
+        gameFrame.className = 'game-container normal';
+        exitFullscreenBtn.style.display = 'none';
+        fullscreenBtn.style.display = 'block';
+        panel.classList.remove('fullscreen-mode');
+      });
+
+      // 监听iframe的load事件，确保游戏加载完成
+      gameFrame.addEventListener('load', () => {
+        // 游戏加载完成后的处理
+        console.log('Game loaded successfully');
+      });
+
+      // 监听iframe的错误事件
+      gameFrame.addEventListener('error', () => {
+        console.error('Failed to load game');
+        // 可以在这里添加错误处理逻辑
+      });
     });
   });
 
@@ -239,6 +331,60 @@ function createGamePanel() {
     const settings = getSettings();
     settings.panelPosition = { x, y };
     saveSettings();
+  });
+
+  // 添加键盘快捷键支持
+  const handleKeyPress = e => {
+    // 只在面板打开时响应快捷键
+    if (!document.querySelector('.game-panel')) return;
+
+    const gameFrame = document.querySelector('.game-container iframe');
+    if (!gameFrame) return;
+
+    const windowControls = document.querySelector('.game-window-controls');
+    if (!windowControls) return;
+
+    const minimizeBtn = windowControls.querySelector('.minimize-btn');
+    const normalBtn = windowControls.querySelector('.normal-btn');
+    const fullscreenBtn = windowControls.querySelector('.fullscreen-btn');
+    const exitFullscreenBtn = windowControls.querySelector('.exit-fullscreen-btn');
+
+    switch (e.key) {
+      case '1': // 数字键1 - 最小化
+        if (minimizeBtn.style.display !== 'none') {
+          minimizeBtn.click();
+        }
+        break;
+      case '2': // 数字键2 - 正常大小
+        if (normalBtn.style.display !== 'none') {
+          normalBtn.click();
+        }
+        break;
+      case '3': // 数字键3 - 全屏
+        if (fullscreenBtn.style.display !== 'none') {
+          fullscreenBtn.click();
+        } else if (exitFullscreenBtn.style.display !== 'none') {
+          exitFullscreenBtn.click();
+        }
+        break;
+      case 'Escape': // ESC键 - 退出全屏或返回
+        if (exitFullscreenBtn.style.display !== 'none') {
+          exitFullscreenBtn.click();
+        } else if (gameFrame.classList.contains('fullscreen')) {
+          exitFullscreenBtn.click();
+        }
+        break;
+    }
+  };
+
+  // 添加键盘事件监听器
+  document.addEventListener('keydown', handleKeyPress);
+
+  // 在面板关闭时移除键盘事件监听器
+  const originalCloseButton = closeButton;
+  closeButton.addEventListener('click', () => {
+    document.removeEventListener('keydown', handleKeyPress);
+    originalCloseButton.click();
   });
 
   return panel;
@@ -340,6 +486,7 @@ context.eventSource.on(context.event_types.APP_READY, () => {
   getSettings(); // 初始化设置
   gameButton = createGameButton();
 });
+
 
 
 
