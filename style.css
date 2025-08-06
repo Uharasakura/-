@@ -24,7 +24,7 @@
 }
 
 .game-panel {
-  position: fixed;
+  position: absolute;
   background: rgba(0, 0, 0, 0.8);
   border-radius: 10px;
   padding: 20px;
@@ -42,6 +42,7 @@
   cursor: move;
   user-select: none;
   touch-action: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .game-panel.minimized {
@@ -61,6 +62,20 @@
   font-size: 18px;
   color: #fff;
   margin: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.game-panel-title:hover {
+  color: #4caf50;
+}
+
+.game-panel-title::after {
+  content: ' (双击重置位置)';
+  font-size: 12px;
+  opacity: 0.6;
+  font-weight: normal;
 }
 
 .game-panel-controls {
@@ -399,6 +414,7 @@
     width: 250px;
   }
 }
+
 
 
 
