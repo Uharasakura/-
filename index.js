@@ -232,7 +232,7 @@ function addEventListeners() {
           <p style="color: #666; font-size: 14px;">${gameName}</p>
           <div style="margin-top: 20px;">
             <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            </div>
+          </div>
           <style>
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -273,10 +273,17 @@ function addEventListeners() {
                   // 触发一次resize事件，帮助游戏重新计算尺寸
                   iframe.contentWindow.dispatchEvent(new Event('resize'));
                 }
+
+                // 确保游戏脚本能正常执行
+                if (iframe.contentWindow) {
+                  // 触发DOMContentLoaded事件，确保游戏初始化
+                  const event = new Event('DOMContentLoaded');
+                  iframe.contentDocument.dispatchEvent(event);
+                }
               } catch (e) {
                 console.log(`游戏初始化检查失败: ${e.message}`);
               }
-            }, 500);
+            }, 1000); // 增加到1秒，给游戏更多初始化时间
           };
         } catch (error) {
           console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
@@ -411,6 +418,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
