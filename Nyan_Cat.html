@@ -32,7 +32,7 @@
         touch-action: none;
       }
 
-      /* 游戏容器 */
+      /* 游戏容器 - 强制缩放到iframe大小 */
       .game-container {
         position: absolute;
         top: 0;
@@ -40,17 +40,19 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         background: #000;
+        /* 强制缩放整个游戏内容 */
+        transform-origin: 0 0;
+        transform: scale(0.5); /* 直接缩放到一半 */
       }
 
-      /* 游戏画布 */
+      /* 游戏画布 - 恢复原始尺寸 */
       #gameCanvas {
-        position: relative;
-        /* 移除定位属性，让Canvas由JS精确控制尺寸和位置 */
-        /* CSS不再设置尺寸，完全由JS控制 */
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 800px; /* 恢复游戏原始设计尺寸 */
+        height: 600px; /* 恢复游戏原始设计尺寸 */
       }
 
       /* 猫咪角色 */
@@ -241,42 +243,21 @@
           touchActive: false,
         };
 
-        // 游戏尺寸计算 - 基于Canvas实际尺寸计算缩放
+        // 恢复原始游戏尺寸计算 - 不再缩放，CSS处理
         function calculateGameDimensions() {
-          // 使用Canvas的实际尺寸（已经保持了正确比例）
-          const canvasWidth = canvas.width;
-          const canvasHeight = canvas.height;
+          console.log(`🎮 使用原始游戏参数，CSS自动缩放 (´∀｀)♡`);
 
-          // 游戏的理想尺寸（游戏设计的原始尺寸）
-          const gameIdealWidth = 800;
-          const gameIdealHeight = 600;
-
-          // 计算缩放比例：基于Canvas实际尺寸
-          const scale = Math.min(canvasWidth / gameIdealWidth, canvasHeight / gameIdealHeight);
-
-          console.log(
-            `Canvas: ${canvasWidth}×${canvasHeight}, 理想尺寸: ${gameIdealWidth}×${gameIdealHeight}, 缩放: ${scale.toFixed(
-              2,
-            )} (｡◕‿◕｡)`,
-          );
-          console.log(`🔍 实际游戏iframe可用区域约: 400×415px, 当前容器: ${canvasWidth}×${canvasHeight}`);
-          console.log(
-            `📊 容器比例: ${(canvasWidth / canvasHeight).toFixed(3)}, 游戏比例: ${(
-              gameIdealWidth / gameIdealHeight
-            ).toFixed(3)}`,
-          );
-
-          const isMobile = canvasWidth <= 400;
-          const catSize = 60 * scale; // 固定猫咪基础尺寸，然后按比例缩放
+          const catSize = 60; // 原始猫咪尺寸
+          const isMobile = window.innerWidth <= 768;
 
           return {
             catSize,
-            obstacleWidth: 20 * scale, // 障碍物宽度按比例缩放
-            obstacleGap: 250 * scale, // 障碍物间距按比例缩放
-            jumpForce: -8 * scale, // 跳跃力度按比例缩放
-            gravity: 0.4 * scale, // 重力按比例缩放
-            speed: 4 * scale, // 速度按比例缩放
-            scale,
+            obstacleWidth: 20, // 原始障碍物宽度
+            obstacleGap: 250, // 原始障碍物间距
+            jumpForce: -8, // 原始跳跃力度
+            gravity: 0.4, // 原始重力
+            speed: 4, // 原始速度
+            scale: 1, // 不缩放，让CSS处理
           };
         }
 
@@ -453,14 +434,13 @@
           });
         }
 
-        // 简化的星星系统
+        // 恢复原始星星系统
         function createStars() {
-          const dims = calculateGameDimensions();
           return Array.from({ length: 100 }, () => ({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            size: (Math.random() * 2 + 1) * dims.scale, // 星星大小按比例缩放
-            speed: (Math.random() * 1.5 + 0.5) * dims.scale, // 星星速度按比例缩放
+            size: Math.random() * 2 + 1, // 原始星星大小
+            speed: Math.random() * 1.5 + 0.5, // 原始星星速度
           }));
         }
 
@@ -560,9 +540,8 @@
           drawStars();
           gameState.obstacles.forEach(obstacle => obstacle.draw());
 
-          // 根据Canvas缩放计算猫咪位置
-          const scaledCatX = 100 * dims.scale; // 原来固定100px，现在按比例缩放
-          nyanCat.style.transform = `translate(${scaledCatX}px, ${gameState.catY}px)`;
+          // 恢复原始猫咪位置，CSS会自动缩放
+          nyanCat.style.transform = `translate(100px, ${gameState.catY}px)`;
         }
 
         function gameLoop() {
@@ -638,51 +617,15 @@
           isPlaying = !isPlaying;
         };
 
-        // 初始化 - 保持游戏比例，适应容器尺寸
+        // 简化初始化 - 直接使用原始游戏尺寸，让CSS缩放处理
         function initCanvas() {
-          const container = document.querySelector('.game-container');
-          const containerWidth = container ? container.clientWidth : 400;
-          const containerHeight = container ? container.clientHeight : 300;
+          // 直接设置为游戏原始设计尺寸
+          canvas.width = 800;
+          canvas.height = 600;
 
-          // 游戏的理想比例 (4:3)
-          const gameAspectRatio = 800 / 600;
-          const containerAspectRatio = containerWidth / containerHeight;
-
-          let canvasWidth, canvasHeight;
-
-          if (containerAspectRatio > gameAspectRatio) {
-            // 容器更宽，以高度为准
-            canvasHeight = containerHeight;
-            canvasWidth = canvasHeight * gameAspectRatio;
-          } else {
-            // 容器更高，以宽度为准
-            canvasWidth = containerWidth;
-            canvasHeight = canvasWidth / gameAspectRatio;
-          }
-
-          // 设置Canvas的实际像素尺寸
-          canvas.width = canvasWidth;
-          canvas.height = canvasHeight;
-          canvas.style.width = canvasWidth + 'px';
-          canvas.style.height = canvasHeight + 'px';
-
-          // Canvas现在由flex容器自动居中，不需要手动定位
-          canvas.style.position = 'relative';
-          canvas.style.left = '';
-          canvas.style.top = '';
-          canvas.style.transform = '';
-
-          console.log(`📦 容器尺寸: ${containerWidth}×${containerHeight}`);
-          console.log(
-            `🎯 容器比例: ${containerAspectRatio.toFixed(3)} (${
-              containerAspectRatio > gameAspectRatio ? '更宽' : '更高'
-            })`,
-          );
-          console.log(`🎮 游戏比例: ${gameAspectRatio.toFixed(3)} (4:3)`);
-          console.log(`🖼️ Canvas最终尺寸: ${canvasWidth}×${canvasHeight}`);
-          console.log(`💡 预期效果: 如果容器是400×415，Canvas应该是400×300，缩放0.5 (´∀｀)♡`);
-
-          // 不再触发resize事件，避免循环调用
+          console.log(`🎮 使用原始游戏尺寸: 800×600`);
+          console.log(`🎨 CSS将整体缩放到0.5倍: 400×300`);
+          console.log(`💡 这样所有元素都会自动按比例缩小！(´∀｀)♡`);
         }
 
         // 延迟初始化，确保iframe完全加载
