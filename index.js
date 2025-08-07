@@ -8,44 +8,44 @@
   // 扩展名称
   const MODULE_NAME = 'game_collection';
 
-  // 默认设置 - 使用可嵌入的游戏链接
+  // 默认设置
   const defaultSettings = {
     games: [
       {
         id: 'sudoku',
         name: '数独',
         icon: '🎲',
-        url: 'https://en.sudokuwiki.org/sudoku.htm',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
       },
       {
         id: 'minesweeper',
         name: '扫雷',
         icon: '💣',
-        url: 'https://minesweeper.online/',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
       },
       {
         id: 'snake',
         name: '贪吃蛇',
         icon: '🐍',
-        url: 'https://playsnake.org/',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
       },
       {
-        id: 'tetris',
-        name: '俄罗斯方块',
-        icon: '🧩',
-        url: 'https://tetris.com/play-tetris',
+        id: 'flight_chess',
+        name: '飞行棋',
+        icon: '🎯',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
       },
       {
-        id: 'pacman',
-        name: '吃豆人',
-        icon: '🟡',
-        url: 'https://freepacman.org/',
+        id: 'farming',
+        name: '种田',
+        icon: '🌾',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
       },
       {
         id: 'nyan_cat',
         name: '彩虹猫',
         icon: '🌈',
-        url: 'https://www.nyan.cat/',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
       },
     ],
     iconPosition: { x: 20, y: 20 },
@@ -275,10 +275,8 @@
                     </div>
                     <div class="game-frame-wrapper">
                         <iframe class="game-frame" 
-                                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-downloads" 
-                                allowfullscreen
-                                loading="lazy"
-                                referrerpolicy="no-referrer-when-downgrade">
+                                sandbox="allow-scripts allow-same-origin" 
+                                allowfullscreen>
                         </iframe>
                         <div class="game-loading" style="display: none;">
                             <div class="loading-spinner"></div>
@@ -393,21 +391,7 @@
     // 拖拽
     makeDraggable(panel.querySelector('.game-panel-header'));
 
-    // iframe事件监听
-    gameFrame.addEventListener('load', () => {
-      console.log('[游戏合集] 游戏加载成功');
-      gameLoading.style.display = 'none';
-      gameError.style.display = 'none';
-      gameFrame.style.display = 'block';
-    });
-
-    gameFrame.addEventListener('error', () => {
-      console.error('[游戏合集] 游戏加载失败');
-      gameLoading.style.display = 'none';
-      gameFrame.style.display = 'none';
-      gameError.style.display = 'block';
-    });
-
+    // 简化的游戏加载函数
     function loadGame(url) {
       gameGrid.style.display = 'none';
       gameContainer.style.display = 'block';
@@ -420,11 +404,6 @@
 
       currentGameUrl = gameUrl;
 
-      // 显示加载状态
-      gameLoading.style.display = 'flex';
-      gameError.style.display = 'none';
-      gameFrame.style.display = 'none';
-
       // 设置窗口大小
       const settings = getSettings();
       if (settings.gameWindowSize) {
@@ -433,19 +412,11 @@
 
       console.log('[游戏合集] 开始加载游戏:', gameUrl);
 
-      // 延迟加载iframe，给UI时间渲染
-      setTimeout(() => {
-        gameFrame.src = gameUrl;
-      }, 100);
-
-      // 加载超时处理
-      setTimeout(() => {
-        if (gameLoading.style.display !== 'none') {
-          console.warn('[游戏合集] 游戏加载超时');
-          gameLoading.style.display = 'none';
-          gameError.style.display = 'block';
-        }
-      }, 10000); // 10秒超时
+      // 直接加载游戏
+      gameFrame.src = gameUrl;
+      gameFrame.style.display = 'block';
+      gameLoading.style.display = 'none';
+      gameError.style.display = 'none';
     }
   }
 
@@ -623,6 +594,7 @@
 
   console.log('[游戏合集] 扩展脚本已加载');
 })();
+
 
 
 
