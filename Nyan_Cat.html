@@ -216,7 +216,7 @@
 
         // 游戏状态
         let gameState = {
-          catY: window.innerHeight / 2,
+          catY: 200, // 先设置一个默认值，初始化后会更新
           velocity: 0,
           gravity: 0.4,
           flyForce: -0.3,
@@ -438,15 +438,19 @@
           });
 
           window.addEventListener('resize', () => {
-            // 使用容器的实际尺寸
+            // 重新设置Canvas为容器的确切尺寸
             const container = document.querySelector('.game-container');
-            canvas.width = container ? container.clientWidth : window.innerWidth;
-            canvas.height = container ? container.clientHeight : window.innerHeight;
+            const containerWidth = container ? container.clientWidth : 400;
+            const containerHeight = container ? container.clientHeight : 300;
+
+            canvas.width = containerWidth;
+            canvas.height = containerHeight;
+            canvas.style.width = containerWidth + 'px';
+            canvas.style.height = containerHeight + 'px';
+
             const dims = calculateGameDimensions();
             document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
-            console.log(
-              `Canvas调整: ${canvas.width} x ${canvas.height}, 窗口: ${window.innerWidth} x ${window.innerHeight}`,
-            );
+            console.log(`Canvas调整为容器尺寸: ${containerWidth} × ${containerHeight} (´∀｀)`);
           });
         }
 
@@ -620,14 +624,19 @@
           isPlaying = !isPlaying;
         };
 
-        // 初始化 - 使用容器尺寸适应悬浮窗
+        // 初始化 - 直接设置Canvas为容器的确切像素尺寸
         function initCanvas() {
           const container = document.querySelector('.game-container');
-          canvas.width = container ? container.clientWidth : window.innerWidth;
-          canvas.height = container ? container.clientHeight : window.innerHeight;
-          console.log(
-            `初始Canvas: ${canvas.width} x ${canvas.height}, iframe窗口: ${window.innerWidth} x ${window.innerHeight}`,
-          );
+          const containerWidth = container ? container.clientWidth : 400;
+          const containerHeight = container ? container.clientHeight : 300;
+
+          // 直接设置Canvas的像素尺寸，不依赖CSS的100%
+          canvas.width = containerWidth;
+          canvas.height = containerHeight;
+          canvas.style.width = containerWidth + 'px';
+          canvas.style.height = containerHeight + 'px';
+
+          console.log(`Canvas设置为容器确切尺寸: ${containerWidth} × ${containerHeight} (＾◡＾)`);
 
           // 强制触发一次resize事件，确保尺寸正确
           setTimeout(() => {
@@ -638,6 +647,11 @@
         // 延迟初始化，确保iframe完全加载
         setTimeout(() => {
           initCanvas();
+
+          // 根据实际Canvas尺寸设置猫咪初始位置
+          gameState.catY = canvas.height / 2;
+          console.log(`猫咪初始位置设置为Canvas中心: Y=${gameState.catY} (=^･ω･^=)`);
+
           nyanCat.style.display = 'none';
           bgm.volume = 1.0;
           bgm.load();
