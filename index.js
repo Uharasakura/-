@@ -8,49 +8,48 @@
   // 扩展名称
   const MODULE_NAME = 'game_collection';
 
-  // 默认设置
+  // 默认设置 - 使用本地游戏文件
   const defaultSettings = {
     games: [
       {
         id: 'sudoku',
         name: '数独',
         icon: '🎲',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
+        url: './Sudoku.html',
       },
       {
         id: 'minesweeper',
         name: '扫雷',
         icon: '💣',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
+        url: './minesweeper.html',
       },
       {
         id: 'snake',
         name: '贪吃蛇',
         icon: '🐍',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
+        url: './Gluttonous_Snake.html',
       },
       {
         id: 'flight_chess',
         name: '飞行棋',
         icon: '🎯',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
+        url: './Flight_chess.html',
       },
       {
         id: 'farming',
         name: '种田',
         icon: '🌾',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+        url: './Farming.html',
       },
       {
         id: 'nyan_cat',
         name: '彩虹猫',
         icon: '🌈',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+        url: './Nyan_Cat.html',
       },
     ],
     iconPosition: { x: 20, y: 20 },
     panelPosition: { x: 100, y: 100 },
-    gameWindowSize: 'normal', // 'minimized', 'normal', 'fullscreen'
   };
 
   // 全局变量
@@ -77,81 +76,73 @@
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  // 拖拽功能
+  // 简化的拖拽功能
   function makeDraggable(element, onDragEnd) {
     let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
-    let xOffset = 0;
-    let yOffset = 0;
-
-    element.addEventListener('mousedown', dragStart);
-    element.addEventListener('mousemove', drag);
-    element.addEventListener('mouseup', dragEnd);
-    element.addEventListener('mouseleave', dragEnd);
-
-    element.addEventListener('touchstart', dragStart);
-    element.addEventListener('touchmove', drag);
-    element.addEventListener('touchend', dragEnd);
+    let currentX, currentY, initialX, initialY;
 
     function dragStart(e) {
       if (e.type === 'mousedown') {
-        initialX = e.clientX - xOffset;
-        initialY = e.clientY - yOffset;
+        initialX = e.clientX;
+        initialY = e.clientY;
       } else {
-        initialX = e.touches[0].clientX - xOffset;
-        initialY = e.touches[0].clientY - yOffset;
+        initialX = e.touches[0].clientX;
+        initialY = e.touches[0].clientY;
       }
 
-      if (e.target === element || e.target.closest('.game-panel-header')) {
-        isDragging = true;
-      }
+      const rect = element.getBoundingClientRect();
+      currentX = rect.left;
+      currentY = rect.top;
+      isDragging = true;
+
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', dragEnd);
+      document.addEventListener('touchmove', drag);
+      document.addEventListener('touchend', dragEnd);
     }
 
     function drag(e) {
-      if (isDragging) {
-        e.preventDefault();
+      if (!isDragging) return;
+      e.preventDefault();
 
-        if (e.type === 'mousemove') {
-          currentX = e.clientX - initialX;
-          currentY = e.clientY - initialY;
-        } else {
-          currentX = e.touches[0].clientX - initialX;
-          currentY = e.touches[0].clientY - initialY;
-        }
-
-        xOffset = currentX;
-        yOffset = currentY;
-
-        setTranslate(currentX, currentY, element);
+      let clientX, clientY;
+      if (e.type === 'mousemove') {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      } else {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
       }
+
+      const deltaX = clientX - initialX;
+      const deltaY = clientY - initialY;
+
+      currentX += deltaX;
+      currentY += deltaY;
+
+      element.style.left = currentX + 'px';
+      element.style.top = currentY + 'px';
+
+      initialX = clientX;
+      initialY = clientY;
     }
 
     function dragEnd() {
-      if (isDragging && onDragEnd) {
+      if (!isDragging) return;
+      isDragging = false;
+
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', dragEnd);
+      document.removeEventListener('touchmove', drag);
+      document.removeEventListener('touchend', dragEnd);
+
+      if (onDragEnd) {
         onDragEnd(currentX, currentY);
       }
-
-      initialX = currentX;
-      initialY = currentY;
-      isDragging = false;
     }
 
-    function setTranslate(xPos, yPos, el) {
-      el.style.transform = `translate(${xPos}px, ${yPos}px)`;
-    }
-
-    // 设置初始位置
-    if (element.id === 'gameButton') {
-      const { iconPosition } = getSettings();
-      setTranslate(iconPosition.x, iconPosition.y, element);
-      xOffset = iconPosition.x;
-      yOffset = iconPosition.y;
-      initialX = iconPosition.x;
-      initialY = iconPosition.y;
-    }
+    element.addEventListener('mousedown', dragStart);
+    element.addEventListener('touchstart', dragStart);
   }
 
   // 创建游戏按钮
@@ -159,29 +150,29 @@
     console.log('[游戏合集] 开始创建游戏按钮');
 
     if (gameButton) {
-      console.log('[游戏合集] 移除旧按钮');
       gameButton.remove();
       gameButton = null;
     }
 
     const button = document.createElement('button');
-    button.id = 'gameButton';
+    button.id = 'game-collection-button';
     button.className = 'game-icon-button';
     button.innerHTML = '🎮';
     button.title = '游戏合集';
 
-    // 设置data-type用于拖拽识别
-    button.dataset.type = 'icon';
+    // 设置位置
+    const settings = getSettings();
+    button.style.left = settings.iconPosition.x + 'px';
+    button.style.top = settings.iconPosition.y + 'px';
 
     // 点击事件
     button.addEventListener('click', e => {
       e.stopPropagation();
       console.log('[游戏合集] 按钮被点击');
-      button.style.display = 'none';
       openGamePanel();
     });
 
-    // 拖拽功能
+    // 拖拽
     makeDraggable(button, (x, y) => {
       const settings = getSettings();
       settings.iconPosition = { x, y };
@@ -189,18 +180,9 @@
       console.log('[游戏合集] 按钮位置已保存:', { x, y });
     });
 
-    // 确保添加到body
-    if (document.body) {
-      document.body.appendChild(button);
-      gameButton = button;
-      console.log('[游戏合集] 游戏按钮已创建并添加到页面');
-    } else {
-      console.error('[游戏合集] document.body不存在，无法添加按钮');
-      setTimeout(() => createGameButton(), 500);
-      return;
-    }
-
-    return button;
+    document.body.appendChild(button);
+    gameButton = button;
+    console.log('[游戏合集] 游戏按钮已创建');
   }
 
   // 打开游戏面板
@@ -286,11 +268,12 @@
                     <div class="game-container-header">
                         <button class="game-container-button back-button">返回</button>
                         <div class="game-controls">
-                            <button class="game-container-button size-button" data-size="normal" title="正常大小">📺</button>
-                            <button class="game-container-button size-button" data-size="fullscreen" title="全屏">⛶</button>
+                            <button class="game-container-button open-button" title="在新窗口打开">🔗</button>
                         </div>
                     </div>
-                    <iframe class="game-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" allow="fullscreen"></iframe>
+                    <div class="game-frame-container">
+                        <p class="game-message">游戏将在新窗口中打开</p>
+                    </div>
                 </div>
             </div>
         `;
@@ -303,11 +286,12 @@
     const gameItems = panel.querySelectorAll('.game-item');
     const addGameButton = panel.querySelector('.add-game-button');
     const backButton = panel.querySelector('.back-button');
-    const sizeButtons = panel.querySelectorAll('.size-button');
+    const openButton = panel.querySelector('.open-button');
     const gameContainer = panel.querySelector('.game-container');
     const gameGrid = panel.querySelector('.game-grid');
-    const gameFrame = panel.querySelector('.game-frame');
     const title = panel.querySelector('.game-panel-title');
+
+    let currentGameUrl = '';
 
     // 最小化
     minimizeButton.addEventListener('click', () => {
@@ -350,19 +334,20 @@
     backButton.addEventListener('click', () => {
       gameContainer.style.display = 'none';
       gameGrid.style.display = 'grid';
-      gameFrame.src = '';
     });
 
-    // 尺寸控制
-    sizeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const size = button.dataset.size;
-        if (size === 'fullscreen') {
-          panel.classList.add('fullscreen');
+    // 打开游戏按钮
+    openButton.addEventListener('click', () => {
+      if (currentGameUrl) {
+        // 在新窗口打开游戏
+        const gameWindow = window.open(currentGameUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        if (gameWindow) {
+          console.log('[游戏合集] 游戏已在新窗口打开:', currentGameUrl);
         } else {
-          panel.classList.remove('fullscreen');
+          console.error('[游戏合集] 无法打开新窗口，请检查浏览器设置');
+          alert('无法打开新窗口，请检查浏览器的弹窗阻止设置');
         }
-      });
+      }
     });
 
     // 拖拽
@@ -372,15 +357,24 @@
       gameGrid.style.display = 'none';
       gameContainer.style.display = 'block';
 
-      // 确保使用raw.githubusercontent.com链接
+      // 处理GitHub链接转换
       let gameUrl = url;
       if (url.includes('github.com') && url.includes('/blob/')) {
         gameUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
       }
 
-      gameFrame.src = gameUrl;
+      currentGameUrl = gameUrl;
 
-      console.log('[游戏合集] 加载游戏:', gameUrl);
+      console.log('[游戏合集] 准备加载游戏:', gameUrl);
+
+      // 自动在新窗口打开游戏
+      const gameWindow = window.open(gameUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      if (gameWindow) {
+        console.log('[游戏合集] 游戏已在新窗口打开');
+      } else {
+        console.error('[游戏合集] 无法打开新窗口');
+        alert('无法打开新窗口，请检查浏览器的弹窗阻止设置');
+      }
     }
   }
 
@@ -391,7 +385,7 @@
       gamePanel = null;
     }
     if (gameButton) {
-      gameButton.style.display = 'flex';
+      gameButton.style.display = 'block';
     }
   }
 
@@ -455,40 +449,8 @@
 
       closeDialog();
 
-      // 重新生成游戏网格内容而不是重新创建整个面板
-      const gameGrid = gamePanel.querySelector('.game-grid');
-      if (gameGrid) {
-        const newGameHTML = `
-          <div class="game-item" data-game-id="${newGame.id}" data-url="${newGame.url}">
-            <div class="game-icon">${newGame.icon}</div>
-            <p class="game-name">${newGame.name}</p>
-          </div>
-        `;
-        // 在添加游戏按钮之前插入新游戏
-        const addGameButton = gameGrid.querySelector('.add-game-button');
-        addGameButton.insertAdjacentHTML('beforebegin', newGameHTML);
-
-        // 为新游戏项添加点击事件
-        const newGameItem = gameGrid.querySelector(`[data-game-id="${newGame.id}"]`);
-        newGameItem.addEventListener('click', () => {
-          const url = newGameItem.dataset.url;
-          if (url) {
-            const gameContainer = gamePanel.querySelector('.game-container');
-            const gameFrame = gamePanel.querySelector('.game-frame');
-
-            // 确保使用raw.githubusercontent.com链接
-            let gameUrl = url;
-            if (url.includes('github.com') && url.includes('/blob/')) {
-              gameUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-            }
-
-            gameGrid.style.display = 'none';
-            gameContainer.style.display = 'block';
-            gameFrame.src = gameUrl;
-            console.log('[游戏合集] 加载游戏:', gameUrl);
-          }
-        });
-      }
+      // 重新创建面板
+      createGamePanel();
 
       console.log('[游戏合集] 新游戏已添加:', newGame.name);
     });
@@ -571,7 +533,7 @@
     });
   }
 
-  // 方法2: jQuery ready事件（[[memory:2339685]]）
+  // 方法2: jQuery ready事件
   $(document).ready(() => {
     console.log('[游戏合集] Document ready');
     setTimeout(tryInitialize, 1500);
