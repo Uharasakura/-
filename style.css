@@ -390,9 +390,61 @@
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
+/* 移动端特殊样式 */
+.mobile-panel {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 10px !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.mobile-panel .panel-header {
+  padding: 16px;
+  font-size: 16px;
+}
+
+.mobile-panel .control-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+.mobile-panel .games-grid {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.mobile-panel .game-item {
+  padding: 16px 12px;
+  min-height: 100px;
+}
+
+.mobile-panel .game-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+}
+
+.mobile-panel .game-name {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.mobile-panel .add-game-btn {
+  padding: 16px;
+  font-size: 16px;
+  margin: 16px;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .mini-games-panel {
+  .mini-games-panel:not(.mobile-panel) {
     width: 95% !important;
     height: 80% !important;
     left: 2.5% !important;
@@ -406,6 +458,7 @@
 
   .game-item {
     padding: 12px 8px;
+    touch-action: manipulation;
   }
 
   .game-icon {
@@ -421,6 +474,20 @@
   .add-game-dialog {
     width: 95%;
     margin: 0 2.5%;
+  }
+
+  .panel-header {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  .control-btn {
+    touch-action: manipulation;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
