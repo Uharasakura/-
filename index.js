@@ -255,9 +255,35 @@ function addEventListeners() {
           const htmlContent = await response.text();
           console.log(`游戏HTML获取成功: ${url}`);
 
-          // 直接使用src属性加载，避免srcdoc的执行环境问题
-          console.log(`直接加载游戏: ${gameName} - ${url}`);
-          iframe.src = url;
+          // 处理HTML内容，修复相对路径和jQuery依赖问题
+          let processedHtml = htmlContent;
+
+          // 获取游戏的基础URL
+          const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+
+          // 检查是否使用了jQuery但没有引入
+          const usesJQuery = processedHtml.includes('$(') || processedHtml.includes('jQuery(');
+          const hasJQuery = processedHtml.includes('jquery') || processedHtml.includes('jQuery');
+
+          let headContent = `<base href="${baseUrl}">`;
+
+          // 如果游戏使用jQuery但没有引入，自动添加jQuery库
+          if (usesJQuery && !hasJQuery) {
+            console.log(`游戏 ${gameName} 使用jQuery但未引入，自动添加jQuery库`);
+            headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
+          }
+
+          // 在head中添加必要的内容
+          if (processedHtml.includes('<head>')) {
+            processedHtml = processedHtml.replace('<head>', '<head>' + headContent);
+          } else if (processedHtml.includes('<html>')) {
+            processedHtml = processedHtml.replace('<html>', '<html><head>' + headContent + '</head>');
+          } else {
+            processedHtml = headContent + processedHtml;
+          }
+
+          console.log(`游戏HTML已处理: ${gameName} - jQuery:${usesJQuery && !hasJQuery ? '已添加' : '无需添加'}`);
+          iframe.srcdoc = processedHtml;
         } catch (error) {
           console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
 
@@ -284,7 +310,7 @@ function addEventListeners() {
                  <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
                  <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
             </div>
-            </div>
+        </div>
            `;
         }
       };
@@ -447,6 +473,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
