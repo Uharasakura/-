@@ -69,35 +69,53 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
-// 让游戏面板适应内容，不强制固定尺寸
+// 让游戏面板适应内容，根据游戏类型优化尺寸
 const optimizePanelForGame = gameName => {
   if (!gamePanel) return;
 
-  // 移动端确保面板不会太小，但让游戏自适应
-  if (isMobile()) {
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
 
-    // 给游戏充足的显示空间，但不强制具体尺寸
-    const minWidth = Math.min(350, screenWidth - 20);
-    const minHeight = Math.min(400, screenHeight - 80);
-    const maxWidth = screenWidth - 20;
-    const maxHeight = screenHeight - 60;
+  // 判断游戏类型（横屏还是竖屏游戏）
+  const isLandscapeGame = gameName === 'Nyan Cat'; // 彩虹猫是典型的横屏游戏
+
+  if (isMobile()) {
+    let panelWidth, panelHeight;
+
+    if (isLandscapeGame) {
+      // 横屏游戏：优先保证宽度，适当增加高度
+      panelWidth = Math.min(screenWidth - 10, 500); // 更宽
+      panelHeight = Math.min(screenHeight - 40, 400); // 较矮但足够
+    } else {
+      // 竖屏游戏：保持原有逻辑
+      panelWidth = Math.min(screenWidth - 20, 420);
+      panelHeight = Math.min(screenHeight - 80, 700);
+    }
 
     Object.assign(gamePanel.style, {
-      minWidth: minWidth + 'px',
-      minHeight: minHeight + 'px',
-      maxWidth: maxWidth + 'px',
-      maxHeight: maxHeight + 'px',
-      width: 'auto', // 让内容决定宽度
-      height: 'auto', // 让内容决定高度
+      width: panelWidth + 'px',
+      height: panelHeight + 'px',
       left: '50%',
       transform: 'translateX(-50%)',
-      top: '30px',
+      top: isLandscapeGame ? '20px' : '30px', // 横屏游戏顶部留更少空间
+      maxWidth: '95vw',
+      maxHeight: isLandscapeGame ? '90vh' : '85vh',
     });
+  } else {
+    // 桌面端根据游戏类型调整
+    if (isLandscapeGame) {
+      Object.assign(gamePanel.style, {
+        width: '600px',
+        height: '450px',
+      });
+    }
   }
 
-  console.log(`优化面板显示: ${gameName} - 让游戏自适应容器大小`);
+  console.log(
+    `优化面板显示: ${gameName} - ${isLandscapeGame ? '横屏' : '竖屏'}游戏 ${gamePanel.style.width}x${
+      gamePanel.style.height
+    }`,
+  );
 };
 
 // 创建游戏面板HTML
@@ -310,7 +328,7 @@ function addEventListeners() {
                  <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
                  <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
             </div>
-        </div>
+            </div>
            `;
         }
       };
@@ -473,6 +491,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
