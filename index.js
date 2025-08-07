@@ -7,7 +7,7 @@ const extensionFolderPath = '/scripts/extensions/third-party/各种小游戏';
 
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
-  panelSize: { width: 350, height: 500 },
+  panelSize: { width: 450, height: 650 },
   isMinimized: false,
   customGames: [],
 };
@@ -120,22 +120,22 @@ function createGamePanel() {
   gamePanel = gamePanel.firstElementChild;
 
   if (isMobile()) {
-    // 移动端适中大小的面板
+    // 移动端适中大小的面板 - 增加游戏显示空间
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-    const panelWidth = Math.min(screenWidth - 40, 400);
-    const panelHeight = Math.min(screenHeight - 120, 600);
+    const panelWidth = Math.min(screenWidth - 20, 420);
+    const panelHeight = Math.min(screenHeight - 80, 700);
 
     Object.assign(gamePanel.style, {
       position: 'fixed',
-      top: '60px',
+      top: '40px',
       left: '50%',
       width: panelWidth + 'px',
       height: panelHeight + 'px',
       transform: 'translateX(-50%)',
       zIndex: '999999',
-      maxWidth: '90vw',
-      maxHeight: '80vh',
+      maxWidth: '95vw',
+      maxHeight: '85vh',
     });
     gamePanel.classList.add('mobile-panel');
   } else {
@@ -350,6 +350,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
