@@ -12,43 +12,49 @@ const defaultSettings = {
   customGames: [],
 };
 
-// 内置游戏列表 - 使用支持iframe的CDN链接
+// 内置游戏列表 - 使用CDN链接并配置最佳尺寸
 const builtInGames = [
   {
     name: '贪吃蛇',
     icon: '🐍',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
+    preferredSize: { width: 420, height: 600 }, // 正方形游戏区域 + 控制面板
   },
   {
     name: '种田',
     icon: '🌾',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
+    preferredSize: { width: 850, height: 700 }, // 宽屏布局，需要更多空间
   },
   {
     name: '飞行棋',
     icon: '✈️',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html',
     description: '经典飞行棋游戏',
+    preferredSize: { width: 850, height: 750 }, // 8x8棋盘 + 控制区域
   },
   {
     name: 'Nyan Cat',
     icon: '🐱',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html',
     description: '彩虹猫跑酷游戏',
+    preferredSize: { width: 700, height: 500 }, // 横向跑酷游戏
   },
   {
     name: '扫雷',
     icon: '💣',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html',
     description: '经典扫雷游戏',
+    preferredSize: { width: 500, height: 600 }, // 标准扫雷尺寸
   },
   {
     name: '数独',
     icon: '🔢',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html',
     description: '数独益智游戏',
+    preferredSize: { width: 500, height: 650 }, // 9x9数独网格
   },
 ];
 
@@ -68,6 +74,56 @@ const getSettings = () => {
   return extensionSettings[MODULE_NAME];
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
+
+// 根据游戏调整窗口大小
+const adjustPanelSizeForGame = (gameName, gameData) => {
+  if (!gamePanel || !gameData.preferredSize) return;
+
+  const { preferredSize } = gameData;
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+
+  let newWidth, newHeight;
+
+  if (isMobile()) {
+    // 移动端：适应屏幕，但保持游戏比例
+    const maxWidth = screenWidth - 40;
+    const maxHeight = screenHeight - 100;
+
+    const aspectRatio = preferredSize.width / preferredSize.height;
+
+    if (maxWidth / maxHeight > aspectRatio) {
+      // 以高度为限制
+      newHeight = Math.min(maxHeight, preferredSize.height);
+      newWidth = newHeight * aspectRatio;
+    } else {
+      // 以宽度为限制
+      newWidth = Math.min(maxWidth, preferredSize.width);
+      newHeight = newWidth / aspectRatio;
+    }
+
+    // 确保最小尺寸
+    newWidth = Math.max(newWidth, 350);
+    newHeight = Math.max(newHeight, 400);
+  } else {
+    // 桌面端：使用推荐尺寸，但不超过屏幕
+    newWidth = Math.min(preferredSize.width, screenWidth - 100);
+    newHeight = Math.min(preferredSize.height, screenHeight - 100);
+  }
+
+  // 应用新尺寸
+  gamePanel.style.width = newWidth + 'px';
+  gamePanel.style.height = newHeight + 'px';
+
+  // 移动端重新居中
+  if (isMobile()) {
+    gamePanel.style.left = '50%';
+    gamePanel.style.transform = 'translateX(-50%)';
+    gamePanel.style.top = Math.max(20, (screenHeight - newHeight) / 2) + 'px';
+  }
+
+  console.log(`调整窗口大小为游戏 ${gameName}: ${newWidth}x${newHeight}`);
+};
 
 // 创建游戏面板HTML
 function createGamePanelHTML() {
@@ -108,10 +164,9 @@ function createGamePanelHTML() {
         <iframe class="game-iframe" 
                 src="" 
                 frameborder="0"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups allow-modals"
-                allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"></iframe>
+                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups"
+                allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay; keyboard-map"
+                loading="lazy"></iframe>
       </div>
     </div>
   `;
@@ -182,13 +237,20 @@ function addEventListeners() {
       const gameFile = item.dataset.game;
       const gameName = item.querySelector('.game-name').textContent;
 
-      // 直接使用gameFile，因为现在都是完整的URL
+      // 查找游戏数据以获取推荐尺寸
+      const allGames = [...builtInGames, ...settings.customGames];
+      const gameData = allGames.find(game => game.file === gameFile) || { preferredSize: null };
+
+      // 直接使用游戏文件URL
       const gameUrl = gameFile;
 
       const iframe = $('.game-iframe');
       $('.current-game-title').textContent = gameName;
       $('.panel-content').style.display = 'none';
       $('.game-iframe-container').style.display = 'block';
+
+      // 根据游戏调整窗口大小
+      adjustPanelSizeForGame(gameName, gameData);
 
       // 显示加载指示器
       iframe.srcdoc = `
@@ -198,7 +260,7 @@ function addEventListeners() {
           <p style="color: #666; font-size: 14px;">${gameName}</p>
           <div style="margin-top: 20px;">
             <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            </div>
+          </div>
           <style>
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -208,29 +270,8 @@ function addEventListeners() {
         </div>
       `;
 
-      // 优先尝试直接加载，失败后使用fetch+srcdoc
+      // 使用fetch获取HTML内容并通过srcdoc渲染
       console.log(`正在加载游戏: ${gameName} - ${gameUrl}`);
-
-      const loadGameDirect = (url, attempt = 0) => {
-        return new Promise((resolve, reject) => {
-          iframe.src = url;
-
-          const timeout = setTimeout(() => {
-            reject(new Error('加载超时'));
-          }, 10000);
-
-          iframe.onload = () => {
-            clearTimeout(timeout);
-            console.log(`游戏直接加载成功: ${url}`);
-            resolve();
-          };
-
-          iframe.onerror = () => {
-            clearTimeout(timeout);
-            reject(new Error('直接加载失败'));
-          };
-        });
-      };
 
       const loadGameWithFetch = async (url, attempt = 0) => {
         try {
@@ -242,49 +283,8 @@ function addEventListeners() {
           const htmlContent = await response.text();
           console.log(`游戏HTML获取成功: ${url}`);
 
-          // 增强HTML内容，添加基础的游戏适配
-          const enhancedHTML = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-              <style>
-                body { 
-                  margin: 0; 
-                  padding: 8px; 
-                  box-sizing: border-box;
-                  overflow: auto;
-                  font-family: Arial, sans-serif;
-                }
-                canvas, #game, .game-container { 
-                  max-width: 100%; 
-                  height: auto; 
-                  display: block; 
-                  margin: 0 auto; 
-                }
-                button { 
-                  min-height: 44px; 
-                  min-width: 44px; 
-                  touch-action: manipulation; 
-                  cursor: pointer;
-                  padding: 8px 16px;
-                  margin: 4px;
-                  border: 1px solid #ccc;
-                  border-radius: 4px;
-                  background: #f8f9fa;
-                }
-                button:hover { background: #e9ecef; }
-              </style>
-            </head>
-            <body>
-              ${htmlContent.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<!DOCTYPE[^>]*>/gi, '')}
-            </body>
-            </html>
-          `;
-
           // 使用srcdoc直接渲染HTML内容
-          iframe.srcdoc = enhancedHTML;
+          iframe.srcdoc = htmlContent;
         } catch (error) {
           console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
 
@@ -303,28 +303,20 @@ function addEventListeners() {
 
           // 所有方法都失败，显示错误页面
           iframe.srcdoc = `
-             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
-               <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
-               <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
-               <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
-               <div style="margin-top: 20px;">
-                 <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
-                 <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+              <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+              <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
+              <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
+              <div style="margin-top: 20px;">
+                <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
+                <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+              </div>
             </div>
-            </div>
-           `;
+          `;
         }
       };
 
-      // 首先尝试直接加载
-      (async () => {
-        try {
-          await loadGameDirect(gameUrl);
-        } catch (directError) {
-          console.log(`直接加载失败，尝试fetch方式: ${directError.message}`);
-          await loadGameWithFetch(gameUrl);
-        }
-      })();
+      loadGameWithFetch(gameUrl);
     };
   });
 
@@ -426,6 +418,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
