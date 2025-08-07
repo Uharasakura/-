@@ -32,26 +32,19 @@
         touch-action: none;
       }
 
-      /* 游戏容器 - 简单缩放 */
+      /* 游戏容器 */
       .game-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        position: fixed;
+        inset: 0;
         overflow: hidden;
-        background: #000;
-        transform-origin: 0 0;
-        transform: scale(0.35); /* 直接缩放到适合手机的大小 */
       }
 
-      /* 游戏画布 - 恢复原始尺寸 */
+      /* 游戏画布 */
       #gameCanvas {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 800px; /* 恢复游戏原始设计尺寸 */
-        height: 600px; /* 恢复游戏原始设计尺寸 */
+        inset: 0;
+        width: 100%;
+        height: 100%;
       }
 
       /* 猫咪角色 */
@@ -220,7 +213,7 @@
 
         // 游戏状态
         let gameState = {
-          catY: 200, // 先设置一个默认值，初始化后会更新
+          catY: window.innerHeight / 2,
           velocity: 0,
           gravity: 0.4,
           flyForce: -0.3,
@@ -242,16 +235,24 @@
           touchActive: false,
         };
 
-        // 简化的游戏尺寸计算
+        // 游戏尺寸计算
         function calculateGameDimensions() {
+          const vw = document.documentElement.clientWidth;
+          const vh = document.documentElement.clientHeight;
+          const isMobile = vw <= 768;
+          const scale = Math.min(1, Math.max(0.5, Math.min(vw / 1920, vh / 1080)));
+          const catSize = isMobile
+            ? Math.max(80, Math.min(vw * 0.15, vh * 0.15))
+            : Math.max(120, Math.min(vw * 0.2, vh * 0.2));
+
           return {
-            catSize: 60,
-            obstacleWidth: 20,
-            obstacleGap: 250,
-            jumpForce: -8,
-            gravity: 0.4,
-            speed: 4,
-            scale: 1,
+            catSize,
+            obstacleWidth: Math.min(20 * scale, vw * 0.03) * (isMobile ? 0.8 : 1.2),
+            obstacleGap: Math.min(300 * scale, vw * 0.3),
+            jumpForce: -8 * scale * (isMobile ? 1 : 1.2),
+            gravity: 0.4 * scale * (isMobile ? 1 : 1.2),
+            speed: 4 * scale * (isMobile ? 0.8 : 1),
+            scale,
           };
         }
 
@@ -276,7 +277,7 @@
             const catSafeZone = dims.catSize * 1.5; // 猫咪安全区域
 
             // 将屏幕垂直方向分为三个区域：上、中、下
-            const topZone = { min: catSafeZone, max: Math.max(catSafeZone + 50, canvas.height * 0.33) };
+            const topZone = { min: catSafeZone, max: canvas.height * 0.33 };
             const middleZone = { min: canvas.height * 0.33, max: canvas.height * 0.66 };
             const bottomZone = { min: canvas.height * 0.66, max: canvas.height - catSafeZone };
 
@@ -284,37 +285,16 @@
             const zoneRandom = Math.random();
             let selectedZone;
 
-            // 检查各区域是否有效（确保有足够空间）
-            const topZoneValid = topZone.max > topZone.min + 30;
-            const bottomZoneValid = bottomZone.max > bottomZone.min + 30;
-
-            console.log(
-              `区域检查 - 上区域: ${topZone.min}-${topZone.max} (有效:${topZoneValid}), 中区域: ${middleZone.min}-${middleZone.max}, 下区域: ${bottomZone.min}-${bottomZone.max} (有效:${bottomZoneValid})`,
-            );
-
-            if (zoneRandom < 0.4 && (topZoneValid || bottomZoneValid)) {
-              // 40%概率在上部或下部（但只在有效区域中选择）
-              if (topZoneValid && bottomZoneValid) {
-                selectedZone = Math.random() < 0.5 ? topZone : bottomZone;
-              } else if (topZoneValid) {
-                selectedZone = topZone;
-              } else {
-                selectedZone = bottomZone;
-              }
+            if (zoneRandom < 0.4) {
+              // 40%概率在上部或下部
+              selectedZone = Math.random() < 0.5 ? topZone : bottomZone;
             } else {
-              // 60%概率在中部，或者上下区域都无效时强制中部
+              // 60%概率在中部
               selectedZone = middleZone;
             }
 
             // 在选定区域内随机生成位置
-            const zoneHeight = selectedZone.max - selectedZone.min;
-            this.y = Math.max(selectedZone.min, Math.random() * zoneHeight + selectedZone.min);
-
-            console.log(
-              `障碍物生成在区域: ${
-                selectedZone === topZone ? '上' : selectedZone === middleZone ? '中' : '下'
-              }, Y位置: ${this.y}`,
-            );
+            this.y = Math.random() * (selectedZone.max - selectedZone.min) + selectedZone.min;
 
             // 确保不会完全堵住通道
             if (this.height > canvas.height * 0.4) {
@@ -419,16 +399,14 @@
           });
 
           window.addEventListener('resize', () => {
-            // 重新计算保持比例的Canvas尺寸
-            initCanvas(); // 直接调用初始化函数重新计算
-
+            canvas.width = document.documentElement.clientWidth;
+            canvas.height = document.documentElement.clientHeight;
             const dims = calculateGameDimensions();
             document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
-            console.log(`Canvas已重新调整比例 (´∀｀)`);
           });
         }
 
-        // 星星系统
+        // 简化的星星系统
         function createStars() {
           return Array.from({ length: 100 }, () => ({
             x: Math.random() * canvas.width,
@@ -520,17 +498,8 @@
         function draw() {
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          // 简化的调试信息
-          ctx.fillStyle = '#fff';
-          ctx.font = '14px Arial';
-          ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 20);
-          ctx.fillText(`Scale: 0.35 (CSS)`, 10, 40);
-
           drawStars();
           gameState.obstacles.forEach(obstacle => obstacle.draw());
-
-          // 猫咪位置
           nyanCat.style.transform = `translate(100px, ${gameState.catY}px)`;
         }
 
@@ -607,28 +576,15 @@
           isPlaying = !isPlaying;
         };
 
-        // 简化初始化
-        function initCanvas() {
-          canvas.width = 800;
-          canvas.height = 600;
-        }
-
-        // 初始化游戏
-        setTimeout(() => {
-          initCanvas();
-
-          const dims = calculateGameDimensions();
-          document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
-
-          gameState.catY = canvas.height / 2;
-          nyanCat.style.display = 'none';
-          bgm.volume = 1.0;
-          bgm.load();
-          gameState.stars = createStars();
-          setupEventListeners();
-
-          requestAnimationFrame(gameLoop);
-        }, 200);
+        // 初始化
+        canvas.width = document.documentElement.clientWidth;
+        canvas.height = document.documentElement.clientHeight;
+        nyanCat.style.display = 'none';
+        bgm.volume = 1.0;
+        bgm.load();
+        gameState.stars = createStars(); // 初始化星星
+        setupEventListeners();
+        gameLoop();
       });
     </script>
   </body>
