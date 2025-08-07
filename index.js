@@ -149,8 +149,12 @@
 
   // 创建游戏按钮
   function createGameButton() {
+    console.log('[游戏合集] 开始创建游戏按钮');
+
     if (gameButton) {
+      console.log('[游戏合集] 移除旧按钮');
       gameButton.remove();
+      gameButton = null;
     }
 
     const button = document.createElement('button');
@@ -159,17 +163,49 @@
     button.innerHTML = '🎮';
     button.title = '游戏合集';
 
-    // 设置位置
+    // 设置位置和基本样式
     const settings = getSettings();
-    button.style.position = 'fixed';
-    button.style.left = settings.iconPosition.x + 'px';
-    button.style.top = settings.iconPosition.y + 'px';
-    button.style.zIndex = '9999';
+    button.style.cssText = `
+      position: fixed;
+      left: ${settings.iconPosition.x}px;
+      top: ${settings.iconPosition.y}px;
+      z-index: 9999;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 24px;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      user-select: none;
+      touch-action: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
 
     // 点击事件
     button.addEventListener('click', e => {
       e.stopPropagation();
+      console.log('[游戏合集] 按钮被点击');
       openGamePanel();
+    });
+
+    // 鼠标悬停效果
+    button.addEventListener('mouseenter', () => {
+      button.style.background = 'rgba(0, 0, 0, 0.9)';
+      button.style.borderColor = '#4caf50';
+      button.style.transform = 'scale(1.05)';
+    });
+
+    button.addEventListener('mouseleave', () => {
+      button.style.background = 'rgba(0, 0, 0, 0.8)';
+      button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      button.style.transform = 'scale(1)';
     });
 
     // 拖拽
@@ -177,12 +213,29 @@
       const settings = getSettings();
       settings.iconPosition = { x, y };
       saveSettings();
+      console.log('[游戏合集] 按钮位置已保存:', { x, y });
     });
 
-    document.body.appendChild(button);
-    gameButton = button;
+    // 确保添加到body
+    if (document.body) {
+      document.body.appendChild(button);
+      gameButton = button;
+      console.log('[游戏合集] 游戏按钮已创建并添加到页面');
+    } else {
+      console.error('[游戏合集] document.body不存在，无法添加按钮');
+      setTimeout(() => createGameButton(), 500);
+      return;
+    }
 
-    console.log('[游戏合集] 游戏按钮已创建');
+    // 验证按钮是否可见
+    setTimeout(() => {
+      if (button.offsetParent === null) {
+        console.warn('[游戏合集] 按钮可能不可见，尝试修复...');
+        button.style.display = 'flex';
+        button.style.visibility = 'visible';
+        button.style.opacity = '1';
+      }
+    }, 100);
   }
 
   // 打开游戏面板
@@ -492,21 +545,48 @@
     console.log('[游戏合集] 已清理');
   }
 
-  // 监听APP_READY事件
-  eventSource.on(event_types.APP_READY, () => {
-    console.log('[游戏合集] 接收到APP_READY事件');
+  // 多种初始化方式确保扩展能正常启动
+  function tryInitialize() {
+    console.log('[游戏合集] 尝试初始化...');
 
-    // 延迟初始化以确保DOM完全加载
-    setTimeout(() => {
+    if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext) {
       initializeExtension();
-    }, 1000);
+    } else {
+      console.log('[游戏合集] SillyTavern未就绪，等待中...');
+      setTimeout(tryInitialize, 500);
+    }
+  }
+
+  // 方法1: 监听APP_READY事件
+  if (typeof eventSource !== 'undefined' && eventSource && event_types) {
+    eventSource.on(event_types.APP_READY, () => {
+      console.log('[游戏合集] 接收到APP_READY事件');
+      setTimeout(() => {
+        initializeExtension();
+      }, 1000);
+    });
+  }
+
+  // 方法2: jQuery ready事件（[[memory:2339685]]）
+  $(document).ready(() => {
+    console.log('[游戏合集] Document ready');
+    setTimeout(tryInitialize, 1500);
   });
+
+  // 方法3: 延迟初始化备用方案
+  setTimeout(() => {
+    if (!isInitialized) {
+      console.log('[游戏合集] 执行备用初始化');
+      tryInitialize();
+    }
+  }, 3000);
 
   // 页面卸载时清理
   window.addEventListener('beforeunload', cleanup);
 
   console.log('[游戏合集] 扩展脚本已加载');
 })();
+
 
 
 
