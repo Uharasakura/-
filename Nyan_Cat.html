@@ -238,29 +238,26 @@
           touchActive: false,
         };
 
-        // 游戏尺寸计算 - 基于固定显示界面的智能缩放
+        // 游戏尺寸计算 - 基于Canvas实际尺寸计算缩放
         function calculateGameDimensions() {
-          // 获取iframe容器的实际尺寸（固定显示界面）
-          const container = document.querySelector('.game-container');
-          const containerWidth = container ? container.clientWidth : window.innerWidth;
-          const containerHeight = container ? container.clientHeight : window.innerHeight;
+          // 使用Canvas的实际尺寸（已经保持了正确比例）
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
 
           // 游戏的理想尺寸（游戏设计的原始尺寸）
           const gameIdealWidth = 800;
           const gameIdealHeight = 600;
 
-          // 计算缩放比例：让游戏完整适应显示界面
-          const scaleX = containerWidth / gameIdealWidth;
-          const scaleY = containerHeight / gameIdealHeight;
-          const scale = Math.min(scaleX, scaleY); // 保持游戏比例，取较小的缩放
+          // 计算缩放比例：基于Canvas实际尺寸
+          const scale = Math.min(canvasWidth / gameIdealWidth, canvasHeight / gameIdealHeight);
 
           console.log(
-            `显示界面: ${containerWidth}×${containerHeight}, 游戏理想尺寸: ${gameIdealWidth}×${gameIdealHeight}, 缩放: ${scale.toFixed(
+            `Canvas: ${canvasWidth}×${canvasHeight}, 理想尺寸: ${gameIdealWidth}×${gameIdealHeight}, 缩放: ${scale.toFixed(
               2,
             )} (｡◕‿◕｡)`,
           );
 
-          const isMobile = containerWidth <= 400;
+          const isMobile = canvasWidth <= 400;
           const catSize = 60 * scale; // 固定猫咪基础尺寸，然后按比例缩放
 
           return {
@@ -438,19 +435,12 @@
           });
 
           window.addEventListener('resize', () => {
-            // 重新设置Canvas为容器的确切尺寸
-            const container = document.querySelector('.game-container');
-            const containerWidth = container ? container.clientWidth : 400;
-            const containerHeight = container ? container.clientHeight : 300;
-
-            canvas.width = containerWidth;
-            canvas.height = containerHeight;
-            canvas.style.width = containerWidth + 'px';
-            canvas.style.height = containerHeight + 'px';
+            // 重新计算保持比例的Canvas尺寸
+            initCanvas(); // 直接调用初始化函数重新计算
 
             const dims = calculateGameDimensions();
             document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
-            console.log(`Canvas调整为容器尺寸: ${containerWidth} × ${containerHeight} (´∀｀)`);
+            console.log(`Canvas已重新调整比例 (´∀｀)`);
           });
         }
 
@@ -624,19 +614,43 @@
           isPlaying = !isPlaying;
         };
 
-        // 初始化 - 直接设置Canvas为容器的确切像素尺寸
+        // 初始化 - 保持游戏比例，适应容器尺寸
         function initCanvas() {
           const container = document.querySelector('.game-container');
           const containerWidth = container ? container.clientWidth : 400;
           const containerHeight = container ? container.clientHeight : 300;
 
-          // 直接设置Canvas的像素尺寸，不依赖CSS的100%
-          canvas.width = containerWidth;
-          canvas.height = containerHeight;
-          canvas.style.width = containerWidth + 'px';
-          canvas.style.height = containerHeight + 'px';
+          // 游戏的理想比例 (4:3)
+          const gameAspectRatio = 800 / 600;
+          const containerAspectRatio = containerWidth / containerHeight;
 
-          console.log(`Canvas设置为容器确切尺寸: ${containerWidth} × ${containerHeight} (＾◡＾)`);
+          let canvasWidth, canvasHeight;
+
+          if (containerAspectRatio > gameAspectRatio) {
+            // 容器更宽，以高度为准
+            canvasHeight = containerHeight;
+            canvasWidth = canvasHeight * gameAspectRatio;
+          } else {
+            // 容器更高，以宽度为准
+            canvasWidth = containerWidth;
+            canvasHeight = canvasWidth / gameAspectRatio;
+          }
+
+          // 设置Canvas的实际像素尺寸
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+          canvas.style.width = canvasWidth + 'px';
+          canvas.style.height = canvasHeight + 'px';
+
+          // 让Canvas在容器中居中
+          canvas.style.position = 'absolute';
+          canvas.style.left = '50%';
+          canvas.style.top = '50%';
+          canvas.style.transform = 'translate(-50%, -50%)';
+
+          console.log(
+            `容器: ${containerWidth}×${containerHeight}, Canvas: ${canvasWidth}×${canvasHeight}, 保持4:3比例 (´∀｀)♡`,
+          );
 
           // 强制触发一次resize事件，确保尺寸正确
           setTimeout(() => {
