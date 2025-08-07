@@ -355,6 +355,12 @@ function toggleGamePanel() {
 
 // 创建扩展按钮
 function createExtensionButton() {
+  // 检查按钮是否已存在，避免重复创建
+  if (document.querySelector('#mini-games-button')) {
+    console.log('小游戏按钮已存在，跳过创建');
+    return;
+  }
+
   const button = document.createElement('div');
   button.id = 'mini-games-button';
   button.className = 'menu_button menu_button_icon';
@@ -363,35 +369,135 @@ function createExtensionButton() {
 
   button.addEventListener('click', toggleGamePanel);
 
-  // 添加到扩展菜单
-  const extensionButtonsContainer = document.querySelector('#extensionsMenuButton');
-  if (extensionButtonsContainer) {
-    extensionButtonsContainer.parentNode.insertBefore(button, extensionButtonsContainer.nextSibling);
-  } else {
-    // 如果找不到扩展菜单，添加到右侧菜单
-    const rightMenu = document.querySelector('#rm_button_panel');
-    if (rightMenu) {
-      rightMenu.appendChild(button);
+  // 尝试多种方式添加按钮
+  let buttonAdded = false;
+
+  // 方法1: 添加到扩展菜单按钮旁边
+  const extensionsMenuButton = document.querySelector('#extensionsMenuButton');
+  if (extensionsMenuButton && extensionsMenuButton.parentNode) {
+    extensionsMenuButton.parentNode.insertBefore(button, extensionsMenuButton.nextSibling);
+    buttonAdded = true;
+    console.log('小游戏按钮已添加到扩展菜单旁边');
+  }
+
+  // 方法2: 添加到右侧菜单面板
+  if (!buttonAdded) {
+    const rightMenuPanel = document.querySelector('#rm_button_panel');
+    if (rightMenuPanel) {
+      rightMenuPanel.appendChild(button);
+      buttonAdded = true;
+      console.log('小游戏按钮已添加到右侧菜单');
     }
+  }
+
+  // 方法3: 添加到顶部菜单栏
+  if (!buttonAdded) {
+    const topMenuBar = document.querySelector('#top-bar, .menu_buttons, #rm_extensions_block');
+    if (topMenuBar) {
+      topMenuBar.appendChild(button);
+      buttonAdded = true;
+      console.log('小游戏按钮已添加到顶部菜单');
+    }
+  }
+
+  // 方法4: 作为最后手段，添加到body
+  if (!buttonAdded) {
+    document.body.appendChild(button);
+    // 给按钮添加固定定位样式
+    button.style.position = 'fixed';
+    button.style.top = '10px';
+    button.style.right = '10px';
+    button.style.zIndex = '9999';
+    button.style.background = '#667eea';
+    button.style.color = 'white';
+    button.style.padding = '10px';
+    button.style.borderRadius = '50%';
+    button.style.cursor = 'pointer';
+    button.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+    console.log('小游戏按钮已添加为浮动按钮');
   }
 }
 
 // 初始化扩展
 function init() {
-  console.log('初始化小游戏合集扩展...');
+  console.log('开始初始化小游戏合集扩展...');
 
-  // 获取设置
-  settings = getSettings();
+  try {
+    // 获取设置
+    settings = getSettings();
+    console.log('扩展设置已加载:', settings);
 
-  // 创建扩展按钮
-  createExtensionButton();
+    // 延迟创建按钮，确保DOM完全加载
+    setTimeout(() => {
+      createExtensionButton();
+    }, 1000);
 
-  console.log('小游戏合集扩展初始化完成');
+    console.log('小游戏合集扩展初始化完成');
+  } catch (error) {
+    console.error('小游戏合集扩展初始化失败:', error);
+  }
 }
 
-// 等待应用准备就绪
-const { eventSource, event_types } = getContext();
-eventSource.on(event_types.APP_READY, init);
+// 安全的初始化函数
+function safeInit() {
+  console.log('尝试安全初始化小游戏合集扩展...');
+
+  // 检查SillyTavern是否已加载
+  if (typeof SillyTavern === 'undefined') {
+    console.log('SillyTavern未加载，等待中...');
+    setTimeout(safeInit, 500);
+    return;
+  }
+
+  try {
+    const context = SillyTavern.getContext();
+    if (!context) {
+      console.log('SillyTavern上下文未准备好，等待中...');
+      setTimeout(safeInit, 500);
+      return;
+    }
+
+    const { eventSource, event_types } = context;
+    if (!eventSource || !event_types) {
+      console.log('事件系统未准备好，等待中...');
+      setTimeout(safeInit, 500);
+      return;
+    }
+
+    // 监听应用就绪事件
+    eventSource.on(event_types.APP_READY, init);
+
+    // 如果应用已经就绪，直接初始化
+    if (document.readyState === 'complete') {
+      setTimeout(init, 100);
+    }
+
+    console.log('事件监听器已设置');
+  } catch (error) {
+    console.error('设置事件监听器失败:', error);
+    // 如果事件系统失败，直接尝试初始化
+    setTimeout(init, 2000);
+  }
+}
+
+// 开始安全初始化
+safeInit();
+
+// 添加全局调试函数
+window.miniGamesDebug = {
+  init: init,
+  createButton: createExtensionButton,
+  showPanel: showGamePanel,
+  hidePanel: hideGamePanel,
+  togglePanel: toggleGamePanel,
+  getSettings: () => settings,
+  forceInit: () => {
+    console.log('强制初始化小游戏扩展...');
+    init();
+  },
+};
+
+console.log('小游戏合集扩展已加载，可使用 window.miniGamesDebug 进行调试');
 
 // 导出模块（可选）
 if (typeof module !== 'undefined' && module.exports) {
@@ -402,6 +508,7 @@ if (typeof module !== 'undefined' && module.exports) {
     hideGamePanel,
   };
 }
+
 
 
 
