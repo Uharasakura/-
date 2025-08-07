@@ -14,15 +14,15 @@ const defaultSettings = {
 
 // 内置游戏列表 - 使用支持iframe的CDN链接
 const builtInGames = [
-  {
-    name: '贪吃蛇',
-    icon: '🐍',
+    {
+      name: '贪吃蛇',
+      icon: '🐍',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
-  },
-  {
-    name: '种田',
-    icon: '🌾',
+    },
+    {
+      name: '种田',
+      icon: '🌾',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
   },
@@ -69,50 +69,35 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
-// 让游戏面板适应内容，特别优化横屏游戏
+// 让游戏面板适应内容，不强制固定尺寸
 const optimizePanelForGame = gameName => {
   if (!gamePanel) return;
 
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-
-  // 检查是否是横屏游戏（需要特殊处理）
-  const isLandscapeGame = gameName === 'Nyan Cat';
-
+  // 移动端确保面板不会太小，但让游戏自适应
   if (isMobile()) {
-    let panelWidth, panelHeight;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
 
-    if (isLandscapeGame) {
-      // 彩虹猫等横屏游戏：优先保证高度，宽度适应
-      panelWidth = Math.min(screenWidth - 20, 500);
-      panelHeight = Math.min(450, screenHeight - 60); // 确保有足够高度显示游戏
-    } else {
-      // 其他游戏：常规适应
-      panelWidth = Math.min(350, screenWidth - 20);
-      panelHeight = Math.min(500, screenHeight - 80);
-    }
+    // 给游戏充足的显示空间，但不强制具体尺寸
+    const minWidth = Math.min(350, screenWidth - 20);
+    const minHeight = Math.min(400, screenHeight - 80);
+    const maxWidth = screenWidth - 20;
+    const maxHeight = screenHeight - 60;
 
     Object.assign(gamePanel.style, {
-      width: panelWidth + 'px',
-      height: panelHeight + 'px',
+      minWidth: minWidth + 'px',
+      minHeight: minHeight + 'px',
+      maxWidth: maxWidth + 'px',
+      maxHeight: maxHeight + 'px',
+      width: 'auto', // 让内容决定宽度
+      height: 'auto', // 让内容决定高度
       left: '50%',
       transform: 'translateX(-50%)',
       top: '30px',
-      maxWidth: screenWidth - 20 + 'px',
-      maxHeight: screenHeight - 60 + 'px',
     });
-
-    console.log(`移动端面板调整: ${gameName} (${isLandscapeGame ? '横屏' : '竖屏'}) - ${panelWidth}x${panelHeight}`);
-  } else {
-    // 桌面端处理
-    if (isLandscapeGame) {
-      Object.assign(gamePanel.style, {
-        width: '600px',
-        height: '450px', // 确保足够显示400px的游戏内容
-      });
-    }
-    console.log(`桌面端面板调整: ${gameName} - 针对${isLandscapeGame ? '横屏' : '竖屏'}游戏优化`);
   }
+
+  console.log(`优化面板显示: ${gameName} - 让游戏自适应容器大小`);
 };
 
 // 创建游戏面板HTML
