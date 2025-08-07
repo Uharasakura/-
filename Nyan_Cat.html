@@ -237,8 +237,9 @@
 
         // 游戏尺寸计算
         function calculateGameDimensions() {
-          const vw = document.documentElement.clientWidth;
-          const vh = document.documentElement.clientHeight;
+          // 在iframe中使用window尺寸而不是document尺寸
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
           const isMobile = vw <= 768;
           const scale = Math.min(1, Math.max(0.5, Math.min(vw / 1920, vh / 1080)));
           const catSize = isMobile
@@ -420,10 +421,12 @@
           });
 
           window.addEventListener('resize', () => {
-            canvas.width = document.documentElement.clientWidth;
-            canvas.height = document.documentElement.clientHeight;
+            // 使用window尺寸来设置Canvas大小
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             const dims = calculateGameDimensions();
             document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
+            console.log(`Canvas尺寸调整: ${canvas.width} x ${canvas.height}`);
           });
         }
 
@@ -597,9 +600,10 @@
           isPlaying = !isPlaying;
         };
 
-        // 初始化
-        canvas.width = document.documentElement.clientWidth;
-        canvas.height = document.documentElement.clientHeight;
+        // 初始化 - 使用window尺寸而不是document尺寸
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        console.log(`初始Canvas尺寸: ${canvas.width} x ${canvas.height}`);
         nyanCat.style.display = 'none';
         bgm.volume = 1.0;
         bgm.load();
