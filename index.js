@@ -196,44 +196,11 @@ function addEventListeners() {
   const $ = sel => gamePanel.querySelector(sel);
 
   // 控制按钮
-  const minimizeBtn = $('.minimize-btn');
-  console.log('🔧 折叠按钮元素:', minimizeBtn);
-  if (minimizeBtn) {
-    minimizeBtn.onclick = () => {
-      console.log('🔄 折叠状态切换:', settings.isMinimized, '->', !settings.isMinimized);
-      settings.isMinimized = !settings.isMinimized;
-      gamePanel.classList.toggle('minimized', settings.isMinimized);
-
-      // 🔧 修复：强制应用折叠状态
-      if (settings.isMinimized) {
-        const panelContent = $('.panel-content');
-        const iframeContainer = $('.game-iframe-container');
-        if (panelContent) {
-          panelContent.style.display = '';
-          panelContent.style.setProperty('display', 'none', 'important');
-        }
-        if (iframeContainer) {
-          iframeContainer.style.display = '';
-          iframeContainer.style.setProperty('display', 'none', 'important');
-        }
-        console.log('✅ 强制应用折叠状态');
-      } else {
-        // 展开时恢复显示
-        const panelContent = $('.panel-content');
-        const iframeContainer = $('.game-iframe-container');
-        if (panelContent) panelContent.style.removeProperty('display');
-        if (iframeContainer && iframeContainer.querySelector('iframe')) {
-          // 只有当有游戏在显示时才显示iframe容器
-          iframeContainer.style.removeProperty('display');
-        }
-        console.log('✅ 恢复展开状态');
-      }
-
-      saveSettings();
-    };
-  } else {
-    console.error('❌ 找不到折叠按钮！');
-  }
+  $('.minimize-btn').onclick = () => {
+    settings.isMinimized = !settings.isMinimized;
+    gamePanel.classList.toggle('minimized', settings.isMinimized);
+    saveSettings();
+  };
   $('.close-btn').onclick = hideGamePanel;
   $('.back-btn').onclick = () => {
     $('.panel-content').style.display = 'block';
