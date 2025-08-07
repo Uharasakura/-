@@ -275,10 +275,13 @@
 
             // 优化垂直位置分布
             const availableSpace = canvas.height - this.height;
-            const catSafeZone = dims.catSize * 1.5; // 猫咪安全区域
+            // 减小安全区域，给上区域更多空间
+            const catSafeZone = dims.catSize * 0.8; // 减少安全区域
+
+            console.log(`Canvas高度: ${canvas.height}, 猫咪尺寸: ${dims.catSize}, 安全区域: ${catSafeZone}`);
 
             // 将屏幕垂直方向分为三个区域：上、中、下
-            const topZone = { min: catSafeZone, max: Math.max(catSafeZone + 50, canvas.height * 0.33) };
+            const topZone = { min: 10, max: Math.max(catSafeZone + 80, canvas.height * 0.33) }; // 从顶部10px开始
             const middleZone = { min: canvas.height * 0.33, max: canvas.height * 0.66 };
             const bottomZone = { min: canvas.height * 0.66, max: canvas.height - catSafeZone };
 
@@ -294,17 +297,18 @@
               `区域检查 - 上区域: ${topZone.min}-${topZone.max} (有效:${topZoneValid}), 中区域: ${middleZone.min}-${middleZone.max}, 下区域: ${bottomZone.min}-${bottomZone.max} (有效:${bottomZoneValid})`,
             );
 
-            if (zoneRandom < 0.4 && (topZoneValid || bottomZoneValid)) {
-              // 40%概率在上部或下部（但只在有效区域中选择）
-              if (topZoneValid && bottomZoneValid) {
-                selectedZone = Math.random() < 0.5 ? topZone : bottomZone;
-              } else if (topZoneValid) {
-                selectedZone = topZone;
-              } else {
-                selectedZone = bottomZone;
-              }
+            // 强制确保三个区域都有机会被选中
+            if (zoneRandom < 0.33 && topZoneValid) {
+              // 33%概率在上部
+              selectedZone = topZone;
+            } else if (zoneRandom < 0.66) {
+              // 33%概率在中部
+              selectedZone = middleZone;
+            } else if (bottomZoneValid) {
+              // 34%概率在下部
+              selectedZone = bottomZone;
             } else {
-              // 60%概率在中部，或者上下区域都无效时强制中部
+              // 如果下区域无效，回退到中区域
               selectedZone = middleZone;
             }
 
@@ -312,10 +316,11 @@
             const zoneHeight = selectedZone.max - selectedZone.min;
             this.y = Math.max(selectedZone.min, Math.random() * zoneHeight + selectedZone.min);
 
+            const zoneName = selectedZone === topZone ? '上' : selectedZone === middleZone ? '中' : '下';
             console.log(
-              `障碍物生成在区域: ${
-                selectedZone === topZone ? '上' : selectedZone === middleZone ? '中' : '下'
-              }, Y位置: ${this.y}`,
+              `随机数: ${zoneRandom.toFixed(3)}, 选中区域: ${zoneName}, Y位置: ${this.y.toFixed(
+                1,
+              )}, 区域范围: ${selectedZone.min.toFixed(1)}-${selectedZone.max.toFixed(1)}`,
             );
 
             // 确保不会完全堵住通道
