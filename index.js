@@ -86,25 +86,31 @@ const adjustPanelSizeForGame = (gameName, gameData) => {
   let newWidth, newHeight;
 
   if (isMobile()) {
-    // 移动端：适应屏幕，但保持游戏比例
-    const maxWidth = screenWidth - 40;
-    const maxHeight = screenHeight - 100;
+    // 移动端：给游戏更多空间，减少边距
+    const maxWidth = screenWidth - 20;
+    const maxHeight = screenHeight - 60; // 减少顶部预留空间
 
-    const aspectRatio = preferredSize.width / preferredSize.height;
-
-    if (maxWidth / maxHeight > aspectRatio) {
-      // 以高度为限制
-      newHeight = Math.min(maxHeight, preferredSize.height);
-      newWidth = newHeight * aspectRatio;
+    // 为不同游戏类型优化尺寸
+    if (gameName === 'Nyan Cat' || gameName === '种田' || gameName === '飞行棋') {
+      // 横屏游戏需要更宽的空间
+      newWidth = Math.min(maxWidth, preferredSize.width * 0.9);
+      newHeight = Math.min(maxHeight, preferredSize.height * 0.8);
     } else {
-      // 以宽度为限制
-      newWidth = Math.min(maxWidth, preferredSize.width);
-      newHeight = newWidth / aspectRatio;
+      // 其他游戏保持比例
+      const aspectRatio = preferredSize.width / preferredSize.height;
+
+      if (maxWidth / maxHeight > aspectRatio) {
+        newHeight = Math.min(maxHeight, preferredSize.height * 0.85);
+        newWidth = newHeight * aspectRatio;
+      } else {
+        newWidth = Math.min(maxWidth, preferredSize.width * 0.9);
+        newHeight = newWidth / aspectRatio;
+      }
     }
 
-    // 确保最小尺寸
-    newWidth = Math.max(newWidth, 350);
-    newHeight = Math.max(newHeight, 400);
+    // 确保最小尺寸但优先显示完整
+    newWidth = Math.max(newWidth, Math.min(350, maxWidth));
+    newHeight = Math.max(newHeight, Math.min(400, maxHeight));
   } else {
     // 桌面端：使用推荐尺寸，但不超过屏幕
     newWidth = Math.min(preferredSize.width, screenWidth - 100);
@@ -115,11 +121,11 @@ const adjustPanelSizeForGame = (gameName, gameData) => {
   gamePanel.style.width = newWidth + 'px';
   gamePanel.style.height = newHeight + 'px';
 
-  // 移动端重新居中
+  // 移动端重新居中，顶部留更少空间
   if (isMobile()) {
     gamePanel.style.left = '50%';
     gamePanel.style.transform = 'translateX(-50%)';
-    gamePanel.style.top = Math.max(20, (screenHeight - newHeight) / 2) + 'px';
+    gamePanel.style.top = Math.max(10, (screenHeight - newHeight) / 2 - 20) + 'px';
   }
 
   console.log(`调整窗口大小为游戏 ${gameName}: ${newWidth}x${newHeight}`);
@@ -418,6 +424,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
