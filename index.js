@@ -49,6 +49,8 @@
       },
     ],
     iconPosition: { x: 20, y: 20 },
+    panelPosition: { x: 100, y: 100 },
+    gameWindowSize: 'normal', // 'minimized', 'normal', 'fullscreen'
   };
 
   // 全局变量
@@ -166,30 +168,30 @@
     // 设置位置和基本样式
     const settings = getSettings();
     button.style.cssText = `
-        position: fixed !important;
-        left: ${settings.iconPosition.x}px !important;
-        top: ${settings.iconPosition.y}px !important;
-        z-index: 9999 !important;
-        width: 48px !important;
-        height: 48px !important;
-        border-radius: 50% !important;
-        background: rgba(0, 0, 0, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-        font-size: 24px !important;
-        cursor: grab !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        backdrop-filter: blur(10px) !important;
-        transition: all 0.3s ease !important;
-        user-select: none !important;
-        touch-action: none !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-      `;
+            position: fixed !important;
+            left: ${settings.iconPosition.x}px !important;
+            top: ${settings.iconPosition.y}px !important;
+            z-index: 9999 !important;
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 50% !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            font-size: 24px !important;
+            cursor: grab !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            backdrop-filter: blur(10px) !important;
+            transition: all 0.3s ease !important;
+            user-select: none !important;
+            touch-action: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        `;
 
     // 点击事件
     button.addEventListener('click', e => {
@@ -296,11 +298,11 @@
     const gamesHTML = settings.games
       .map(
         game => `
-            <div class="game-item" data-game-id="${game.id}" data-url="${game.url}">
-                <div class="game-icon">${game.icon}</div>
-                <p class="game-name">${game.name}</p>
-            </div>
-        `,
+                <div class="game-item" data-game-id="${game.id}" data-url="${game.url}">
+                    <div class="game-icon">${game.icon}</div>
+                    <p class="game-name">${game.name}</p>
+                </div>
+            `,
       )
       .join('');
 
