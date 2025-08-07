@@ -280,7 +280,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 450px !important;
+  min-height: 500px !important;
+  max-height: calc(100vh - 140px) !important;
 }
 
 /* 响应式设计 */
@@ -330,6 +331,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
