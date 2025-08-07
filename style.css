@@ -212,6 +212,10 @@
   border: none;
   background: white;
   min-height: 400px;
+  /* 添加缩放和滚动支持 */
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  transform-origin: top left;
 }
 
 /* 移动端优化 */
