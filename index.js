@@ -7,7 +7,7 @@ const extensionFolderPath = '/scripts/extensions/third-party/各种小游戏';
 
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
-  panelSize: { width: 400, height: 500 }, // 适合移动端的默认大小
+  panelSize: { width: 400, height: 500 }, // 更合理的默认大小
   isMinimized: false,
   customGames: [],
 };
@@ -310,7 +310,7 @@ function addEventListeners() {
                  <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
                  <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
             </div>
-            </div>
+        </div>
            `;
         }
       };
