@@ -211,8 +211,9 @@
   height: 100%;
   border: none;
   background: white;
-  min-height: 450px;
-  overflow: hidden;
+  min-height: 400px;
+  overflow: auto;
+  display: block;
 }
 
 /* 移动端优化 */
@@ -279,8 +280,7 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 500px !important;
-  overflow: auto !important;
+  min-height: 450px !important;
 }
 
 /* 响应式设计 */
@@ -330,6 +330,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
