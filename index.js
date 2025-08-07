@@ -7,7 +7,7 @@ const extensionFolderPath = '/scripts/extensions/third-party/各种小游戏';
 
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
-  panelSize: { width: 450, height: 650 },
+  panelSize: { width: 400, height: 500 }, // 更合理的默认大小
   isMinimized: false,
   customGames: [],
 };
@@ -19,42 +19,36 @@ const builtInGames = [
     icon: '🐍',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
-    preferredSize: { width: 420, height: 600 },
   },
   {
     name: '种田',
     icon: '🌾',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
-    preferredSize: { width: 850, height: 700 },
   },
   {
     name: '飞行棋',
     icon: '✈️',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html',
     description: '经典飞行棋游戏',
-    preferredSize: { width: 850, height: 750 },
   },
   {
     name: 'Nyan Cat',
     icon: '🐱',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html',
     description: '彩虹猫跑酷游戏',
-    preferredSize: { width: 700, height: 500 },
   },
   {
     name: '扫雷',
     icon: '💣',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html',
     description: '经典扫雷游戏',
-    preferredSize: { width: 500, height: 600 },
   },
   {
     name: '数独',
     icon: '🔢',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html',
     description: '数独益智游戏',
-    preferredSize: { width: 500, height: 650 },
   },
 ];
 
@@ -75,60 +69,35 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
-// 根据游戏调整窗口大小
-const adjustPanelSizeForGame = (gameName, gameData) => {
-  if (!gamePanel || !gameData.preferredSize) return;
+// 让游戏面板适应内容，不强制固定尺寸
+const optimizePanelForGame = gameName => {
+  if (!gamePanel) return;
 
-  const { preferredSize } = gameData;
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-
-  let newWidth, newHeight;
-
+  // 移动端确保面板不会太小，但让游戏自适应
   if (isMobile()) {
-    // 移动端：给游戏更多空间，减少边距
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // 给游戏充足的显示空间，但不强制具体尺寸
+    const minWidth = Math.min(350, screenWidth - 20);
+    const minHeight = Math.min(400, screenHeight - 80);
     const maxWidth = screenWidth - 20;
-    const maxHeight = screenHeight - 60; // 减少顶部预留空间
+    const maxHeight = screenHeight - 60;
 
-    // 为不同游戏类型优化尺寸
-    if (gameName === 'Nyan Cat' || gameName === '种田' || gameName === '飞行棋') {
-      // 横屏游戏需要更宽的空间
-      newWidth = Math.min(maxWidth, preferredSize.width * 0.9);
-      newHeight = Math.min(maxHeight, preferredSize.height * 0.8);
-    } else {
-      // 其他游戏保持比例
-      const aspectRatio = preferredSize.width / preferredSize.height;
-
-      if (maxWidth / maxHeight > aspectRatio) {
-        newHeight = Math.min(maxHeight, preferredSize.height * 0.85);
-        newWidth = newHeight * aspectRatio;
-      } else {
-        newWidth = Math.min(maxWidth, preferredSize.width * 0.9);
-        newHeight = newWidth / aspectRatio;
-      }
-    }
-
-    // 确保最小尺寸但优先显示完整
-    newWidth = Math.max(newWidth, Math.min(350, maxWidth));
-    newHeight = Math.max(newHeight, Math.min(400, maxHeight));
-  } else {
-    // 桌面端：使用推荐尺寸，但不超过屏幕
-    newWidth = Math.min(preferredSize.width, screenWidth - 100);
-    newHeight = Math.min(preferredSize.height, screenHeight - 100);
+    Object.assign(gamePanel.style, {
+      minWidth: minWidth + 'px',
+      minHeight: minHeight + 'px',
+      maxWidth: maxWidth + 'px',
+      maxHeight: maxHeight + 'px',
+      width: 'auto', // 让内容决定宽度
+      height: 'auto', // 让内容决定高度
+      left: '50%',
+      transform: 'translateX(-50%)',
+      top: '30px',
+    });
   }
 
-  // 应用新尺寸
-  gamePanel.style.width = newWidth + 'px';
-  gamePanel.style.height = newHeight + 'px';
-
-  // 移动端重新居中，顶部留更少空间
-  if (isMobile()) {
-    gamePanel.style.left = '50%';
-    gamePanel.style.transform = 'translateX(-50%)';
-    gamePanel.style.top = Math.max(10, (screenHeight - newHeight) / 2 - 20) + 'px';
-  }
-
-  console.log(`调整窗口大小为游戏 ${gameName}: ${newWidth}x${newHeight}`);
+  console.log(`优化面板显示: ${gameName} - 让游戏自适应容器大小`);
 };
 
 // 创建游戏面板HTML
@@ -243,10 +212,6 @@ function addEventListeners() {
       const gameFile = item.dataset.game;
       const gameName = item.querySelector('.game-name').textContent;
 
-      // 查找游戏数据以获取推荐尺寸
-      const allGames = [...builtInGames, ...settings.customGames];
-      const gameData = allGames.find(game => game.file === gameFile) || { preferredSize: null };
-
       // 直接使用gameFile，因为现在都是完整的URL
       const gameUrl = gameFile;
 
@@ -255,8 +220,8 @@ function addEventListeners() {
       $('.panel-content').style.display = 'none';
       $('.game-iframe-container').style.display = 'block';
 
-      // 根据游戏调整窗口大小
-      adjustPanelSizeForGame(gameName, gameData);
+      // 优化面板显示，让游戏自适应
+      optimizePanelForGame(gameName);
 
       // 显示加载指示器
       iframe.srcdoc = `
@@ -424,6 +389,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
