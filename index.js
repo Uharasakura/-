@@ -12,42 +12,42 @@ const defaultSettings = {
   customGames: [],
 };
 
-// 内置游戏列表 - 使用GitHub Raw链接
+// 内置游戏列表 - 使用支持iframe的CDN链接
 const builtInGames = [
   {
     name: '贪吃蛇',
     icon: '🐍',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
   },
   {
     name: '种田',
     icon: '🌾',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
   },
   {
     name: '飞行棋',
     icon: '✈️',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html',
     description: '经典飞行棋游戏',
   },
   {
     name: 'Nyan Cat',
     icon: '🐱',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html',
     description: '彩虹猫跑酷游戏',
   },
   {
     name: '扫雷',
     icon: '💣',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html',
     description: '经典扫雷游戏',
   },
   {
     name: '数独',
     icon: '🔢',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html',
     description: '数独益智游戏',
   },
 ];
@@ -179,10 +179,55 @@ function addEventListeners() {
       // 直接使用gameFile，因为现在都是完整的URL
       const gameUrl = gameFile;
 
-      $('.game-iframe').src = gameUrl;
+      const iframe = $('.game-iframe');
+      iframe.src = gameUrl;
       $('.current-game-title').textContent = gameName;
       $('.panel-content').style.display = 'none';
       $('.game-iframe-container').style.display = 'block';
+
+      // 添加错误处理和备用CDN
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      const tryLoadGame = (url, attempt = 0) => {
+        iframe.src = url;
+
+        iframe.onload = () => {
+          console.log(`游戏加载成功: ${url}`);
+        };
+
+        iframe.onerror = () => {
+          console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`);
+
+          if (attempt < maxRetries) {
+            // 尝试备用CDN
+            const backupUrls = [
+              gameUrl.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
+              gameUrl.replace('cdn.jsdelivr.net/gh/', 'gitcdn.xyz/repo/'),
+            ];
+
+            if (attempt < backupUrls.length) {
+              setTimeout(() => tryLoadGame(backupUrls[attempt], attempt + 1), 1000);
+              return;
+            }
+          }
+
+          // 所有CDN都失败，显示错误页面
+          iframe.srcdoc = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+              <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+              <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
+              <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
+              <div style="margin-top: 20px;">
+                <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
+                <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+              </div>
+            </div>
+          `;
+        };
+      };
+
+      tryLoadGame(gameUrl);
     };
   });
 
@@ -284,6 +329,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
