@@ -166,7 +166,7 @@ function createGameButton() {
   // 点击事件
   button.addEventListener('click', e => {
     e.stopPropagation();
-    console.log('[游戏合集] 按钮被点击');
+    console.log('[游戏合集] 游戏按钮被点击');
     openGamePanel();
   });
 
@@ -272,7 +272,6 @@ function createPanelHTML() {
         </div>
         <div class="game-frame-wrapper">
           <iframe class="game-frame" 
-                  sandbox="allow-scripts allow-same-origin" 
                   allowfullscreen>
           </iframe>
           <div class="game-loading" style="display: none;">
@@ -333,9 +332,13 @@ function bindPanelEvents(panel) {
   // 游戏项点击
   gameItems.forEach(item => {
     item.addEventListener('click', () => {
+      console.log('[游戏合集] 游戏项被点击');
       const url = item.dataset.url;
+      console.log('[游戏合集] 获取到的URL:', url);
       if (url) {
         loadGame(url);
+      } else {
+        console.error('[游戏合集] 没有找到游戏URL');
       }
     });
   });
@@ -390,13 +393,17 @@ function bindPanelEvents(panel) {
 
   // 简化的游戏加载函数
   function loadGame(url) {
+    console.log('[游戏合集] loadGame函数被调用，URL:', url);
+
     gameGrid.style.display = 'none';
     gameContainer.style.display = 'block';
+    console.log('[游戏合集] 已切换显示状态');
 
     // 处理GitHub链接转换
     let gameUrl = url;
     if (url.includes('github.com') && url.includes('/blob/')) {
       gameUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+      console.log('[游戏合集] 已转换GitHub链接:', gameUrl);
     }
 
     currentGameUrl = gameUrl;
@@ -408,12 +415,24 @@ function bindPanelEvents(panel) {
     }
 
     console.log('[游戏合集] 开始加载游戏:', gameUrl);
+    console.log('[游戏合集] iframe元素:', gameFrame);
+
+    // 添加iframe事件监听来调试
+    gameFrame.onload = function () {
+      console.log('[游戏合集] iframe加载成功');
+    };
+
+    gameFrame.onerror = function () {
+      console.error('[游戏合集] iframe加载失败');
+    };
 
     // 直接加载游戏
     gameFrame.src = gameUrl;
     gameFrame.style.display = 'block';
     gameLoading.style.display = 'none';
     gameError.style.display = 'none';
+
+    console.log('[游戏合集] iframe.src已设置完成');
   }
 }
 
@@ -590,6 +609,7 @@ setTimeout(() => {
 window.addEventListener('beforeunload', cleanup);
 
 console.log('[游戏合集] 扩展脚本已加载');
+
 
 
 
