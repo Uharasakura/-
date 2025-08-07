@@ -12,42 +12,42 @@ const defaultSettings = {
   customGames: [],
 };
 
-// 内置游戏列表 - 使用GitHub Raw链接（应该可以工作）
+// 内置游戏列表 - 使用支持iframe的CDN链接
 const builtInGames = [
   {
     name: '贪吃蛇',
     icon: '🐍',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
   },
   {
     name: '种田',
     icon: '🌾',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
   },
   {
     name: '飞行棋',
     icon: '✈️',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html',
     description: '经典飞行棋游戏',
   },
   {
     name: 'Nyan Cat',
     icon: '🐱',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html',
     description: '彩虹猫跑酷游戏',
   },
   {
     name: '扫雷',
     icon: '💣',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html',
     description: '经典扫雷游戏',
   },
   {
     name: '数独',
     icon: '🔢',
-    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html',
     description: '数独益智游戏',
   },
 ];
@@ -105,11 +105,7 @@ function createGamePanelHTML() {
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
         </div>
-        <iframe class="game-iframe" src="" frameborder="0" 
-                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock" 
-                allow="accelerometer; gyroscope; gamepad" 
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe class="game-iframe" src="" frameborder="0"></iframe>
       </div>
     </div>
   `;
@@ -188,29 +184,71 @@ function addEventListeners() {
       $('.panel-content').style.display = 'none';
       $('.game-iframe-container').style.display = 'block';
 
-      // 加载游戏并设置错误处理
+      // 显示加载指示器
+      iframe.srcdoc = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f8f9fa;">
+          <div style="font-size: 48px; margin-bottom: 20px;">🎮</div>
+          <h2 style="color: #667eea; margin-bottom: 10px;">正在加载游戏...</h2>
+          <p style="color: #666; font-size: 14px;">${gameName}</p>
+          <div style="margin-top: 20px;">
+            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          </div>
+          <style>
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
+        </div>
+      `;
+
+      // 使用fetch获取HTML内容并通过srcdoc渲染
       console.log(`正在加载游戏: ${gameName} - ${gameUrl}`);
 
-      iframe.onload = () => {
-        console.log(`游戏加载成功: ${gameName}`);
+      const loadGameWithFetch = async (url, attempt = 0) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const htmlContent = await response.text();
+          console.log(`游戏HTML获取成功: ${url}`);
+
+          // 使用srcdoc直接渲染HTML内容
+          iframe.srcdoc = htmlContent;
+        } catch (error) {
+          console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
+
+          if (attempt < 2) {
+            // 尝试备用CDN
+            const backupUrls = [
+              gameUrl.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
+              gameUrl.replace('cdn.jsdelivr.net/gh/', 'gitcdn.xyz/repo/'),
+            ];
+
+            if (attempt < backupUrls.length) {
+              setTimeout(() => loadGameWithFetch(backupUrls[attempt], attempt + 1), 1000);
+              return;
+            }
+          }
+
+          // 所有方法都失败，显示错误页面
+          iframe.srcdoc = `
+             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+               <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+               <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
+               <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
+               <div style="margin-top: 20px;">
+                 <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
+                 <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+               </div>
+             </div>
+           `;
+        }
       };
 
-      iframe.onerror = () => {
-        console.log(`游戏加载失败: ${gameName} - ${gameUrl}`);
-        iframe.srcdoc = `
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
-            <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
-            <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
-            <p style="color: #666; font-size: 12px; margin-bottom: 20px;">可能是网络问题或跨域限制</p>
-            <div>
-              <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开游戏</a>
-            </div>
-          </div>
-        `;
-      };
-
-      // 最后设置src，触发加载
-      iframe.src = gameUrl;
+      loadGameWithFetch(gameUrl);
     };
   });
 
@@ -312,6 +350,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
