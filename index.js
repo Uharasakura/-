@@ -7,22 +7,22 @@ const extensionFolderPath = '/scripts/extensions/third-party/各种小游戏';
 
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
-  panelSize: { width: 400, height: 500 }, // 更合理的默认大小
+  panelSize: { width: 400, height: 500 }, // 适合移动端的默认大小
   isMinimized: false,
   customGames: [],
 };
 
 // 内置游戏列表 - 使用支持iframe的CDN链接
 const builtInGames = [
-    {
-      name: '贪吃蛇',
-      icon: '🐍',
+  {
+    name: '贪吃蛇',
+    icon: '🐍',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
-    },
-    {
-      name: '种田',
-      icon: '🌾',
+  },
+  {
+    name: '种田',
+    icon: '🌾',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
   },
@@ -196,11 +196,18 @@ function addEventListeners() {
   const $ = sel => gamePanel.querySelector(sel);
 
   // 控制按钮
-  $('.minimize-btn').onclick = () => {
-    settings.isMinimized = !settings.isMinimized;
-    gamePanel.classList.toggle('minimized', settings.isMinimized);
-    saveSettings();
-  };
+  const minimizeBtn = $('.minimize-btn');
+  console.log('🔧 折叠按钮元素:', minimizeBtn);
+  if (minimizeBtn) {
+    minimizeBtn.onclick = () => {
+      console.log('🔄 折叠状态切换:', settings.isMinimized, '->', !settings.isMinimized);
+      settings.isMinimized = !settings.isMinimized;
+      gamePanel.classList.toggle('minimized', settings.isMinimized);
+      saveSettings();
+    };
+  } else {
+    console.error('❌ 找不到折叠按钮！');
+  }
   $('.close-btn').onclick = hideGamePanel;
   $('.back-btn').onclick = () => {
     $('.panel-content').style.display = 'block';
@@ -473,6 +480,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
