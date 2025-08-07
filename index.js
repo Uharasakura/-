@@ -8,48 +8,49 @@
   // 扩展名称
   const MODULE_NAME = 'game_collection';
 
-  // 默认设置 - 使用本地游戏文件
+  // 默认设置
   const defaultSettings = {
     games: [
       {
         id: 'sudoku',
         name: '数独',
         icon: '🎲',
-        url: './Sudoku.html',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
       },
       {
         id: 'minesweeper',
         name: '扫雷',
         icon: '💣',
-        url: './minesweeper.html',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
       },
       {
         id: 'snake',
         name: '贪吃蛇',
         icon: '🐍',
-        url: './Gluttonous_Snake.html',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
       },
       {
         id: 'flight_chess',
         name: '飞行棋',
         icon: '🎯',
-        url: './Flight_chess.html',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
       },
       {
         id: 'farming',
         name: '种田',
         icon: '🌾',
-        url: './Farming.html',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
       },
       {
         id: 'nyan_cat',
         name: '彩虹猫',
         icon: '🌈',
-        url: './Nyan_Cat.html',
+        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
       },
     ],
     iconPosition: { x: 20, y: 20 },
     panelPosition: { x: 100, y: 100 },
+    gameWindowSize: 'normal',
   };
 
   // 全局变量
@@ -265,14 +266,28 @@
                     </div>
                 </div>
                 <div class="game-container" style="display: none;">
-                    <div class="game-container-header">
-                        <button class="game-container-button back-button">返回</button>
-                        <div class="game-controls">
-                            <button class="game-container-button open-button" title="在新窗口打开">🔗</button>
-                        </div>
+                    <div class="game-window-controls">
+                        <button class="game-window-button back-button">返回</button>
+                        <button class="game-window-button size-small" title="小窗口">🔸</button>
+                        <button class="game-window-button size-normal" title="正常大小">🔹</button>
+                        <button class="game-window-button size-large" title="大窗口">🔲</button>
+                        <button class="game-window-button refresh-button" title="刷新">🔄</button>
                     </div>
-                    <div class="game-frame-container">
-                        <p class="game-message">游戏将在新窗口中打开</p>
+                    <div class="game-frame-wrapper">
+                        <iframe class="game-frame" 
+                                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-downloads" 
+                                allowfullscreen
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                        <div class="game-loading" style="display: none;">
+                            <div class="loading-spinner"></div>
+                            <p>加载中... (◕‿◕)</p>
+                        </div>
+                        <div class="game-error" style="display: none;">
+                            <p>😭 游戏加载失败</p>
+                            <button class="retry-button">重试</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -286,10 +301,15 @@
     const gameItems = panel.querySelectorAll('.game-item');
     const addGameButton = panel.querySelector('.add-game-button');
     const backButton = panel.querySelector('.back-button');
-    const openButton = panel.querySelector('.open-button');
     const gameContainer = panel.querySelector('.game-container');
     const gameGrid = panel.querySelector('.game-grid');
     const title = panel.querySelector('.game-panel-title');
+    const gameFrame = panel.querySelector('.game-frame');
+    const gameLoading = panel.querySelector('.game-loading');
+    const gameError = panel.querySelector('.game-error');
+    const retryButton = panel.querySelector('.retry-button');
+    const refreshButton = panel.querySelector('.refresh-button');
+    const sizeButtons = panel.querySelectorAll('.game-window-button[class*="size-"]');
 
     let currentGameUrl = '';
 
@@ -308,8 +328,8 @@
     title.addEventListener('dblclick', () => {
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
-      const panelWidth = Math.min(600, screenWidth * 0.8);
-      const panelHeight = Math.min(500, screenHeight * 0.8);
+      const panelWidth = Math.min(800, screenWidth * 0.9);
+      const panelHeight = Math.min(700, screenHeight * 0.9);
 
       panel.style.left = (screenWidth - panelWidth) / 2 + 'px';
       panel.style.top = (screenHeight - panelHeight) / 2 + 'px';
@@ -332,26 +352,61 @@
 
     // 返回按钮
     backButton.addEventListener('click', () => {
+      gameFrame.src = '';
       gameContainer.style.display = 'none';
       gameGrid.style.display = 'grid';
     });
 
-    // 打开游戏按钮
-    openButton.addEventListener('click', () => {
+    // 刷新按钮
+    refreshButton.addEventListener('click', () => {
       if (currentGameUrl) {
-        // 在新窗口打开游戏
-        const gameWindow = window.open(currentGameUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-        if (gameWindow) {
-          console.log('[游戏合集] 游戏已在新窗口打开:', currentGameUrl);
-        } else {
-          console.error('[游戏合集] 无法打开新窗口，请检查浏览器设置');
-          alert('无法打开新窗口，请检查浏览器的弹窗阻止设置');
-        }
+        loadGame(currentGameUrl);
       }
+    });
+
+    // 重试按钮
+    retryButton.addEventListener('click', () => {
+      if (currentGameUrl) {
+        loadGame(currentGameUrl);
+      }
+    });
+
+    // 窗口大小控制
+    sizeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const size = button.classList.contains('size-small')
+          ? 'small'
+          : button.classList.contains('size-normal')
+          ? 'normal'
+          : 'large';
+
+        gameContainer.className = `game-container ${size}`;
+
+        const settings = getSettings();
+        settings.gameWindowSize = size;
+        saveSettings();
+
+        console.log('[游戏合集] 窗口大小已设置为:', size);
+      });
     });
 
     // 拖拽
     makeDraggable(panel.querySelector('.game-panel-header'));
+
+    // iframe事件监听
+    gameFrame.addEventListener('load', () => {
+      console.log('[游戏合集] 游戏加载成功');
+      gameLoading.style.display = 'none';
+      gameError.style.display = 'none';
+      gameFrame.style.display = 'block';
+    });
+
+    gameFrame.addEventListener('error', () => {
+      console.error('[游戏合集] 游戏加载失败');
+      gameLoading.style.display = 'none';
+      gameFrame.style.display = 'none';
+      gameError.style.display = 'block';
+    });
 
     function loadGame(url) {
       gameGrid.style.display = 'none';
@@ -365,16 +420,32 @@
 
       currentGameUrl = gameUrl;
 
-      console.log('[游戏合集] 准备加载游戏:', gameUrl);
+      // 显示加载状态
+      gameLoading.style.display = 'flex';
+      gameError.style.display = 'none';
+      gameFrame.style.display = 'none';
 
-      // 自动在新窗口打开游戏
-      const gameWindow = window.open(gameUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-      if (gameWindow) {
-        console.log('[游戏合集] 游戏已在新窗口打开');
-      } else {
-        console.error('[游戏合集] 无法打开新窗口');
-        alert('无法打开新窗口，请检查浏览器的弹窗阻止设置');
+      // 设置窗口大小
+      const settings = getSettings();
+      if (settings.gameWindowSize) {
+        gameContainer.className = `game-container ${settings.gameWindowSize}`;
       }
+
+      console.log('[游戏合集] 开始加载游戏:', gameUrl);
+
+      // 延迟加载iframe，给UI时间渲染
+      setTimeout(() => {
+        gameFrame.src = gameUrl;
+      }, 100);
+
+      // 加载超时处理
+      setTimeout(() => {
+        if (gameLoading.style.display !== 'none') {
+          console.warn('[游戏合集] 游戏加载超时');
+          gameLoading.style.display = 'none';
+          gameError.style.display = 'block';
+        }
+      }, 10000); // 10秒超时
     }
   }
 
@@ -552,6 +623,7 @@
 
   console.log('[游戏合集] 扩展脚本已加载');
 })();
+
 
 
 
