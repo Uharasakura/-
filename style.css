@@ -210,65 +210,64 @@
   background: white;
 }
 
-/* 移动端全屏模式 */
-.mobile-fullscreen {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 999999 !important;
-  border-radius: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
+/* 移动端优化 */
+.mobile-panel {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
 }
 
-.mobile-fullscreen .panel-header {
-  padding: max(env(safe-area-inset-top), 20px) 20px 20px 20px !important;
-  background: rgba(0, 0, 0, 0.3) !important;
-  font-size: 18px !important;
-  min-height: 60px !important;
+.mobile-panel .panel-header {
+  padding: 16px 20px !important;
+  font-size: 16px !important;
 }
 
-.mobile-fullscreen .panel-content {
-  flex: 1 !important;
+.mobile-panel .panel-content {
+  padding: 16px !important;
   overflow: auto !important;
   -webkit-overflow-scrolling: touch !important;
 }
 
-.mobile-fullscreen .games-grid {
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-  gap: 20px !important;
+.mobile-panel .games-grid {
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+  gap: 16px !important;
+  padding: 4px !important;
 }
 
-.mobile-fullscreen .game-item {
-  padding: 20px 15px !important;
-  min-height: 120px !important;
+.mobile-panel .game-item {
+  padding: 16px 12px !important;
+  min-height: 100px !important;
   touch-action: manipulation !important;
 }
 
-.mobile-fullscreen .game-icon {
-  font-size: 36px !important;
-  width: 60px !important;
-  height: 60px !important;
-}
-.mobile-fullscreen .game-name {
-  font-size: 14px !important;
-  margin-top: 12px !important;
+.mobile-panel .game-icon {
+  font-size: 28px !important;
+  width: 44px !important;
+  height: 44px !important;
 }
 
-.mobile-fullscreen .control-btn {
-  width: 40px !important;
-  height: 40px !important;
-  font-size: 18px !important;
+.mobile-panel .game-name {
+  font-size: 12px !important;
+  margin-top: 8px !important;
+}
+
+.mobile-panel .control-btn {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 16px !important;
   min-width: 44px !important;
   min-height: 44px !important;
   touch-action: manipulation !important;
 }
 
+.mobile-panel .add-game-btn {
+  padding: 16px !important;
+  font-size: 15px !important;
+  margin-top: 12px !important;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .mini-games-panel:not(.mobile-fullscreen) {
+  .mini-games-panel:not(.mobile-panel) {
     width: 95% !important;
     height: 80% !important;
     left: 2.5% !important;
@@ -313,6 +312,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
