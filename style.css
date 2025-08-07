@@ -25,11 +25,8 @@
 .mini-games-panel.minimized {
   height: 50px !important;
 }
-/* 强化折叠样式优先级 */
 .mini-games-panel.minimized .panel-content,
-.mini-games-panel.minimized .game-iframe-container,
-.mini-games-panel.minimized .panel-content[style],
-.mini-games-panel.minimized .game-iframe-container[style] {
+.mini-games-panel.minimized .game-iframe-container {
   display: none !important;
 }
 
@@ -339,6 +336,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
