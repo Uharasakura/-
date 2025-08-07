@@ -172,7 +172,6 @@
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.95);
-  overflow: hidden; /* 防止内容溢出 */
 }
 
 .iframe-header {
@@ -213,8 +212,10 @@
   border: none;
   background: white;
   min-height: 300px;
-  overflow: hidden; /* 改为hidden，防止内容溢出 */
+  overflow: auto;
   display: block;
+  /* 让iframe内容自适应 */
+  resize: both;
   /* 确保触摸事件能正确传递 */
   touch-action: manipulation;
   pointer-events: auto;
@@ -284,9 +285,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 280px !important;
-  /* 确保iframe充分利用容器空间 */
-  object-fit: contain;
+  min-height: 300px !important;
+  /* 移除固定高度限制，让游戏自适应 */
 }
 
 /* 响应式设计 */
@@ -336,6 +336,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
