@@ -89,18 +89,24 @@ function createGamePanel() {
   gamePanel = gamePanel.firstElementChild;
 
   if (isMobile()) {
-    // 移动端全屏模式
+    // 移动端适中大小的面板
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const panelWidth = Math.min(screenWidth - 40, 400);
+    const panelHeight = Math.min(screenHeight - 120, 600);
+
     Object.assign(gamePanel.style, {
       position: 'fixed',
-      top: '0',
-      left: '0',
-      width: '100vw',
-      height: '100vh',
+      top: '60px',
+      left: '50%',
+      width: panelWidth + 'px',
+      height: panelHeight + 'px',
+      transform: 'translateX(-50%)',
       zIndex: '999999',
-      borderRadius: '0',
+      maxWidth: '90vw',
+      maxHeight: '80vh',
     });
-    gamePanel.classList.add('mobile-panel', 'mobile-fullscreen');
-    document.body.style.overflow = 'hidden';
+    gamePanel.classList.add('mobile-panel');
   } else {
     // 桌面端
     Object.assign(gamePanel.style, {
@@ -170,7 +176,6 @@ function showGamePanel() {
 
 function hideGamePanel() {
   if (gamePanel) {
-    if (isMobile()) document.body.style.overflow = '';
     gamePanel.style.display = 'none';
   }
   isGamePanelVisible = false;
@@ -246,6 +251,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
