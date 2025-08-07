@@ -139,9 +139,10 @@ function createGamePanelHTML() {
                  <iframe class="game-iframe" 
                  src="" 
                  frameborder="0"
-                 sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups"
-                 allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay; keyboard-map"
-                 loading="lazy"></iframe>
+                 sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups allow-modals allow-downloads allow-top-navigation-by-user-activation"
+                 allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay; keyboard-map; clipboard-read; clipboard-write"
+                 loading="lazy"
+                 referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
   `;
@@ -231,7 +232,7 @@ function addEventListeners() {
           <p style="color: #666; font-size: 14px;">${gameName}</p>
           <div style="margin-top: 20px;">
             <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-          </div>
+            </div>
           <style>
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -254,8 +255,29 @@ function addEventListeners() {
           const htmlContent = await response.text();
           console.log(`游戏HTML获取成功: ${url}`);
 
-          // 使用srcdoc直接渲染HTML内容
+          // 使用srcdoc直接渲染HTML内容，并确保游戏正确初始化
           iframe.srcdoc = htmlContent;
+
+          // 等待iframe加载完成，然后尝试初始化游戏
+          iframe.onload = () => {
+            console.log(`游戏iframe加载完成: ${gameName}`);
+
+            // 给游戏一些时间来初始化
+            setTimeout(() => {
+              try {
+                // 尝试触发游戏的初始化（如果有的话）
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const gameCanvas = iframeDoc.querySelector('canvas');
+                if (gameCanvas) {
+                  console.log(`找到游戏Canvas: ${gameName}`);
+                  // 触发一次resize事件，帮助游戏重新计算尺寸
+                  iframe.contentWindow.dispatchEvent(new Event('resize'));
+                }
+              } catch (e) {
+                console.log(`游戏初始化检查失败: ${e.message}`);
+              }
+            }, 500);
+          };
         } catch (error) {
           console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
 
@@ -281,8 +303,8 @@ function addEventListeners() {
                <div style="margin-top: 20px;">
                  <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
                  <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
-               </div>
-             </div>
+            </div>
+            </div>
            `;
         }
       };
@@ -389,6 +411,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
