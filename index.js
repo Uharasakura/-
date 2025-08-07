@@ -80,73 +80,78 @@
   // 拖拽功能
   function makeDraggable(element, onDragEnd) {
     let isDragging = false;
-    let currentX, currentY, initialX, initialY;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    element.addEventListener('mousedown', dragStart);
+    element.addEventListener('mousemove', drag);
+    element.addEventListener('mouseup', dragEnd);
+    element.addEventListener('mouseleave', dragEnd);
+
+    element.addEventListener('touchstart', dragStart);
+    element.addEventListener('touchmove', drag);
+    element.addEventListener('touchend', dragEnd);
 
     function dragStart(e) {
       if (e.type === 'mousedown') {
-        initialX = e.clientX;
-        initialY = e.clientY;
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
       } else {
-        initialX = e.touches[0].clientX;
-        initialY = e.touches[0].clientY;
+        initialX = e.touches[0].clientX - xOffset;
+        initialY = e.touches[0].clientY - yOffset;
       }
 
-      const rect = element.getBoundingClientRect();
-      currentX = rect.left;
-      currentY = rect.top;
-      isDragging = true;
-
-      element.style.cursor = 'grabbing';
-      document.addEventListener('mousemove', drag);
-      document.addEventListener('mouseup', dragEnd);
-      document.addEventListener('touchmove', drag);
-      document.addEventListener('touchend', dragEnd);
+      if (e.target === element || e.target.closest('.game-panel-header')) {
+        isDragging = true;
+      }
     }
 
     function drag(e) {
-      if (!isDragging) return;
-      e.preventDefault();
+      if (isDragging) {
+        e.preventDefault();
 
-      let clientX, clientY;
-      if (e.type === 'mousemove') {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      } else {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
+        if (e.type === 'mousemove') {
+          currentX = e.clientX - initialX;
+          currentY = e.clientY - initialY;
+        } else {
+          currentX = e.touches[0].clientX - initialX;
+          currentY = e.touches[0].clientY - initialY;
+        }
+
+        xOffset = currentX;
+        yOffset = currentY;
+
+        setTranslate(currentX, currentY, element);
       }
-
-      const deltaX = clientX - initialX;
-      const deltaY = clientY - initialY;
-
-      currentX += deltaX;
-      currentY += deltaY;
-
-      element.style.left = currentX + 'px';
-      element.style.top = currentY + 'px';
-
-      initialX = clientX;
-      initialY = clientY;
     }
 
     function dragEnd() {
-      if (!isDragging) return;
-      isDragging = false;
-      element.style.cursor = 'grab';
-
-      document.removeEventListener('mousemove', drag);
-      document.removeEventListener('mouseup', dragEnd);
-      document.removeEventListener('touchmove', drag);
-      document.removeEventListener('touchend', dragEnd);
-
-      if (onDragEnd) {
+      if (isDragging && onDragEnd) {
         onDragEnd(currentX, currentY);
       }
+
+      initialX = currentX;
+      initialY = currentY;
+      isDragging = false;
     }
 
-    element.addEventListener('mousedown', dragStart);
-    element.addEventListener('touchstart', dragStart);
-    element.style.cursor = 'grab';
+    function setTranslate(xPos, yPos, el) {
+      el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+    }
+
+    // 设置初始位置
+    if (element.id === 'gameButton') {
+      const { iconPosition } = getSettings();
+      setTranslate(iconPosition.x, iconPosition.y, element);
+      xOffset = iconPosition.x;
+      yOffset = iconPosition.y;
+      initialX = iconPosition.x;
+      initialY = iconPosition.y;
+    }
   }
 
   // 创建游戏按钮
@@ -160,60 +165,23 @@
     }
 
     const button = document.createElement('button');
-    button.id = 'game-collection-button';
+    button.id = 'gameButton';
     button.className = 'game-icon-button';
     button.innerHTML = '🎮';
     button.title = '游戏合集';
 
-    // 设置位置和基本样式
-    const settings = getSettings();
-    button.style.cssText = `
-            position: fixed !important;
-            left: ${settings.iconPosition.x}px !important;
-            top: ${settings.iconPosition.y}px !important;
-            z-index: 9999 !important;
-            width: 48px !important;
-            height: 48px !important;
-            border-radius: 50% !important;
-            background: rgba(0, 0, 0, 0.8) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: white !important;
-            font-size: 24px !important;
-            cursor: grab !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            backdrop-filter: blur(10px) !important;
-            transition: all 0.3s ease !important;
-            user-select: none !important;
-            touch-action: none !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        `;
+    // 设置data-type用于拖拽识别
+    button.dataset.type = 'icon';
 
     // 点击事件
     button.addEventListener('click', e => {
       e.stopPropagation();
       console.log('[游戏合集] 按钮被点击');
+      button.style.display = 'none';
       openGamePanel();
     });
 
-    // 鼠标悬停效果
-    button.addEventListener('mouseenter', () => {
-      button.style.background = 'rgba(0, 0, 0, 0.9) !important';
-      button.style.borderColor = '#4caf50 !important';
-      button.style.transform = 'scale(1.05) !important';
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = 'rgba(0, 0, 0, 0.8) !important';
-      button.style.borderColor = 'rgba(255, 255, 255, 0.1) !important';
-      button.style.transform = 'scale(1) !important';
-    });
-
-    // 拖拽
+    // 拖拽功能
     makeDraggable(button, (x, y) => {
       const settings = getSettings();
       settings.iconPosition = { x, y };
@@ -232,15 +200,7 @@
       return;
     }
 
-    // 验证按钮是否可见
-    setTimeout(() => {
-      if (button.offsetParent === null) {
-        console.warn('[游戏合集] 按钮可能不可见，尝试修复...');
-        button.style.display = 'flex !important';
-        button.style.visibility = 'visible !important';
-        button.style.opacity = '1 !important';
-      }
-    }, 100);
+    return button;
   }
 
   // 打开游戏面板
@@ -424,7 +384,7 @@
       gamePanel = null;
     }
     if (gameButton) {
-      gameButton.style.display = 'block';
+      gameButton.style.display = 'flex';
     }
   }
 
@@ -591,6 +551,7 @@
 
   console.log('[游戏合集] 扩展脚本已加载');
 })();
+
 
 
 
