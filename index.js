@@ -69,132 +69,6 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
-// 增强游戏HTML，添加自适应和交互支持
-function enhanceGameHTML(htmlContent, gameName) {
-  // 添加viewport meta标签和自适应样式
-  const enhancementScript = `
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-      /* 游戏自适应样式 */
-      body {
-        margin: 0 !important;
-        padding: 8px !important;
-        overflow-x: auto !important;
-        overflow-y: auto !important;
-        box-sizing: border-box !important;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      }
-      
-      /* 让游戏容器自适应 */
-      canvas, #game, #gameArea, .game-container, .game-board {
-        max-width: 100% !important;
-        height: auto !important;
-        display: block !important;
-        margin: 0 auto !important;
-      }
-      
-      /* 按钮和控件优化 */
-      button, input[type="button"], .btn {
-        min-height: 44px !important;
-        min-width: 44px !important;
-        padding: 8px 16px !important;
-        font-size: 14px !important;
-        touch-action: manipulation !important;
-        cursor: pointer !important;
-        border-radius: 6px !important;
-        border: 1px solid #ccc !important;
-        background: #f8f9fa !important;
-        margin: 4px !important;
-      }
-      
-      button:hover, input[type="button"]:hover, .btn:hover {
-        background: #e9ecef !important;
-      }
-      
-      /* 移动端触摸优化 */
-      * {
-        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
-        -webkit-touch-callout: none !important;
-        -webkit-user-select: none !important;
-        user-select: none !important;
-      }
-      
-      /* 让文本可选择（如果需要） */
-      p, span, div:not(.game-area):not(.game-board) {
-        -webkit-user-select: text !important;
-        user-select: text !important;
-      }
-      
-      /* 响应式表格 */
-      table {
-        width: 100% !important;
-        max-width: 100% !important;
-        table-layout: fixed !important;
-      }
-      
-      /* 确保游戏在小屏幕上可见 */
-      @media (max-width: 480px) {
-        body { padding: 4px !important; }
-        canvas, #game, #gameArea, .game-container { 
-          transform-origin: top left !important;
-        }
-      }
-    </style>
-    <script>
-      // 游戏自适应脚本
-      (function() {
-        console.log('游戏增强脚本已加载: ${gameName}');
-        
-        // 等待DOM加载完成
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initGameEnhancements);
-        } else {
-          initGameEnhancements();
-        }
-        
-        function initGameEnhancements() {
-          // 阻止默认的触摸行为，避免页面滚动
-          document.addEventListener('touchmove', function(e) {
-            if (e.target.tagName === 'CANVAS' || e.target.classList.contains('game-area')) {
-              e.preventDefault();
-            }
-          }, { passive: false });
-          
-          // 确保所有按钮都能正常工作
-          const buttons = document.querySelectorAll('button, input[type="button"], .btn');
-          buttons.forEach(btn => {
-            btn.style.pointerEvents = 'auto';
-            btn.addEventListener('touchstart', function(e) {
-              e.stopPropagation();
-            }, { passive: true });
-          });
-          
-          // 自动调整canvas大小
-          const canvases = document.querySelectorAll('canvas');
-          canvases.forEach(canvas => {
-            if (canvas.width > 400) {
-              const scale = Math.min(400 / canvas.width, 1);
-              canvas.style.transform = 'scale(' + scale + ')';
-              canvas.style.transformOrigin = 'top left';
-            }
-          });
-          
-          console.log('游戏增强脚本初始化完成');
-        }
-      })();
-    </script>
-  `;
-
-  // 在head标签中插入增强脚本
-  if (htmlContent.includes('<head>')) {
-    return htmlContent.replace('<head>', '<head>' + enhancementScript);
-  } else if (htmlContent.includes('<html>')) {
-    return htmlContent.replace('<html>', '<html><head>' + enhancementScript + '</head>');
-  } else {
-    return enhancementScript + htmlContent;
-  }
-}
-
 // 创建游戏面板HTML
 function createGamePanelHTML() {
   const allGames = [...builtInGames, ...settings.customGames];
@@ -231,10 +105,13 @@ function createGamePanelHTML() {
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
         </div>
-        <iframe class="game-iframe" src="" frameborder="0" 
-                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups" 
-                allow="accelerometer; gyroscope; gamepad; fullscreen"
-                loading="lazy"></iframe>
+        <iframe class="game-iframe" 
+                src="" 
+                frameborder="0"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups allow-modals"
+                allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
   `;
@@ -321,7 +198,7 @@ function addEventListeners() {
           <p style="color: #666; font-size: 14px;">${gameName}</p>
           <div style="margin-top: 20px;">
             <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-          </div>
+            </div>
           <style>
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -331,8 +208,29 @@ function addEventListeners() {
         </div>
       `;
 
-      // 使用fetch获取HTML内容并通过srcdoc渲染
+      // 优先尝试直接加载，失败后使用fetch+srcdoc
       console.log(`正在加载游戏: ${gameName} - ${gameUrl}`);
+
+      const loadGameDirect = (url, attempt = 0) => {
+        return new Promise((resolve, reject) => {
+          iframe.src = url;
+
+          const timeout = setTimeout(() => {
+            reject(new Error('加载超时'));
+          }, 10000);
+
+          iframe.onload = () => {
+            clearTimeout(timeout);
+            console.log(`游戏直接加载成功: ${url}`);
+            resolve();
+          };
+
+          iframe.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error('直接加载失败'));
+          };
+        });
+      };
 
       const loadGameWithFetch = async (url, attempt = 0) => {
         try {
@@ -344,8 +242,46 @@ function addEventListeners() {
           const htmlContent = await response.text();
           console.log(`游戏HTML获取成功: ${url}`);
 
-          // 修改HTML内容，添加自适应缩放和交互支持
-          const enhancedHTML = enhanceGameHTML(htmlContent, gameName);
+          // 增强HTML内容，添加基础的游戏适配
+          const enhancedHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+              <style>
+                body { 
+                  margin: 0; 
+                  padding: 8px; 
+                  box-sizing: border-box;
+                  overflow: auto;
+                  font-family: Arial, sans-serif;
+                }
+                canvas, #game, .game-container { 
+                  max-width: 100%; 
+                  height: auto; 
+                  display: block; 
+                  margin: 0 auto; 
+                }
+                button { 
+                  min-height: 44px; 
+                  min-width: 44px; 
+                  touch-action: manipulation; 
+                  cursor: pointer;
+                  padding: 8px 16px;
+                  margin: 4px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                  background: #f8f9fa;
+                }
+                button:hover { background: #e9ecef; }
+              </style>
+            </head>
+            <body>
+              ${htmlContent.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<!DOCTYPE[^>]*>/gi, '')}
+            </body>
+            </html>
+          `;
 
           // 使用srcdoc直接渲染HTML内容
           iframe.srcdoc = enhancedHTML;
@@ -380,7 +316,15 @@ function addEventListeners() {
         }
       };
 
-      loadGameWithFetch(gameUrl);
+      // 首先尝试直接加载
+      (async () => {
+        try {
+          await loadGameDirect(gameUrl);
+        } catch (directError) {
+          console.log(`直接加载失败，尝试fetch方式: ${directError.message}`);
+          await loadGameWithFetch(gameUrl);
+        }
+      })();
     };
   });
 
@@ -482,6 +426,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
