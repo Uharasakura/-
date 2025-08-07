@@ -166,27 +166,30 @@
     // 设置位置和基本样式
     const settings = getSettings();
     button.style.cssText = `
-      position: fixed;
-      left: ${settings.iconPosition.x}px;
-      top: ${settings.iconPosition.y}px;
-      z-index: 9999;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-      font-size: 24px;
-      cursor: grab;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-      user-select: none;
-      touch-action: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    `;
+        position: fixed !important;
+        left: ${settings.iconPosition.x}px !important;
+        top: ${settings.iconPosition.y}px !important;
+        z-index: 9999 !important;
+        width: 48px !important;
+        height: 48px !important;
+        border-radius: 50% !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        font-size: 24px !important;
+        cursor: grab !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        backdrop-filter: blur(10px) !important;
+        transition: all 0.3s ease !important;
+        user-select: none !important;
+        touch-action: none !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      `;
 
     // 点击事件
     button.addEventListener('click', e => {
@@ -197,15 +200,15 @@
 
     // 鼠标悬停效果
     button.addEventListener('mouseenter', () => {
-      button.style.background = 'rgba(0, 0, 0, 0.9)';
-      button.style.borderColor = '#4caf50';
-      button.style.transform = 'scale(1.05)';
+      button.style.background = 'rgba(0, 0, 0, 0.9) !important';
+      button.style.borderColor = '#4caf50 !important';
+      button.style.transform = 'scale(1.05) !important';
     });
 
     button.addEventListener('mouseleave', () => {
-      button.style.background = 'rgba(0, 0, 0, 0.8)';
-      button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-      button.style.transform = 'scale(1)';
+      button.style.background = 'rgba(0, 0, 0, 0.8) !important';
+      button.style.borderColor = 'rgba(255, 255, 255, 0.1) !important';
+      button.style.transform = 'scale(1) !important';
     });
 
     // 拖拽
@@ -231,9 +234,9 @@
     setTimeout(() => {
       if (button.offsetParent === null) {
         console.warn('[游戏合集] 按钮可能不可见，尝试修复...');
-        button.style.display = 'flex';
-        button.style.visibility = 'visible';
-        button.style.opacity = '1';
+        button.style.display = 'flex !important';
+        button.style.visibility = 'visible !important';
+        button.style.opacity = '1 !important';
       }
     }, 100);
   }
@@ -586,6 +589,7 @@
 
   console.log('[游戏合集] 扩展脚本已加载');
 })();
+
 
 
 
