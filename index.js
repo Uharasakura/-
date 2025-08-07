@@ -12,13 +12,44 @@ const defaultSettings = {
   customGames: [],
 };
 
+// 内置游戏列表 - 使用GitHub Raw链接
 const builtInGames = [
-  { name: '贪吃蛇', icon: '🐍', file: 'Gluttonous_Snake.html', description: '经典贪吃蛇游戏' },
-  { name: '种田', icon: '🌾', file: 'Farming.html', description: '休闲种田游戏' },
-  { name: '飞行棋', icon: '✈️', file: 'Flight_chess.html', description: '经典飞行棋游戏' },
-  { name: 'Nyan Cat', icon: '🐱', file: 'Nyan_Cat.html', description: '彩虹猫跑酷游戏' },
-  { name: '扫雷', icon: '💣', file: 'minesweeper.html', description: '经典扫雷游戏' },
-  { name: '数独', icon: '🔢', file: 'shudoku.html', description: '数独益智游戏' },
+  {
+    name: '贪吃蛇',
+    icon: '🐍',
+    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
+    description: '经典贪吃蛇游戏',
+  },
+  {
+    name: '种田',
+    icon: '🌾',
+    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+    description: '休闲种田游戏',
+  },
+  {
+    name: '飞行棋',
+    icon: '✈️',
+    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
+    description: '经典飞行棋游戏',
+  },
+  {
+    name: 'Nyan Cat',
+    icon: '🐱',
+    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+    description: '彩虹猫跑酷游戏',
+  },
+  {
+    name: '扫雷',
+    icon: '💣',
+    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
+    description: '经典扫雷游戏',
+  },
+  {
+    name: '数独',
+    icon: '🔢',
+    file: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
+    description: '数独益智游戏',
+  },
 ];
 
 let gamePanel = null;
@@ -144,7 +175,9 @@ function addEventListeners() {
     item.onclick = () => {
       const gameFile = item.dataset.game;
       const gameName = item.querySelector('.game-name').textContent;
-      const gameUrl = gameFile.startsWith('http') ? gameFile : `${extensionFolderPath}/${gameFile}`;
+
+      // 直接使用gameFile，因为现在都是完整的URL
+      const gameUrl = gameFile;
 
       $('.game-iframe').src = gameUrl;
       $('.current-game-title').textContent = gameName;
@@ -251,6 +284,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
