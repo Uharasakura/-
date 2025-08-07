@@ -255,67 +255,9 @@ function addEventListeners() {
           const htmlContent = await response.text();
           console.log(`游戏HTML获取成功: ${url}`);
 
-          // 预处理HTML内容，确保脚本能正确执行
-          let processedHtml = htmlContent;
-
-          // 确保所有script标签都能执行
-          processedHtml = processedHtml.replace(/<script/g, '<script');
-
-          // 添加强制初始化脚本
-          const initScript = `
-              <script>
-                // 确保DOM完全加载后执行游戏初始化
-                if (document.readyState === 'loading') {
-                  document.addEventListener('DOMContentLoaded', function() {
-                    setTimeout(initializeGame, 100);
-                  });
-                } else {
-                  setTimeout(initializeGame, 100);
-                }
-                
-                function initializeGame() {
-                  console.log('强制初始化游戏: ${gameName}');
-                  
-                  // 触发resize事件，帮助Canvas游戏重新计算尺寸
-                  window.dispatchEvent(new Event('resize'));
-                  
-                  // 触发load事件，确保所有资源加载完成
-                  window.dispatchEvent(new Event('load'));
-                  
-                  // 如果有Canvas，尝试重新初始化
-                  const canvas = document.querySelector('canvas');
-                  if (canvas && canvas.getContext) {
-                    console.log('找到Canvas，触发初始化');
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                      // 触发Canvas相关事件
-                      canvas.dispatchEvent(new Event('canvasready'));
-                    }
-                  }
-                  
-                  // 查找并执行可能的游戏初始化函数
-                  const commonInitFunctions = ['init', 'start', 'initGame', 'startGame', 'setup'];
-                  commonInitFunctions.forEach(funcName => {
-                    if (typeof window[funcName] === 'function') {
-                      console.log('执行初始化函数:', funcName);
-                      try {
-                        window[funcName]();
-                      } catch (e) {
-                        console.log('初始化函数执行失败:', funcName, e);
-                      }
-                    }
-                  });
-                }
-              </script>
-            `;
-
-          // 将初始化脚本插入到body结束标签前
-          processedHtml = processedHtml.replace(/<\/body>/i, initScript + '</body>');
-
-          // 使用处理后的HTML内容
-          iframe.srcdoc = processedHtml;
-
-          console.log(`游戏HTML已处理并加载: ${gameName}`);
+          // 直接使用src属性加载，避免srcdoc的执行环境问题
+          console.log(`直接加载游戏: ${gameName} - ${url}`);
+          iframe.src = url;
         } catch (error) {
           console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
 
@@ -505,6 +447,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
