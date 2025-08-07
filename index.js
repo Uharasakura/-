@@ -10,8 +10,8 @@ const extensionFolderPath = '/scripts/extensions/third-party/各种小游戏';
 
 // 默认设置
 const defaultSettings = {
-  panelPosition: { x: 100, y: 100 },
-  panelSize: { width: 600, height: 400 },
+  panelPosition: { x: 20, y: 50 },
+  panelSize: { width: 350, height: 500 },
   isMinimized: false,
   customGames: [],
 };
@@ -143,22 +143,45 @@ function createGamePanel() {
     gamePanel.remove();
   }
 
+  // 检测是否为移动设备
+  const isMobile =
+    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
   // 创建面板元素
   gamePanel = document.createElement('div');
   gamePanel.innerHTML = createGamePanelHTML();
   gamePanel = gamePanel.firstElementChild;
 
-  // 设置位置和大小
-  gamePanel.style.left = settings.panelPosition.x + 'px';
-  gamePanel.style.top = settings.panelPosition.y + 'px';
-  gamePanel.style.width = settings.panelSize.width + 'px';
-  gamePanel.style.height = settings.panelSize.height + 'px';
+  // 移动端特殊处理
+  if (isMobile) {
+    // 移动端使用全屏或大部分屏幕
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    gamePanel.style.left = '10px';
+    gamePanel.style.top = '10px';
+    gamePanel.style.width = screenWidth - 20 + 'px';
+    gamePanel.style.height = screenHeight - 100 + 'px';
+
+    // 添加移动端特殊样式
+    gamePanel.classList.add('mobile-panel');
+
+    console.log(`移动端面板创建: ${screenWidth - 20}x${screenHeight - 100}`);
+  } else {
+    // 桌面端使用设置的位置和大小
+    gamePanel.style.left = settings.panelPosition.x + 'px';
+    gamePanel.style.top = settings.panelPosition.y + 'px';
+    gamePanel.style.width = settings.panelSize.width + 'px';
+    gamePanel.style.height = settings.panelSize.height + 'px';
+  }
 
   // 添加事件监听器
   addPanelEventListeners();
 
   // 添加到页面
   document.body.appendChild(gamePanel);
+
+  console.log('游戏面板已创建并添加到页面');
 }
 
 // 添加面板事件监听器
@@ -172,34 +195,65 @@ function addPanelEventListeners() {
   const gamesGrid = gamePanel.querySelector('.games-grid');
   const iframeContainer = gamePanel.querySelector('.game-iframe-container');
 
-  // 拖拽功能
-  header.addEventListener('mousedown', e => {
+  // 检测是否为移动设备
+  const isMobile =
+    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+  // 拖拽功能 - 支持触摸和鼠标
+  function startDrag(e) {
     if (e.target.classList.contains('control-btn')) return;
+
+    e.preventDefault();
     isDragging = true;
-    dragOffset.x = e.clientX - gamePanel.offsetLeft;
-    dragOffset.y = e.clientY - gamePanel.offsetTop;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    dragOffset.x = clientX - gamePanel.offsetLeft;
+    dragOffset.y = clientY - gamePanel.offsetTop;
     gamePanel.style.cursor = 'grabbing';
-  });
 
-  document.addEventListener('mousemove', e => {
-    if (isDragging) {
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
-      gamePanel.style.left = Math.max(0, Math.min(window.innerWidth - gamePanel.offsetWidth, newX)) + 'px';
-      gamePanel.style.top = Math.max(0, Math.min(window.innerHeight - gamePanel.offsetHeight, newY)) + 'px';
-    }
-  });
+    console.log('开始拖拽面板');
+  }
 
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      gamePanel.style.cursor = '';
-      // 保存新位置
-      settings.panelPosition.x = parseInt(gamePanel.style.left);
-      settings.panelPosition.y = parseInt(gamePanel.style.top);
-      saveSettings();
-    }
-  });
+  function doDrag(e) {
+    if (!isDragging) return;
+
+    e.preventDefault();
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const newX = clientX - dragOffset.x;
+    const newY = clientY - dragOffset.y;
+
+    gamePanel.style.left = Math.max(0, Math.min(window.innerWidth - gamePanel.offsetWidth, newX)) + 'px';
+    gamePanel.style.top = Math.max(0, Math.min(window.innerHeight - gamePanel.offsetHeight, newY)) + 'px';
+  }
+
+  function endDrag() {
+    if (!isDragging) return;
+
+    isDragging = false;
+    gamePanel.style.cursor = '';
+
+    // 保存新位置
+    settings.panelPosition.x = parseInt(gamePanel.style.left);
+    settings.panelPosition.y = parseInt(gamePanel.style.top);
+    saveSettings();
+
+    console.log('拖拽结束，位置已保存');
+  }
+
+  // 添加触摸和鼠标事件
+  header.addEventListener('mousedown', startDrag);
+  header.addEventListener('touchstart', startDrag, { passive: false });
+
+  document.addEventListener('mousemove', doDrag);
+  document.addEventListener('touchmove', doDrag, { passive: false });
+
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchend', endDrag);
 
   // 最小化按钮
   minimizeBtn.addEventListener('click', () => {
@@ -329,11 +383,28 @@ function addCustomGame(gameData) {
 
 // 显示游戏面板
 function showGamePanel() {
+  console.log('尝试显示游戏面板...');
+
   if (!gamePanel) {
+    console.log('面板不存在，正在创建...');
     createGamePanel();
   }
-  gamePanel.style.display = 'block';
-  isGamePanelVisible = true;
+
+  if (gamePanel) {
+    gamePanel.style.display = 'block';
+    gamePanel.style.visibility = 'visible';
+    gamePanel.style.opacity = '1';
+    isGamePanelVisible = true;
+    console.log('游戏面板已显示');
+
+    // 确保面板在最顶层
+    gamePanel.style.zIndex = '10000';
+
+    // 强制重绘
+    gamePanel.offsetHeight;
+  } else {
+    console.error('无法创建游戏面板');
+  }
 }
 
 // 隐藏游戏面板
@@ -346,9 +417,13 @@ function hideGamePanel() {
 
 // 切换游戏面板显示状态
 function toggleGamePanel() {
+  console.log('切换游戏面板状态，当前状态:', isGamePanelVisible ? '显示' : '隐藏');
+
   if (isGamePanelVisible) {
+    console.log('隐藏面板');
     hideGamePanel();
   } else {
+    console.log('显示面板');
     showGamePanel();
   }
 }
@@ -508,6 +583,7 @@ if (typeof module !== 'undefined' && module.exports) {
     hideGamePanel,
   };
 }
+
 
 
 
