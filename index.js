@@ -290,7 +290,7 @@
                             <button class="game-container-button size-button" data-size="fullscreen" title="全屏">⛶</button>
                         </div>
                     </div>
-                    <iframe class="game-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+                    <iframe class="game-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" allow="fullscreen"></iframe>
                 </div>
             </div>
         `;
@@ -371,9 +371,16 @@
     function loadGame(url) {
       gameGrid.style.display = 'none';
       gameContainer.style.display = 'block';
-      gameFrame.src = url;
 
-      console.log('[游戏合集] 加载游戏:', url);
+      // 确保使用raw.githubusercontent.com链接
+      let gameUrl = url;
+      if (url.includes('github.com') && url.includes('/blob/')) {
+        gameUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+      }
+
+      gameFrame.src = gameUrl;
+
+      console.log('[游戏合集] 加载游戏:', gameUrl);
     }
   }
 
@@ -448,8 +455,40 @@
 
       closeDialog();
 
-      // 重新创建面板
-      createGamePanel();
+      // 重新生成游戏网格内容而不是重新创建整个面板
+      const gameGrid = gamePanel.querySelector('.game-grid');
+      if (gameGrid) {
+        const newGameHTML = `
+          <div class="game-item" data-game-id="${newGame.id}" data-url="${newGame.url}">
+            <div class="game-icon">${newGame.icon}</div>
+            <p class="game-name">${newGame.name}</p>
+          </div>
+        `;
+        // 在添加游戏按钮之前插入新游戏
+        const addGameButton = gameGrid.querySelector('.add-game-button');
+        addGameButton.insertAdjacentHTML('beforebegin', newGameHTML);
+
+        // 为新游戏项添加点击事件
+        const newGameItem = gameGrid.querySelector(`[data-game-id="${newGame.id}"]`);
+        newGameItem.addEventListener('click', () => {
+          const url = newGameItem.dataset.url;
+          if (url) {
+            const gameContainer = gamePanel.querySelector('.game-container');
+            const gameFrame = gamePanel.querySelector('.game-frame');
+
+            // 确保使用raw.githubusercontent.com链接
+            let gameUrl = url;
+            if (url.includes('github.com') && url.includes('/blob/')) {
+              gameUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+            }
+
+            gameGrid.style.display = 'none';
+            gameContainer.style.display = 'block';
+            gameFrame.src = gameUrl;
+            console.log('[游戏合集] 加载游戏:', gameUrl);
+          }
+        });
+      }
 
       console.log('[游戏合集] 新游戏已添加:', newGame.name);
     });
