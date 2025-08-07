@@ -216,6 +216,9 @@
   display: block;
   /* 让iframe内容自适应 */
   resize: both;
+  /* 确保触摸事件能正确传递 */
+  touch-action: manipulation;
+  pointer-events: auto;
 }
 
 /* 移动端优化 */
@@ -333,6 +336,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
