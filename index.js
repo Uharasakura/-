@@ -12,49 +12,49 @@ const defaultSettings = {
   customGames: [],
 };
 
-// 内置游戏列表 - 使用CDN链接并配置最佳尺寸
+// 内置游戏列表 - 使用支持iframe的CDN链接
 const builtInGames = [
   {
     name: '贪吃蛇',
     icon: '🐍',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
     description: '经典贪吃蛇游戏',
-    preferredSize: { width: 420, height: 600 }, // 正方形游戏区域 + 控制面板
+    preferredSize: { width: 420, height: 600 },
   },
   {
     name: '种田',
     icon: '🌾',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
     description: '休闲种田游戏',
-    preferredSize: { width: 850, height: 700 }, // 宽屏布局，需要更多空间
+    preferredSize: { width: 850, height: 700 },
   },
   {
     name: '飞行棋',
     icon: '✈️',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html',
     description: '经典飞行棋游戏',
-    preferredSize: { width: 850, height: 750 }, // 8x8棋盘 + 控制区域
+    preferredSize: { width: 850, height: 750 },
   },
   {
     name: 'Nyan Cat',
     icon: '🐱',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html',
     description: '彩虹猫跑酷游戏',
-    preferredSize: { width: 700, height: 500 }, // 横向跑酷游戏
+    preferredSize: { width: 700, height: 500 },
   },
   {
     name: '扫雷',
     icon: '💣',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html',
     description: '经典扫雷游戏',
-    preferredSize: { width: 500, height: 600 }, // 标准扫雷尺寸
+    preferredSize: { width: 500, height: 600 },
   },
   {
     name: '数独',
     icon: '🔢',
     file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html',
     description: '数独益智游戏',
-    preferredSize: { width: 500, height: 650 }, // 9x9数独网格
+    preferredSize: { width: 500, height: 650 },
   },
 ];
 
@@ -161,12 +161,12 @@ function createGamePanelHTML() {
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
         </div>
-        <iframe class="game-iframe" 
-                src="" 
-                frameborder="0"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups"
-                allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay; keyboard-map"
-                loading="lazy"></iframe>
+                 <iframe class="game-iframe" 
+                 src="" 
+                 frameborder="0"
+                 sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups"
+                 allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay; keyboard-map"
+                 loading="lazy"></iframe>
       </div>
     </div>
   `;
@@ -241,7 +241,7 @@ function addEventListeners() {
       const allGames = [...builtInGames, ...settings.customGames];
       const gameData = allGames.find(game => game.file === gameFile) || { preferredSize: null };
 
-      // 直接使用游戏文件URL
+      // 直接使用gameFile，因为现在都是完整的URL
       const gameUrl = gameFile;
 
       const iframe = $('.game-iframe');
@@ -303,16 +303,16 @@ function addEventListeners() {
 
           // 所有方法都失败，显示错误页面
           iframe.srcdoc = `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
-              <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
-              <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
-              <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
-              <div style="margin-top: 20px;">
-                <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
-                <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
-              </div>
-            </div>
-          `;
+             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+               <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+               <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
+               <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
+               <div style="margin-top: 20px;">
+                 <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
+                 <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+               </div>
+             </div>
+           `;
         }
       };
 
@@ -418,6 +418,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
