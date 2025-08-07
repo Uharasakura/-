@@ -154,25 +154,35 @@ function createGamePanel() {
 
   // 移动端特殊处理
   if (isMobile) {
-    // 移动端使用全屏或大部分屏幕
+    // 移动端使用几乎全屏的面板
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
+    const availableHeight = window.innerHeight - 60; // 留出状态栏和导航栏空间
 
-    gamePanel.style.left = '10px';
-    gamePanel.style.top = '10px';
-    gamePanel.style.width = screenWidth - 20 + 'px';
-    gamePanel.style.height = screenHeight - 100 + 'px';
+    // 使用固定定位，覆盖整个可视区域
+    gamePanel.style.position = 'fixed';
+    gamePanel.style.left = '5px';
+    gamePanel.style.top = '30px'; // 避开状态栏
+    gamePanel.style.right = '5px';
+    gamePanel.style.bottom = '30px'; // 避开导航栏
+    gamePanel.style.width = 'auto';
+    gamePanel.style.height = 'auto';
+    gamePanel.style.maxWidth = 'none';
+    gamePanel.style.maxHeight = 'none';
+    gamePanel.style.zIndex = '99999'; // 确保在最顶层
 
     // 添加移动端特殊样式
     gamePanel.classList.add('mobile-panel');
 
-    console.log(`移动端面板创建: ${screenWidth - 20}x${screenHeight - 100}`);
+    console.log(`移动端面板创建: 屏幕尺寸 ${screenWidth}x${screenHeight}, 面板位置 5px-30px-5px-30px`);
   } else {
     // 桌面端使用设置的位置和大小
+    gamePanel.style.position = 'fixed';
     gamePanel.style.left = settings.panelPosition.x + 'px';
     gamePanel.style.top = settings.panelPosition.y + 'px';
     gamePanel.style.width = settings.panelSize.width + 'px';
     gamePanel.style.height = settings.panelSize.height + 'px';
+    gamePanel.style.zIndex = '10000';
   }
 
   // 添加事件监听器
@@ -398,12 +408,69 @@ function showGamePanel() {
     console.log('游戏面板已显示');
 
     // 确保面板在最顶层
-    gamePanel.style.zIndex = '10000';
+    gamePanel.style.zIndex = '99999';
 
     // 强制重绘
     gamePanel.offsetHeight;
+
+    // 输出面板信息用于调试
+    const rect = gamePanel.getBoundingClientRect();
+    console.log('面板位置和大小:', {
+      left: gamePanel.style.left,
+      top: gamePanel.style.top,
+      width: gamePanel.style.width,
+      height: gamePanel.style.height,
+      rect: rect,
+      visible: gamePanel.offsetWidth > 0 && gamePanel.offsetHeight > 0,
+    });
   } else {
     console.error('无法创建游戏面板');
+  }
+}
+
+// 强制显示面板（调试用）
+function forceShowPanel() {
+  console.log('强制显示面板（调试模式）...');
+
+  // 删除现有面板
+  if (gamePanel) {
+    gamePanel.remove();
+    gamePanel = null;
+  }
+
+  // 重新创建面板
+  createGamePanel();
+
+  if (gamePanel) {
+    // 强制设置样式
+    gamePanel.style.display = 'block !important';
+    gamePanel.style.visibility = 'visible !important';
+    gamePanel.style.opacity = '1 !important';
+    gamePanel.style.zIndex = '99999 !important';
+    gamePanel.style.position = 'fixed !important';
+
+    // 检测是否为移动设备并设置合适的位置
+    const isMobile =
+      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+    if (isMobile) {
+      gamePanel.style.top = '10px !important';
+      gamePanel.style.left = '10px !important';
+      gamePanel.style.right = '10px !important';
+      gamePanel.style.bottom = '10px !important';
+      gamePanel.style.width = 'auto !important';
+      gamePanel.style.height = 'auto !important';
+      console.log('移动端强制显示模式');
+    } else {
+      gamePanel.style.left = '50px !important';
+      gamePanel.style.top = '50px !important';
+      gamePanel.style.width = '400px !important';
+      gamePanel.style.height = '500px !important';
+      console.log('桌面端强制显示模式');
+    }
+
+    isGamePanelVisible = true;
+    console.log('强制显示完成');
   }
 }
 
@@ -565,7 +632,16 @@ window.miniGamesDebug = {
   showPanel: showGamePanel,
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
+  forceShow: forceShowPanel,
   getSettings: () => settings,
+  checkPanel: () => {
+    console.log('面板检查:', {
+      exists: !!gamePanel,
+      visible: isGamePanelVisible,
+      element: gamePanel,
+      inDOM: gamePanel ? document.contains(gamePanel) : false,
+    });
+  },
   forceInit: () => {
     console.log('强制初始化小游戏扩展...');
     init();
@@ -583,6 +659,7 @@ if (typeof module !== 'undefined' && module.exports) {
     hideGamePanel,
   };
 }
+
 
 
 
