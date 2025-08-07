@@ -635,13 +635,19 @@
             }`,
           );
 
-          // 根据实际容器大小动态计算缩放
+          // 针对超小屏幕的特殊处理
           let scale = 0.5; // 默认缩放
           if (actualWidth > 0 && actualHeight > 0) {
             const scaleX = actualWidth / 800;
             const scaleY = actualHeight / 600;
             scale = Math.min(scaleX, scaleY);
             console.log(`🔧 动态计算缩放: ${scale.toFixed(3)} (基于实际容器 ${actualWidth}×${actualHeight})`);
+
+            // 如果容器超级小（手机端），使用更激进的缩放
+            if (actualWidth < 350 || actualHeight < 150) {
+              scale = Math.max(scale, 0.2); // 最小缩放不低于0.2，否则游戏会完全看不见
+              console.log(`📱 检测到超小屏幕，调整最小缩放到: ${scale.toFixed(3)}`);
+            }
           }
 
           // 更新CSS缩放
