@@ -211,11 +211,8 @@
   height: 100%;
   border: none;
   background: white;
-  min-height: 400px;
-  /* 添加缩放和滚动支持 */
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  transform-origin: top left;
+  min-height: 450px;
+  overflow: hidden;
 }
 
 /* 移动端优化 */
@@ -282,7 +279,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 450px !important;
+  min-height: 500px !important;
+  overflow: auto !important;
 }
 
 /* 响应式设计 */
@@ -332,6 +330,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
