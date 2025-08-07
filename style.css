@@ -211,9 +211,11 @@
   height: 100%;
   border: none;
   background: white;
-  min-height: 400px;
+  min-height: 300px;
   overflow: auto;
   display: block;
+  /* 让iframe内容自适应 */
+  resize: both;
 }
 
 /* 移动端优化 */
@@ -280,8 +282,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 500px !important;
-  max-height: calc(100vh - 140px) !important;
+  min-height: 300px !important;
+  /* 移除固定高度限制，让游戏自适应 */
 }
 
 /* 响应式设计 */
