@@ -129,17 +129,24 @@ function makeDraggable(element, onDragEnd = null) {
   }
 
   function setTranslate(xPos, yPos, el) {
-    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+    if (el.dataset.type === 'icon') {
+      // 图标按钮使用fixed定位，直接设置left和top
+      el.style.left = `${xPos}px`;
+      el.style.top = `${yPos}px`;
+    } else {
+      // 面板使用transform
+      el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+    }
   }
 
   // 设置初始位置
   if (element.dataset.type === 'icon') {
     const { iconPosition } = getSettings();
-    setTranslate(iconPosition.x, iconPosition.y, element);
-    xOffset = iconPosition.x;
-    yOffset = iconPosition.y;
-    initialX = iconPosition.x;
-    initialY = iconPosition.y;
+    // 图标按钮的初始位置已在创建时设置，这里只需要记录偏移
+    xOffset = 0;
+    yOffset = 0;
+    initialX = 0;
+    initialY = 0;
   } else if (element.dataset.type === 'panel') {
     // 面板使用绝对定位，不需要初始transform
     xOffset = 0;
@@ -563,6 +570,11 @@ function createGameButton() {
   button.innerHTML = '🎮';
   button.title = '游戏合集';
 
+  // 设置初始位置
+  const settings = getSettings();
+  button.style.left = `${settings.iconPosition.x}px`;
+  button.style.top = `${settings.iconPosition.y}px`;
+
   button.addEventListener('click', () => {
     button.style.display = 'none';
     createGamePanel();
@@ -573,20 +585,46 @@ function createGameButton() {
   // 使图标可拖拽
   makeDraggable(button, (x, y) => {
     const settings = getSettings();
-    settings.iconPosition = { x, y };
+    // 计算新的绝对位置
+    const rect = button.getBoundingClientRect();
+    settings.iconPosition = {
+      x: rect.left,
+      y: rect.top,
+    };
     saveSettings();
+    console.log('图标位置已保存:', settings.iconPosition);
   });
 
   gameButton = button;
+  console.log('游戏按钮已创建，位置:', settings.iconPosition);
   return button;
 }
 
 // 监听APP_READY事件
 context.eventSource.on(context.event_types.APP_READY, () => {
   console.log('游戏合集扩展已准备就绪');
-  getSettings(); // 初始化设置
-  createGameButton();
+  try {
+    getSettings(); // 初始化设置
+    createGameButton();
+    console.log('游戏合集扩展初始化完成');
+  } catch (error) {
+    console.error('游戏合集扩展初始化失败:', error);
+  }
 });
+
+// 备用初始化方案
+setTimeout(() => {
+  if (!gameButton) {
+    console.log('使用备用方案初始化游戏按钮');
+    try {
+      getSettings();
+      createGameButton();
+    } catch (error) {
+      console.error('备用初始化失败:', error);
+    }
+  }
+}, 2000);
+
 
 
 
