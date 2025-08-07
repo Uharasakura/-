@@ -32,7 +32,7 @@
         touch-action: none;
       }
 
-      /* 游戏容器 - 动态缩放 */
+      /* 游戏容器 - 简单缩放 */
       .game-container {
         position: absolute;
         top: 0;
@@ -41,8 +41,8 @@
         height: 100%;
         overflow: hidden;
         background: #000;
-        /* 缩放将由JS动态设置 */
         transform-origin: 0 0;
+        transform: scale(0.35); /* 直接缩放到适合手机的大小 */
       }
 
       /* 游戏画布 - 恢复原始尺寸 */
@@ -242,21 +242,16 @@
           touchActive: false,
         };
 
-        // 恢复原始游戏尺寸计算 - 不再缩放，CSS处理
+        // 简化的游戏尺寸计算
         function calculateGameDimensions() {
-          console.log(`🎮 使用原始游戏参数，CSS自动缩放 (´∀｀)♡`);
-
-          const catSize = 60; // 原始猫咪尺寸
-          const isMobile = window.innerWidth <= 768;
-
           return {
-            catSize,
-            obstacleWidth: 20, // 原始障碍物宽度
-            obstacleGap: 250, // 原始障碍物间距
-            jumpForce: -8, // 原始跳跃力度
-            gravity: 0.4, // 原始重力
-            speed: 4, // 原始速度
-            scale: 1, // 不缩放，让CSS处理
+            catSize: 60,
+            obstacleWidth: 20,
+            obstacleGap: 250,
+            jumpForce: -8,
+            gravity: 0.4,
+            speed: 4,
+            scale: 1,
           };
         }
 
@@ -433,13 +428,13 @@
           });
         }
 
-        // 恢复原始星星系统
+        // 星星系统
         function createStars() {
           return Array.from({ length: 100 }, () => ({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            size: Math.random() * 2 + 1, // 原始星星大小
-            speed: Math.random() * 1.5 + 0.5, // 原始星星速度
+            size: Math.random() * 2 + 1,
+            speed: Math.random() * 1.5 + 0.5,
           }));
         }
 
@@ -526,24 +521,16 @@
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-          // 🔍 调试信息：显示真实容器尺寸
-          const container = document.querySelector('.game-container');
-          const actualWidth = container ? container.clientWidth : 0;
-          const actualHeight = container ? container.clientHeight : 0;
-          const currentScale = container ? container.style.transform : '未知';
-
+          // 简化的调试信息
           ctx.fillStyle = '#fff';
-          ctx.font = '12px Arial';
-          ctx.fillText(`实际容器: ${actualWidth}×${actualHeight}`, 10, 20);
-          ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 40);
-          ctx.fillText(`CSS缩放: ${currentScale}`, 10, 60);
-          ctx.fillText(`Window: ${window.innerWidth}×${window.innerHeight}`, 10, 80);
-          ctx.fillText(`Screen: ${screen.width}×${screen.height}`, 10, 100);
+          ctx.font = '14px Arial';
+          ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 20);
+          ctx.fillText(`Scale: 0.35 (CSS)`, 10, 40);
 
           drawStars();
           gameState.obstacles.forEach(obstacle => obstacle.draw());
 
-          // 恢复原始猫咪位置，CSS会自动缩放
+          // 猫咪位置
           nyanCat.style.transform = `translate(100px, ${gameState.catY}px)`;
         }
 
@@ -620,86 +607,26 @@
           isPlaying = !isPlaying;
         };
 
-        // 尺寸检测 - 看看手机端到底多大
+        // 简化初始化
         function initCanvas() {
-          const container = document.querySelector('.game-container');
-          const actualWidth = container ? container.clientWidth : 0;
-          const actualHeight = container ? container.clientHeight : 0;
-
-          console.log(`📱 实际游戏容器尺寸: ${actualWidth} × ${actualHeight}`);
-          console.log(`📺 window尺寸: ${window.innerWidth} × ${window.innerHeight}`);
-          console.log(`🖥️ screen尺寸: ${screen.width} × ${screen.height}`);
-          console.log(
-            `🎯 iframe parent尺寸: ${
-              window.parent ? window.parent.innerWidth + '×' + window.parent.innerHeight : '无法获取'
-            }`,
-          );
-
-          // 针对超小屏幕的特殊处理
-          let scale = 0.5; // 默认缩放
-          if (actualWidth > 0 && actualHeight > 0) {
-            const scaleX = actualWidth / 800;
-            const scaleY = actualHeight / 600;
-            scale = Math.min(scaleX, scaleY);
-            console.log(`🔧 动态计算缩放: ${scale.toFixed(3)} (基于实际容器 ${actualWidth}×${actualHeight})`);
-
-            // 如果容器超级小（手机端），使用更激进的缩放
-            if (actualWidth < 350 || actualHeight < 150) {
-              scale = Math.max(scale, 0.2); // 最小缩放不低于0.2，否则游戏会完全看不见
-              console.log(`📱 检测到超小屏幕，调整最小缩放到: ${scale.toFixed(3)}`);
-            }
-          }
-
-          // 更新CSS缩放
-          const gameContainer = document.querySelector('.game-container');
-          if (gameContainer) {
-            gameContainer.style.transform = `scale(${scale})`;
-            console.log(`🎨 应用CSS缩放: scale(${scale.toFixed(3)})`);
-          }
-
-          // 设置Canvas原始尺寸
           canvas.width = 800;
           canvas.height = 600;
         }
 
-        // 延迟初始化，确保iframe完全加载
+        // 初始化游戏
         setTimeout(() => {
           initCanvas();
 
-          // 重新计算游戏元素尺寸（基于新的Canvas尺寸）
           const dims = calculateGameDimensions();
-          console.log(
-            `🎮 游戏元素重新计算: 猫咪=${dims.catSize}px, 障碍物宽度=${dims.obstacleWidth}px, 缩放=${dims.scale} (＾◡＾)`,
-          );
-
-          // 更新CSS变量
           document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
-          console.log(`🎨 CSS变量已设置: --cat-size = ${dims.catSize}px`);
 
-          // 验证CSS变量是否生效
-          setTimeout(() => {
-            const computedStyle = window.getComputedStyle(document.documentElement);
-            const actualCatSize = computedStyle.getPropertyValue('--cat-size');
-            console.log(`🔍 实际CSS变量值: --cat-size = ${actualCatSize}`);
-
-            const catElement = document.getElementById('nyanCat');
-            if (catElement) {
-              const catComputedStyle = window.getComputedStyle(catElement);
-              console.log(`🐱 猫咪实际宽度: ${catComputedStyle.width}, 高度: ${catComputedStyle.height}`);
-            }
-          }, 50);
-
-          // 根据实际Canvas尺寸设置猫咪初始位置
           gameState.catY = canvas.height / 2;
-          console.log(`猫咪初始位置设置为Canvas中心: Y=${gameState.catY} (=^･ω･^=)`);
-
           nyanCat.style.display = 'none';
           bgm.volume = 1.0;
           bgm.load();
-          gameState.stars = createStars(); // 重新创建星星（使用新的缩放尺寸）
+          gameState.stars = createStars();
           setupEventListeners();
 
-          // 开始游戏循环
           requestAnimationFrame(gameLoop);
         }, 200);
       });
