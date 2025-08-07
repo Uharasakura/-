@@ -286,6 +286,7 @@
 
 .mobile-panel .game-iframe {
   min-height: 300px !important;
+  max-height: 400px !important; /* 为横屏游戏提供足够高度 */
   /* 移除固定高度限制，让游戏自适应 */
 }
 
@@ -336,6 +337,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
