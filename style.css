@@ -1,36 +1,27 @@
 /* 游戏图标按钮 */
 .game-icon-button {
-  position: fixed !important;
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 50% !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
-  font-size: 24px !important;
-  cursor: grab !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  backdrop-filter: blur(10px) !important;
-  transition: all 0.3s ease !important;
-  user-select: none !important;
-  touch-action: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-  z-index: 9999 !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 24px;
+  cursor: move;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  user-select: none;
+  touch-action: none;
 }
 
 .game-icon-button:hover {
+  transform: scale(1.1);
   background: rgba(0, 0, 0, 0.9);
-  border-color: #4caf50;
-  transform: scale(1.05);
-}
-
-.game-icon-button:active {
-  cursor: grabbing;
 }
 
 /* 游戏面板 */
@@ -365,6 +356,7 @@
     width: calc(100% - 40px);
   }
 }
+
 
 
 
