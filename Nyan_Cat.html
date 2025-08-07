@@ -259,6 +259,12 @@
               2,
             )} (｡◕‿◕｡)`,
           );
+          console.log(`🔍 实际游戏iframe可用区域约: 400×415px, 当前容器: ${canvasWidth}×${canvasHeight}`);
+          console.log(
+            `📊 容器比例: ${(canvasWidth / canvasHeight).toFixed(3)}, 游戏比例: ${(
+              gameIdealWidth / gameIdealHeight
+            ).toFixed(3)}`,
+          );
 
           const isMobile = canvasWidth <= 400;
           const catSize = 60 * scale; // 固定猫咪基础尺寸，然后按比例缩放
@@ -540,11 +546,21 @@
         function draw() {
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // 🔍 调试信息：在Canvas上显示当前尺寸和缩放
+          const dims = calculateGameDimensions();
+          ctx.fillStyle = '#fff';
+          ctx.font = '11px Arial';
+          ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 15);
+          ctx.fillText(`Scale: ${dims.scale.toFixed(2)}`, 10, 30);
+          ctx.fillText(`Cat: ${dims.catSize.toFixed(1)}px`, 10, 45);
+          ctx.fillText(`Expected: 400×300, 0.50, 30px`, 10, 60);
+          ctx.fillText(`CatX: ${(100 * dims.scale).toFixed(1)}px`, 10, 75);
+
           drawStars();
           gameState.obstacles.forEach(obstacle => obstacle.draw());
 
           // 根据Canvas缩放计算猫咪位置
-          const dims = calculateGameDimensions();
           const scaledCatX = 100 * dims.scale; // 原来固定100px，现在按比例缩放
           nyanCat.style.transform = `translate(${scaledCatX}px, ${gameState.catY}px)`;
         }
@@ -656,9 +672,15 @@
           canvas.style.top = '';
           canvas.style.transform = '';
 
+          console.log(`📦 容器尺寸: ${containerWidth}×${containerHeight}`);
           console.log(
-            `容器: ${containerWidth}×${containerHeight}, Canvas: ${canvasWidth}×${canvasHeight}, 保持4:3比例 (´∀｀)♡`,
+            `🎯 容器比例: ${containerAspectRatio.toFixed(3)} (${
+              containerAspectRatio > gameAspectRatio ? '更宽' : '更高'
+            })`,
           );
+          console.log(`🎮 游戏比例: ${gameAspectRatio.toFixed(3)} (4:3)`);
+          console.log(`🖼️ Canvas最终尺寸: ${canvasWidth}×${canvasHeight}`);
+          console.log(`💡 预期效果: 如果容器是400×415，Canvas应该是400×300，缩放0.5 (´∀｀)♡`);
 
           // 不再触发resize事件，避免循环调用
         }
@@ -669,10 +691,26 @@
 
           // 重新计算游戏元素尺寸（基于新的Canvas尺寸）
           const dims = calculateGameDimensions();
-          console.log(`游戏元素重新计算: 猫咪=${dims.catSize}px, 障碍物宽度=${dims.obstacleWidth}px (＾◡＾)`);
+          console.log(
+            `🎮 游戏元素重新计算: 猫咪=${dims.catSize}px, 障碍物宽度=${dims.obstacleWidth}px, 缩放=${dims.scale} (＾◡＾)`,
+          );
 
           // 更新CSS变量
           document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
+          console.log(`🎨 CSS变量已设置: --cat-size = ${dims.catSize}px`);
+
+          // 验证CSS变量是否生效
+          setTimeout(() => {
+            const computedStyle = window.getComputedStyle(document.documentElement);
+            const actualCatSize = computedStyle.getPropertyValue('--cat-size');
+            console.log(`🔍 实际CSS变量值: --cat-size = ${actualCatSize}`);
+
+            const catElement = document.getElementById('nyanCat');
+            if (catElement) {
+              const catComputedStyle = window.getComputedStyle(catElement);
+              console.log(`🐱 猫咪实际宽度: ${catComputedStyle.width}, 高度: ${catComputedStyle.height}`);
+            }
+          }, 50);
 
           // 根据实际Canvas尺寸设置猫咪初始位置
           gameState.catY = canvas.height / 2;
