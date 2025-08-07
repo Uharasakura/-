@@ -24,8 +24,8 @@
       body {
         margin: 0;
         padding: 0;
-        width: 20%;
-        min-height: 20vh;
+        width: 100%;
+        min-height: 60vh;
         overflow: hidden;
         background: #000;
         font-family: Arial, sans-serif;
@@ -37,8 +37,8 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 20%;
-        height: 20%;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
         display: flex;
         align-items: center;
@@ -449,11 +449,12 @@
 
         // 简化的星星系统
         function createStars() {
+          const dims = calculateGameDimensions();
           return Array.from({ length: 100 }, () => ({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            size: Math.random() * 2 + 1,
-            speed: Math.random() * 1.5 + 0.5,
+            size: (Math.random() * 2 + 1) * dims.scale, // 星星大小按比例缩放
+            speed: (Math.random() * 1.5 + 0.5) * dims.scale, // 星星速度按比例缩放
           }));
         }
 
@@ -541,7 +542,11 @@
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           drawStars();
           gameState.obstacles.forEach(obstacle => obstacle.draw());
-          nyanCat.style.transform = `translate(100px, ${gameState.catY}px)`;
+
+          // 根据Canvas缩放计算猫咪位置
+          const dims = calculateGameDimensions();
+          const scaledCatX = 100 * dims.scale; // 原来固定100px，现在按比例缩放
+          nyanCat.style.transform = `translate(${scaledCatX}px, ${gameState.catY}px)`;
         }
 
         function gameLoop() {
@@ -655,15 +660,19 @@
             `容器: ${containerWidth}×${containerHeight}, Canvas: ${canvasWidth}×${canvasHeight}, 保持4:3比例 (´∀｀)♡`,
           );
 
-          // 强制触发一次resize事件，确保尺寸正确
-          setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-          }, 100);
+          // 不再触发resize事件，避免循环调用
         }
 
         // 延迟初始化，确保iframe完全加载
         setTimeout(() => {
           initCanvas();
+
+          // 重新计算游戏元素尺寸（基于新的Canvas尺寸）
+          const dims = calculateGameDimensions();
+          console.log(`游戏元素重新计算: 猫咪=${dims.catSize}px, 障碍物宽度=${dims.obstacleWidth}px (＾◡＾)`);
+
+          // 更新CSS变量
+          document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
 
           // 根据实际Canvas尺寸设置猫咪初始位置
           gameState.catY = canvas.height / 2;
@@ -672,7 +681,7 @@
           nyanCat.style.display = 'none';
           bgm.volume = 1.0;
           bgm.load();
-          gameState.stars = createStars(); // 初始化星星
+          gameState.stars = createStars(); // 重新创建星星（使用新的缩放尺寸）
           setupEventListeners();
 
           // 开始游戏循环
