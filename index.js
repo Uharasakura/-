@@ -69,6 +69,132 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
+// 增强游戏HTML，添加自适应和交互支持
+function enhanceGameHTML(htmlContent, gameName) {
+  // 添加viewport meta标签和自适应样式
+  const enhancementScript = `
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+      /* 游戏自适应样式 */
+      body {
+        margin: 0 !important;
+        padding: 8px !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      
+      /* 让游戏容器自适应 */
+      canvas, #game, #gameArea, .game-container, .game-board {
+        max-width: 100% !important;
+        height: auto !important;
+        display: block !important;
+        margin: 0 auto !important;
+      }
+      
+      /* 按钮和控件优化 */
+      button, input[type="button"], .btn {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+        touch-action: manipulation !important;
+        cursor: pointer !important;
+        border-radius: 6px !important;
+        border: 1px solid #ccc !important;
+        background: #f8f9fa !important;
+        margin: 4px !important;
+      }
+      
+      button:hover, input[type="button"]:hover, .btn:hover {
+        background: #e9ecef !important;
+      }
+      
+      /* 移动端触摸优化 */
+      * {
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+      }
+      
+      /* 让文本可选择（如果需要） */
+      p, span, div:not(.game-area):not(.game-board) {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+      }
+      
+      /* 响应式表格 */
+      table {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+      }
+      
+      /* 确保游戏在小屏幕上可见 */
+      @media (max-width: 480px) {
+        body { padding: 4px !important; }
+        canvas, #game, #gameArea, .game-container { 
+          transform-origin: top left !important;
+        }
+      }
+    </style>
+    <script>
+      // 游戏自适应脚本
+      (function() {
+        console.log('游戏增强脚本已加载: ${gameName}');
+        
+        // 等待DOM加载完成
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initGameEnhancements);
+        } else {
+          initGameEnhancements();
+        }
+        
+        function initGameEnhancements() {
+          // 阻止默认的触摸行为，避免页面滚动
+          document.addEventListener('touchmove', function(e) {
+            if (e.target.tagName === 'CANVAS' || e.target.classList.contains('game-area')) {
+              e.preventDefault();
+            }
+          }, { passive: false });
+          
+          // 确保所有按钮都能正常工作
+          const buttons = document.querySelectorAll('button, input[type="button"], .btn');
+          buttons.forEach(btn => {
+            btn.style.pointerEvents = 'auto';
+            btn.addEventListener('touchstart', function(e) {
+              e.stopPropagation();
+            }, { passive: true });
+          });
+          
+          // 自动调整canvas大小
+          const canvases = document.querySelectorAll('canvas');
+          canvases.forEach(canvas => {
+            if (canvas.width > 400) {
+              const scale = Math.min(400 / canvas.width, 1);
+              canvas.style.transform = 'scale(' + scale + ')';
+              canvas.style.transformOrigin = 'top left';
+            }
+          });
+          
+          console.log('游戏增强脚本初始化完成');
+        }
+      })();
+    </script>
+  `;
+
+  // 在head标签中插入增强脚本
+  if (htmlContent.includes('<head>')) {
+    return htmlContent.replace('<head>', '<head>' + enhancementScript);
+  } else if (htmlContent.includes('<html>')) {
+    return htmlContent.replace('<html>', '<html><head>' + enhancementScript + '</head>');
+  } else {
+    return enhancementScript + htmlContent;
+  }
+}
+
 // 创建游戏面板HTML
 function createGamePanelHTML() {
   const allGames = [...builtInGames, ...settings.customGames];
@@ -105,7 +231,10 @@ function createGamePanelHTML() {
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
         </div>
-        <iframe class="game-iframe" src="" frameborder="0"></iframe>
+        <iframe class="game-iframe" src="" frameborder="0" 
+                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups" 
+                allow="accelerometer; gyroscope; gamepad; fullscreen"
+                loading="lazy"></iframe>
       </div>
     </div>
   `;
@@ -215,8 +344,11 @@ function addEventListeners() {
           const htmlContent = await response.text();
           console.log(`游戏HTML获取成功: ${url}`);
 
+          // 修改HTML内容，添加自适应缩放和交互支持
+          const enhancedHTML = enhanceGameHTML(htmlContent, gameName);
+
           // 使用srcdoc直接渲染HTML内容
-          iframe.srcdoc = htmlContent;
+          iframe.srcdoc = enhancedHTML;
         } catch (error) {
           console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
 
@@ -242,8 +374,8 @@ function addEventListeners() {
                <div style="margin-top: 20px;">
                  <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
                  <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
-               </div>
-             </div>
+            </div>
+            </div>
            `;
         }
       };
@@ -350,6 +482,7 @@ start();
 
 // 调试接口
 window.miniGamesDebug = { showPanel: showGamePanel, hidePanel: hideGamePanel, togglePanel: toggleGamePanel };
+
 
 
 
