@@ -8,44 +8,44 @@
   // 扩展名称
   const MODULE_NAME = 'game_collection';
 
-  // 默认设置
+  // 默认设置 - 使用可嵌入的游戏链接
   const defaultSettings = {
     games: [
       {
         id: 'sudoku',
         name: '数独',
         icon: '🎲',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/shudoku.html',
+        url: 'https://en.sudokuwiki.org/sudoku.htm',
       },
       {
         id: 'minesweeper',
         name: '扫雷',
         icon: '💣',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/minesweeper.html',
+        url: 'https://minesweeper.online/',
       },
       {
         id: 'snake',
         name: '贪吃蛇',
         icon: '🐍',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Gluttonous_Snake.html',
+        url: 'https://playsnake.org/',
       },
       {
-        id: 'flight_chess',
-        name: '飞行棋',
-        icon: '🎯',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Flight_chess.html',
+        id: 'tetris',
+        name: '俄罗斯方块',
+        icon: '🧩',
+        url: 'https://tetris.com/play-tetris',
       },
       {
-        id: 'farming',
-        name: '种田',
-        icon: '🌾',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Farming.html',
+        id: 'pacman',
+        name: '吃豆人',
+        icon: '🟡',
+        url: 'https://freepacman.org/',
       },
       {
         id: 'nyan_cat',
         name: '彩虹猫',
         icon: '🌈',
-        url: 'https://raw.githubusercontent.com/Uharasakura/-/main/Nyan_Cat.html',
+        url: 'https://www.nyan.cat/',
       },
     ],
     iconPosition: { x: 20, y: 20 },
@@ -623,6 +623,7 @@
 
   console.log('[游戏合集] 扩展脚本已加载');
 })();
+
 
 
 
