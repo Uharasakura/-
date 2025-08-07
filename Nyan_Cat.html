@@ -32,7 +32,7 @@
         touch-action: none;
       }
 
-      /* 游戏容器 - 强制缩放到iframe大小 */
+      /* 游戏容器 - 动态缩放 */
       .game-container {
         position: absolute;
         top: 0;
@@ -41,9 +41,8 @@
         height: 100%;
         overflow: hidden;
         background: #000;
-        /* 强制缩放整个游戏内容 */
+        /* 缩放将由JS动态设置 */
         transform-origin: 0 0;
-        transform: scale(0.5); /* 直接缩放到一半 */
       }
 
       /* 游戏画布 - 恢复原始尺寸 */
@@ -527,15 +526,19 @@
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-          // 🔍 调试信息：在Canvas上显示当前尺寸和缩放
-          const dims = calculateGameDimensions();
+          // 🔍 调试信息：显示真实容器尺寸
+          const container = document.querySelector('.game-container');
+          const actualWidth = container ? container.clientWidth : 0;
+          const actualHeight = container ? container.clientHeight : 0;
+          const currentScale = container ? container.style.transform : '未知';
+
           ctx.fillStyle = '#fff';
-          ctx.font = '11px Arial';
-          ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 15);
-          ctx.fillText(`Scale: ${dims.scale.toFixed(2)}`, 10, 30);
-          ctx.fillText(`Cat: ${dims.catSize.toFixed(1)}px`, 10, 45);
-          ctx.fillText(`Expected: 400×300, 0.50, 30px`, 10, 60);
-          ctx.fillText(`CatX: ${(100 * dims.scale).toFixed(1)}px`, 10, 75);
+          ctx.font = '12px Arial';
+          ctx.fillText(`实际容器: ${actualWidth}×${actualHeight}`, 10, 20);
+          ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 40);
+          ctx.fillText(`CSS缩放: ${currentScale}`, 10, 60);
+          ctx.fillText(`Window: ${window.innerWidth}×${window.innerHeight}`, 10, 80);
+          ctx.fillText(`Screen: ${screen.width}×${screen.height}`, 10, 100);
 
           drawStars();
           gameState.obstacles.forEach(obstacle => obstacle.draw());
@@ -617,15 +620,40 @@
           isPlaying = !isPlaying;
         };
 
-        // 简化初始化 - 直接使用原始游戏尺寸，让CSS缩放处理
+        // 尺寸检测 - 看看手机端到底多大
         function initCanvas() {
-          // 直接设置为游戏原始设计尺寸
+          const container = document.querySelector('.game-container');
+          const actualWidth = container ? container.clientWidth : 0;
+          const actualHeight = container ? container.clientHeight : 0;
+
+          console.log(`📱 实际游戏容器尺寸: ${actualWidth} × ${actualHeight}`);
+          console.log(`📺 window尺寸: ${window.innerWidth} × ${window.innerHeight}`);
+          console.log(`🖥️ screen尺寸: ${screen.width} × ${screen.height}`);
+          console.log(
+            `🎯 iframe parent尺寸: ${
+              window.parent ? window.parent.innerWidth + '×' + window.parent.innerHeight : '无法获取'
+            }`,
+          );
+
+          // 根据实际容器大小动态计算缩放
+          let scale = 0.5; // 默认缩放
+          if (actualWidth > 0 && actualHeight > 0) {
+            const scaleX = actualWidth / 800;
+            const scaleY = actualHeight / 600;
+            scale = Math.min(scaleX, scaleY);
+            console.log(`🔧 动态计算缩放: ${scale.toFixed(3)} (基于实际容器 ${actualWidth}×${actualHeight})`);
+          }
+
+          // 更新CSS缩放
+          const gameContainer = document.querySelector('.game-container');
+          if (gameContainer) {
+            gameContainer.style.transform = `scale(${scale})`;
+            console.log(`🎨 应用CSS缩放: scale(${scale.toFixed(3)})`);
+          }
+
+          // 设置Canvas原始尺寸
           canvas.width = 800;
           canvas.height = 600;
-
-          console.log(`🎮 使用原始游戏尺寸: 800×600`);
-          console.log(`🎨 CSS将整体缩放到0.5倍: 400×300`);
-          console.log(`💡 这样所有元素都会自动按比例缩小！(´∀｀)♡`);
         }
 
         // 延迟初始化，确保iframe完全加载
