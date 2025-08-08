@@ -197,34 +197,44 @@ function createGamePanel() {
 function addEventListeners() {
   // 移除之前的监听器避免重复绑定
   gamePanel.removeEventListener('click', handlePanelClick);
+  gamePanel.removeEventListener('touchend', handlePanelTouch);
 
   // 使用事件委托处理所有点击事件
   gamePanel.addEventListener('click', handlePanelClick);
+
+  // 移动端专用：添加触摸事件处理
+  if (isMobile()) {
+    gamePanel.addEventListener('touchend', handlePanelTouch);
+  }
 }
 
 // 处理面板内的点击事件
 function handlePanelClick(event) {
   const target = event.target;
 
+  // 查找最近的按钮元素（防止点击到按钮内部文本节点）
+  const minimizeBtn = target.closest('.minimize-btn');
+  const closeBtn = target.closest('.close-btn');
+  const backBtn = target.closest('.back-btn');
+  const addGameBtn = target.closest('.add-game-btn');
+  const gameItem = target.closest('.game-item');
+
   // 最小化按钮
-  if (target.classList.contains('minimize-btn')) {
+  if (minimizeBtn) {
     event.preventDefault();
     event.stopPropagation();
 
     // 重新获取最新的设置对象引用
     settings = getSettings();
-    console.log('点击最小化按钮，当前状态:', settings.isMinimized);
 
     settings.isMinimized = !settings.isMinimized;
     gamePanel.classList.toggle('minimized', settings.isMinimized);
     saveSettings();
-
-    console.log('最小化状态已更新:', settings.isMinimized);
     return;
   }
 
   // 关闭按钮
-  if (target.classList.contains('close-btn')) {
+  if (closeBtn) {
     event.preventDefault();
     event.stopPropagation();
     hideGamePanel();
@@ -232,7 +242,7 @@ function handlePanelClick(event) {
   }
 
   // 返回按钮
-  if (target.classList.contains('back-btn')) {
+  if (backBtn) {
     event.preventDefault();
     event.stopPropagation();
     const $ = sel => gamePanel.querySelector(sel);
@@ -242,11 +252,9 @@ function handlePanelClick(event) {
   }
 
   // 游戏项点击 - 现在通过事件委托处理
-  if (target.classList.contains('game-item') || target.closest('.game-item')) {
+  if (gameItem) {
     event.preventDefault();
     event.stopPropagation();
-
-    const gameItem = target.classList.contains('game-item') ? target : target.closest('.game-item');
     const gameFile = gameItem.dataset.game;
     const gameName = gameItem.querySelector('.game-name').textContent;
 
@@ -358,7 +366,7 @@ function handlePanelClick(event) {
   }
 
   // 添加游戏按钮 - 现在通过事件委托处理
-  if (target.classList.contains('add-game-btn')) {
+  if (addGameBtn) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -371,6 +379,43 @@ function handlePanelClick(event) {
       createGamePanel();
       if (isGamePanelVisible) gamePanel.style.display = 'block';
     }
+    return;
+  }
+}
+
+// 移动端触摸事件处理（防止移动端点击问题）
+function handlePanelTouch(event) {
+  // 防止触摸滚动时误触发
+  if (event.touches && event.touches.length > 1) return;
+
+  const target = event.target;
+
+  // 查找最近的按钮元素
+  const minimizeBtn = target.closest('.minimize-btn');
+  const closeBtn = target.closest('.close-btn');
+  const backBtn = target.closest('.back-btn');
+  const addGameBtn = target.closest('.add-game-btn');
+  const gameItem = target.closest('.game-item');
+
+  // 最小化按钮（移动端专用处理）
+  if (minimizeBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // 重新获取最新的设置对象引用
+    settings = getSettings();
+
+    settings.isMinimized = !settings.isMinimized;
+    gamePanel.classList.toggle('minimized', settings.isMinimized);
+    saveSettings();
+    return;
+  }
+
+  // 其他按钮也可以类似处理，但先试试最小化按钮
+  if (closeBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideGamePanel();
     return;
   }
 }
@@ -518,6 +563,8 @@ window.miniGamesDebug = {
     }
   },
 };
+
+
 
 
 
