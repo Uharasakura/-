@@ -218,14 +218,35 @@ function handlePanelClick(event) {
   const addGameBtn = target.closest('.add-game-btn');
   const gameItem = target.closest('.game-item');
 
-  // 最小化按钮 - 全新简单逻辑
+  // 最小化按钮 - 超级简单的实现
   if (minimizeBtn) {
     event.preventDefault();
     event.stopPropagation();
 
-    // 超级简单：直接toggle CSS class
-    gamePanel.classList.toggle('collapsed');
-    console.log('折叠状态切换，当前是否折叠:', gamePanel.classList.contains('collapsed'));
+    const panelContent = gamePanel.querySelector('.panel-content');
+    const gameContainer = gamePanel.querySelector('.game-iframe-container');
+
+    // 检查当前是否已最小化
+    const isMinimized = panelContent.style.display === 'none' && gameContainer.style.display === 'none';
+
+    if (isMinimized) {
+      // 展开：恢复内容显示
+      panelContent.style.display = '';
+      if (gameContainer.style.display !== 'none') {
+        gameContainer.style.display = 'block';
+      }
+      gamePanel.style.height = '';
+      minimizeBtn.textContent = '−';
+      minimizeBtn.title = '最小化';
+    } else {
+      // 最小化：隐藏内容，只保留标题栏
+      panelContent.style.display = 'none';
+      gameContainer.style.display = 'none';
+      gamePanel.style.height = '50px';
+      minimizeBtn.textContent = '+';
+      minimizeBtn.title = '展开';
+    }
+
     return;
   }
 
@@ -393,18 +414,39 @@ function handlePanelTouch(event) {
   const addGameBtn = target.closest('.add-game-btn');
   const gameItem = target.closest('.game-item');
 
-  // 最小化按钮（移动端专用处理）- 全新简单逻辑
+  // 最小化按钮 - 移动端使用相同的简单逻辑
   if (minimizeBtn) {
     event.preventDefault();
     event.stopPropagation();
 
-    // 超级简单：直接toggle CSS class
-    gamePanel.classList.toggle('collapsed');
-    console.log('移动端折叠状态切换，当前是否折叠:', gamePanel.classList.contains('collapsed'));
+    const panelContent = gamePanel.querySelector('.panel-content');
+    const gameContainer = gamePanel.querySelector('.game-iframe-container');
+
+    // 检查当前是否已最小化
+    const isMinimized = panelContent.style.display === 'none' && gameContainer.style.display === 'none';
+
+    if (isMinimized) {
+      // 展开：恢复内容显示
+      panelContent.style.display = '';
+      if (gameContainer.style.display !== 'none') {
+        gameContainer.style.display = 'block';
+      }
+      gamePanel.style.height = '';
+      minimizeBtn.textContent = '−';
+      minimizeBtn.title = '最小化';
+    } else {
+      // 最小化：隐藏内容，只保留标题栏
+      panelContent.style.display = 'none';
+      gameContainer.style.display = 'none';
+      gamePanel.style.height = '50px';
+      minimizeBtn.textContent = '+';
+      minimizeBtn.title = '展开';
+    }
+
     return;
   }
 
-  // 其他按钮也可以类似处理，但先试试最小化按钮
+  // 关闭按钮
   if (closeBtn) {
     event.preventDefault();
     event.stopPropagation();
@@ -503,23 +545,6 @@ window.miniGamesDebug = {
   showPanel: showGamePanel,
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
-  // 新增折叠调试功能
-  toggleCollapse: () => {
-    if (gamePanel) {
-      gamePanel.classList.toggle('collapsed');
-      console.log('手动切换折叠状态，当前是否折叠:', gamePanel.classList.contains('collapsed'));
-    } else {
-      console.log('面板不存在');
-    }
-  },
-  checkCollapse: () => {
-    if (gamePanel) {
-      console.log('当前折叠状态:', gamePanel.classList.contains('collapsed'));
-      console.log('面板class列表:', gamePanel.className);
-    } else {
-      console.log('面板不存在');
-    }
-  },
   // 新增游戏调试功能
   checkGame: () => {
     const iframe = document.querySelector('.game-iframe');
@@ -573,6 +598,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
