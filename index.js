@@ -208,6 +208,9 @@ function handlePanelClick(event) {
   if (target.classList.contains('minimize-btn')) {
     event.preventDefault();
     event.stopPropagation();
+
+    // 重新获取最新的设置对象引用
+    settings = getSettings();
     console.log('点击最小化按钮，当前状态:', settings.isMinimized);
 
     settings.isMinimized = !settings.isMinimized;
@@ -372,7 +375,10 @@ function handlePanelClick(event) {
 
 // 面板控制
 function showGamePanel() {
-  if (!gamePanel) createGamePanel();
+  if (!gamePanel) {
+    settings = getSettings(); // 重新获取最新设置
+    createGamePanel();
+  }
   gamePanel.style.display = 'block';
   isGamePanelVisible = true;
 }
@@ -510,6 +516,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
