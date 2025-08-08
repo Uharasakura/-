@@ -185,8 +185,7 @@
   justify-content: space-between;
 }
 
-.back-btn,
-.resize-btn {
+.back-btn {
   background: #667eea;
   color: white;
   border: none;
@@ -197,18 +196,8 @@
   font-weight: 600;
   transition: all 0.2s ease;
 }
-.back-btn:hover,
-.resize-btn:hover {
+.back-btn:hover {
   background: #5a67d8;
-}
-
-.resize-btn {
-  background: #48dbfb;
-  font-size: 14px;
-  padding: 4px 8px;
-}
-.resize-btn:hover {
-  background: #0abde3;
 }
 
 .current-game-title {
@@ -300,8 +289,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 400px !important;
-  min-width: 320px !important;
+  min-height: 300px !important;
+  min-width: 300px !important;
   /* 移除固定高度限制，让游戏自适应 */
 }
 
