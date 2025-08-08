@@ -269,8 +269,30 @@
         const gridElement = document.getElementById('grid');
         const { rows, cols } = config[currentDifficulty];
 
-        gridElement.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
-        gridElement.style.gridTemplateRows = `repeat(${rows}, 32px)`;
+        // 动态计算格子大小，确保游戏区域不会太大
+        const maxWidth = Math.min(window.innerWidth - 100, 600); // 最大宽度
+        const maxHeight = Math.min(window.innerHeight - 200, 500); // 最大高度
+
+        const cellWidth = Math.floor(Math.min(maxWidth / cols, maxHeight / rows, 32));
+        const cellHeight = cellWidth; // 保持正方形
+
+        gridElement.style.gridTemplateColumns = `repeat(${cols}, ${cellWidth}px)`;
+        gridElement.style.gridTemplateRows = `repeat(${rows}, ${cellHeight}px)`;
+
+        // 同时更新CSS中的格子大小
+        const style = document.createElement('style');
+        style.textContent = `
+          .cell {
+            width: ${cellWidth}px !important;
+            height: ${cellHeight}px !important;
+            font-size: ${Math.max(12, cellWidth * 0.6)}px !important;
+          }
+          .cell.flagged::before, .cell.mine::before {
+            font-size: ${Math.max(12, cellWidth * 0.6)}px !important;
+          }
+        `;
+        document.head.appendChild(style);
+
         gridElement.innerHTML = '';
 
         for (let i = 0; i < rows; i++) {
@@ -416,3 +438,4 @@
     </script>
   </body>
 </html>
+
