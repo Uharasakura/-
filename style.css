@@ -204,43 +204,6 @@
   font-weight: 600;
   color: #333;
   font-size: 13px;
-  flex: 1;
-}
-
-.game-controls {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.scale-btn,
-.fullscreen-btn {
-  background: #f8f9fa;
-  color: #333;
-  border: 1px solid #dee2e6;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  min-width: 32px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.scale-btn:hover,
-.fullscreen-btn:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
-
-.scale-btn.active {
-  background: #667eea;
-  color: white;
-  border-color: #667eea;
 }
 
 .game-iframe {
@@ -253,14 +216,8 @@
   min-width: 350px;
   overflow: hidden;
   display: block;
-  /* 让iframe内容自适应 */
-  resize: both;
-  /* 确保触摸事件能正确传递 */
   touch-action: manipulation;
   pointer-events: auto;
-  /* 添加缩放控制 */
-  transform-origin: top left;
-  transition: transform 0.3s ease;
 }
 
 /* 移动端优化 */
@@ -335,19 +292,6 @@
   min-height: 400px !important;
   min-width: 320px !important;
   /* 移除固定高度限制，让游戏自适应 */
-}
-
-.mobile-panel .game-controls {
-  gap: 2px !important;
-}
-
-.mobile-panel .scale-btn,
-.mobile-panel .fullscreen-btn {
-  padding: 6px 8px !important;
-  font-size: 11px !important;
-  min-width: 28px !important;
-  height: 32px !important;
-  touch-action: manipulation !important;
 }
 
 /* 响应式设计 */
