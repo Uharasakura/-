@@ -185,7 +185,8 @@
   justify-content: space-between;
 }
 
-.back-btn {
+.back-btn,
+.resize-btn {
   background: #667eea;
   color: white;
   border: none;
@@ -196,8 +197,18 @@
   font-weight: 600;
   transition: all 0.2s ease;
 }
-.back-btn:hover {
+.back-btn:hover,
+.resize-btn:hover {
   background: #5a67d8;
+}
+
+.resize-btn {
+  background: #48dbfb;
+  font-size: 14px;
+  padding: 4px 8px;
+}
+.resize-btn:hover {
+  background: #0abde3;
 }
 
 .current-game-title {
@@ -341,6 +352,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
