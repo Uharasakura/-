@@ -1,341 +1,111 @@
-/* 小游戏合集扩展样式 - 精简版 */
+/* 小游戏合集扩展 - 超级简化版样式 */
 
-/* 扩展按钮 */
-#mini-games-button {
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  user-select: none;
-}
-#mini-games-button:hover {
-  transform: scale(1.1);
-}
-
-/* 游戏面板 */
 .mini-games-panel {
-  position: fixed;
-  z-index: 10000;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  transition: height 0.3s ease;
-}
-
-/* 最小化状态样式 */
-.mini-games-panel[style*='height: 50px'] {
   overflow: hidden;
 }
 
-/* 标题栏 */
 .panel-header {
   background: rgba(0, 0, 0, 0.2);
   padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: grab;
-  user-select: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-.panel-header:active {
-  cursor: grabbing;
+  font-weight: bold;
 }
 
-.panel-title {
-  display: flex;
-  align-items: center;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-}
-.title-icon {
-  margin-right: 8px;
-  font-size: 16px;
-}
-
-.panel-controls {
-  display: flex;
-  gap: 8px;
-}
-.control-btn {
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 50%;
+.minimize-btn,
+.close-btn,
+.back-btn {
   background: rgba(255, 255, 255, 0.2);
+  border: none;
   color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   cursor: pointer;
-  display: flex;
+  margin-left: 8px;
+  font-size: 16px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  transition: all 0.2s ease;
 }
-.control-btn:hover {
+
+.minimize-btn:hover,
+.close-btn:hover,
+.back-btn:hover {
   background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-}
-.close-btn:hover {
-  background: #ff4757;
 }
 
-/* 面板内容 */
 .panel-content {
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  height: calc(100% - 50px);
-  display: flex;
-  flex-direction: column;
+  padding: 16px;
 }
 
-/* 游戏网格 */
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 16px;
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 12px;
 }
 
-/* 游戏项 */
 .game-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 12px;
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid transparent;
+  transition: all 0.2s ease;
 }
+
 .game-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border-color: #667eea;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .game-icon {
   font-size: 32px;
   margin-bottom: 8px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .game-name {
   font-size: 12px;
-  font-weight: 600;
-  color: #333;
-  text-align: center;
-  line-height: 1.3;
+  opacity: 0.9;
 }
 
-/* 底部按钮 */
-.panel-footer {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.add-game-btn {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-.add-game-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-/* iframe容器 */
-.game-iframe-container {
+.game-view {
+  padding: 16px;
   height: calc(100% - 50px);
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.iframe-header {
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.back-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-.back-btn:hover {
-  background: #5a67d8;
-}
-
-.current-game-title {
-  font-weight: 600;
-  color: #333;
-  font-size: 13px;
 }
 
 .game-iframe {
   flex: 1;
   width: 100%;
-  height: 100%;
   border: none;
+  border-radius: 8px;
   background: white;
-  min-height: 300px;
-  overflow: auto;
-  display: block;
-  /* 让iframe内容自适应 */
-  resize: both;
-  /* 确保触摸事件能正确传递 */
-  touch-action: manipulation;
-  pointer-events: auto;
+  margin-top: 12px;
 }
 
-/* 移动端优化 */
-.mobile-panel {
-  border-radius: 16px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
-}
-
-.mobile-panel .panel-header {
-  padding: 16px 20px !important;
-  font-size: 16px !important;
-}
-
-.mobile-panel .panel-content {
-  padding: 16px !important;
-  overflow: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-.mobile-panel .games-grid {
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
-  gap: 16px !important;
-  padding: 4px !important;
-}
-
-.mobile-panel .game-item {
-  padding: 16px 12px !important;
-  min-height: 100px !important;
-  touch-action: manipulation !important;
-}
-
-.mobile-panel .game-icon {
-  font-size: 28px !important;
-  width: 44px !important;
-  height: 44px !important;
-}
-
-.mobile-panel .game-name {
-  font-size: 12px !important;
-  margin-top: 8px !important;
-}
-
-.mobile-panel .control-btn {
-  width: 44px !important;
-  height: 44px !important;
-  font-size: 18px !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
-  touch-action: manipulation !important;
-  pointer-events: auto !important;
-  z-index: 10 !important;
-}
-
-.mobile-panel .add-game-btn {
-  padding: 16px !important;
-  font-size: 15px !important;
-  margin-top: 12px !important;
-}
-
-.mobile-panel .game-iframe-container {
-  height: calc(100% - 60px) !important;
-}
-
-.mobile-panel .iframe-header {
-  padding: 12px 16px !important;
-}
-
-.mobile-panel .game-iframe {
-  min-height: 300px !important;
-  /* 移除固定高度限制，让游戏自适应 */
-}
-
-/* 响应式设计 */
+/* 移动端适配 */
 @media (max-width: 768px) {
-  .mini-games-panel:not(.mobile-panel) {
-    width: 95% !important;
-    height: 80% !important;
-    left: 2.5% !important;
-    top: 10% !important;
+  .mini-games-panel {
+    width: 95vw !important;
+    height: 80vh !important;
+    left: 2.5vw !important;
+    top: 10vh !important;
+  }
+
+  .minimize-btn,
+  .close-btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .games-grid {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 12px;
-  }
-  .game-item {
-    padding: 12px 8px;
-    touch-action: manipulation;
-  }
-  .game-icon {
-    font-size: 24px;
-    width: 40px;
-    height: 40px;
-  }
-  .game-name {
-    font-size: 11px;
-  }
-  .control-btn {
-    touch-action: manipulation;
-    min-width: 44px;
-    min-height: 44px;
   }
 }
 
-/* 滚动条 */
-.games-grid::-webkit-scrollbar {
-  width: 6px;
-}
-.games-grid::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-.games-grid::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.6);
-  border-radius: 3px;
-}
-.games-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(102, 126, 234, 0.8);
-}
 
 
 
