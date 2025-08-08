@@ -102,6 +102,8 @@ const optimizePanelForGame = gameName => {
 
 // 创建游戏面板HTML
 function createGamePanelHTML() {
+  // 确保使用最新的设置
+  settings = getSettings();
   const allGames = [...builtInGames, ...settings.customGames];
   const gamesHTML = allGames
     .map(
@@ -268,7 +270,7 @@ function handlePanelClick(event) {
           <p style="color: #666; font-size: 14px;">${gameName}</p>
           <div style="margin-top: 20px;">
             <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-          </div>
+            </div>
           <style>
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -346,7 +348,7 @@ function handlePanelClick(event) {
               <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
               <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
             </div>
-          </div>
+            </div>
         `;
       }
     };
@@ -516,6 +518,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
