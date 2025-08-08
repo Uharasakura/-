@@ -20,20 +20,12 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: height 0.3s ease;
 }
 
-/* 全新的简单折叠系统 */
-.mini-games-panel.collapsed {
-  height: 50px !important;
-  overflow: hidden !important;
-}
-
-.mini-games-panel.collapsed .panel-content {
-  display: none !important;
-}
-
-.mini-games-panel.collapsed .game-iframe-container {
-  display: none !important;
+/* 最小化状态样式 */
+.mini-games-panel[style*='height: 50px'] {
+  overflow: hidden;
 }
 
 /* 标题栏 */
@@ -344,6 +336,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
