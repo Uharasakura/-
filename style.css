@@ -235,14 +235,19 @@
 
 .mobile-panel .panel-content {
   padding: 16px !important;
-  overflow: auto !important;
+  overflow: hidden !important;
   -webkit-overflow-scrolling: touch !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .mobile-panel .games-grid {
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
   gap: 16px !important;
   padding: 4px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  max-height: calc(100vh - 200px) !important;
 }
 
 .mobile-panel .game-item {
@@ -339,6 +344,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
