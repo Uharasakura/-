@@ -191,92 +191,74 @@ function createGamePanel() {
   document.body.appendChild(gamePanel);
 }
 
-// 重置到游戏列表状态
-function resetToGameList() {
-  const $ = sel => gamePanel.querySelector(sel);
-
-  // 显示游戏列表，隐藏游戏界面
-  $('.panel-content').style.display = 'block';
-  $('.game-iframe-container').style.display = 'none';
-
-  // 清空游戏iframe内容，释放资源
-  const iframe = $('.game-iframe');
-  if (iframe) {
-    iframe.srcdoc = '';
-    iframe.src = 'about:blank';
-  }
-
-  // 重置面板大小到默认状态
-  resetPanelSize();
-
-  console.log('面板已重置到游戏列表状态');
-}
-
-// 重置面板大小
-function resetPanelSize() {
-  if (!gamePanel) return;
-
-  const isMobile = window.innerWidth <= 768;
-  if (isMobile) {
-    Object.assign(gamePanel.style, {
-      width: '90vw',
-      height: '80vh',
-      maxWidth: '400px',
-      maxHeight: '600px',
-      minWidth: '300px',
-      minHeight: '400px',
-    });
-  } else {
-    Object.assign(gamePanel.style, {
-      width: settings.panelSize.width + 'px',
-      height: settings.panelSize.height + 'px',
-      maxWidth: '800px',
-      maxHeight: '600px',
-      minWidth: '300px',
-      minHeight: '200px',
-    });
-  }
-}
-
-// 添加事件监听器
+// 添加事件监听器 - 使用事件委托避免作用域问题
 function addEventListeners() {
-  const $ = sel => gamePanel.querySelector(sel);
+  // 移除之前的监听器避免重复绑定
+  gamePanel.removeEventListener('click', handlePanelClick);
 
-  // 控制按钮
-  $('.minimize-btn').onclick = () => {
+  // 使用事件委托处理所有点击事件
+  gamePanel.addEventListener('click', handlePanelClick);
+}
+
+// 处理面板内的点击事件
+function handlePanelClick(event) {
+  const target = event.target;
+
+  // 最小化按钮
+  if (target.classList.contains('minimize-btn')) {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('点击最小化按钮，当前状态:', settings.isMinimized);
+
     settings.isMinimized = !settings.isMinimized;
     gamePanel.classList.toggle('minimized', settings.isMinimized);
-
-    // 如果正在最小化，确保重置到游戏列表状态
-    if (settings.isMinimized) {
-      resetToGameList();
-    }
     saveSettings();
-  };
-  $('.close-btn').onclick = hideGamePanel;
-  $('.back-btn').onclick = () => {
-    resetToGameList();
-  };
 
-  // 游戏项点击
-  gamePanel.querySelectorAll('.game-item').forEach(item => {
-    item.onclick = () => {
-      const gameFile = item.dataset.game;
-      const gameName = item.querySelector('.game-name').textContent;
+    console.log('最小化状态已更新:', settings.isMinimized);
+    return;
+  }
 
-      // 直接使用gameFile，因为现在都是完整的URL
-      const gameUrl = gameFile;
+  // 关闭按钮
+  if (target.classList.contains('close-btn')) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideGamePanel();
+    return;
+  }
 
-      const iframe = $('.game-iframe');
-      $('.current-game-title').textContent = gameName;
-      $('.panel-content').style.display = 'none';
-      $('.game-iframe-container').style.display = 'block';
+  // 返回按钮
+  if (target.classList.contains('back-btn')) {
+    event.preventDefault();
+    event.stopPropagation();
+    const $ = sel => gamePanel.querySelector(sel);
+    $('.panel-content').style.display = 'block';
+    $('.game-iframe-container').style.display = 'none';
+    return;
+  }
 
-      // 优化面板显示，让游戏自适应
-      optimizePanelForGame(gameName);
+  // 游戏项点击 - 现在通过事件委托处理
+  if (target.classList.contains('game-item') || target.closest('.game-item')) {
+    event.preventDefault();
+    event.stopPropagation();
 
-      // 显示加载指示器
-      iframe.srcdoc = `
+    const gameItem = target.classList.contains('game-item') ? target : target.closest('.game-item');
+    const gameFile = gameItem.dataset.game;
+    const gameName = gameItem.querySelector('.game-name').textContent;
+
+    // 直接使用gameFile，因为现在都是完整的URL
+    const gameUrl = gameFile;
+    const $ = sel => gamePanel.querySelector(sel);
+
+    const iframe = $('.game-iframe');
+    $('.current-game-title').textContent = gameName;
+    $('.panel-content').style.display = 'none';
+    $('.game-iframe-container').style.display = 'block';
+
+    // 优化面板显示，让游戏自适应
+    optimizePanelForGame(gameName);
+
+    // 显示加载指示器
+    iframe.srcdoc = `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f8f9fa;">
           <div style="font-size: 48px; margin-bottom: 20px;">🎮</div>
           <h2 style="color: #667eea; margin-bottom: 10px;">正在加载游戏...</h2>
@@ -293,85 +275,88 @@ function addEventListeners() {
         </div>
       `;
 
-      // 使用fetch获取HTML内容并通过srcdoc渲染
-      console.log(`正在加载游戏: ${gameName} - ${gameUrl}`);
+    // 使用fetch获取HTML内容并通过srcdoc渲染
+    console.log(`正在加载游戏: ${gameName} - ${gameUrl}`);
 
-      const loadGameWithFetch = async (url, attempt = 0) => {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-
-          const htmlContent = await response.text();
-          console.log(`游戏HTML获取成功: ${url}`);
-
-          // 处理HTML内容，修复相对路径和jQuery依赖问题
-          let processedHtml = htmlContent;
-
-          // 获取游戏的基础URL
-          const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-
-          // 检查是否使用了jQuery但没有引入
-          const usesJQuery = processedHtml.includes('$(') || processedHtml.includes('jQuery(');
-          const hasJQuery = processedHtml.includes('jquery') || processedHtml.includes('jQuery');
-
-          let headContent = `<base href="${baseUrl}">`;
-
-          // 如果游戏使用jQuery但没有引入，自动添加jQuery库
-          if (usesJQuery && !hasJQuery) {
-            console.log(`游戏 ${gameName} 使用jQuery但未引入，自动添加jQuery库`);
-            headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
-          }
-
-          // 在head中添加必要的内容
-          if (processedHtml.includes('<head>')) {
-            processedHtml = processedHtml.replace('<head>', '<head>' + headContent);
-          } else if (processedHtml.includes('<html>')) {
-            processedHtml = processedHtml.replace('<html>', '<html><head>' + headContent + '</head>');
-          } else {
-            processedHtml = headContent + processedHtml;
-          }
-
-          console.log(`游戏HTML已处理: ${gameName} - jQuery:${usesJQuery && !hasJQuery ? '已添加' : '无需添加'}`);
-          iframe.srcdoc = processedHtml;
-        } catch (error) {
-          console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
-
-          if (attempt < 2) {
-            // 尝试备用CDN
-            const backupUrls = [
-              gameUrl.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
-              gameUrl.replace('cdn.jsdelivr.net/gh/', 'gitcdn.xyz/repo/'),
-            ];
-
-            if (attempt < backupUrls.length) {
-              setTimeout(() => loadGameWithFetch(backupUrls[attempt], attempt + 1), 1000);
-              return;
-            }
-          }
-
-          // 所有方法都失败，显示错误页面
-          iframe.srcdoc = `
-             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
-               <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
-               <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
-               <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
-               <div style="margin-top: 20px;">
-                 <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
-                 <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
-            </div>
-        </div>
-           `;
+    const loadGameWithFetch = async (url, attempt = 0) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
-      };
 
-      loadGameWithFetch(gameUrl);
+        const htmlContent = await response.text();
+        console.log(`游戏HTML获取成功: ${url}`);
+
+        // 处理HTML内容，修复相对路径和jQuery依赖问题
+        let processedHtml = htmlContent;
+
+        // 获取游戏的基础URL
+        const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+
+        // 检查是否使用了jQuery但没有引入
+        const usesJQuery = processedHtml.includes('$(') || processedHtml.includes('jQuery(');
+        const hasJQuery = processedHtml.includes('jquery') || processedHtml.includes('jQuery');
+
+        let headContent = `<base href="${baseUrl}">`;
+
+        // 如果游戏使用jQuery但没有引入，自动添加jQuery库
+        if (usesJQuery && !hasJQuery) {
+          console.log(`游戏 ${gameName} 使用jQuery但未引入，自动添加jQuery库`);
+          headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
+        }
+
+        // 在head中添加必要的内容
+        if (processedHtml.includes('<head>')) {
+          processedHtml = processedHtml.replace('<head>', '<head>' + headContent);
+        } else if (processedHtml.includes('<html>')) {
+          processedHtml = processedHtml.replace('<html>', '<html><head>' + headContent + '</head>');
+        } else {
+          processedHtml = headContent + processedHtml;
+        }
+
+        console.log(`游戏HTML已处理: ${gameName} - jQuery:${usesJQuery && !hasJQuery ? '已添加' : '无需添加'}`);
+        iframe.srcdoc = processedHtml;
+      } catch (error) {
+        console.log(`游戏加载失败 (尝试 ${attempt + 1}): ${url}`, error);
+
+        if (attempt < 2) {
+          // 尝试备用CDN
+          const backupUrls = [
+            gameUrl.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
+            gameUrl.replace('cdn.jsdelivr.net/gh/', 'gitcdn.xyz/repo/'),
+          ];
+
+          if (attempt < backupUrls.length) {
+            setTimeout(() => loadGameWithFetch(backupUrls[attempt], attempt + 1), 1000);
+            return;
+          }
+        }
+
+        // 所有方法都失败，显示错误页面
+        iframe.srcdoc = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+            <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+            <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${gameName}</p>
+            <p style="color: #666; font-size: 12px;">已尝试多个CDN源，可能是网络问题</p>
+            <div style="margin-top: 20px;">
+              <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
+              <a href="${gameUrl}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+            </div>
+          </div>
+        `;
+      }
     };
-  });
 
-  // 添加游戏按钮
-  $('.add-game-btn').onclick = () => {
+    loadGameWithFetch(gameUrl);
+    return; // 处理完游戏点击事件，退出函数
+  }
+
+  // 添加游戏按钮 - 现在通过事件委托处理
+  if (target.classList.contains('add-game-btn')) {
+    event.preventDefault();
+    event.stopPropagation();
+
     const name = prompt('游戏名称:');
     const icon = prompt('游戏图标(emoji):');
     const url = prompt('游戏链接:');
@@ -381,7 +366,8 @@ function addEventListeners() {
       createGamePanel();
       if (isGamePanelVisible) gamePanel.style.display = 'block';
     }
-  };
+    return;
+  }
 }
 
 // 面板控制
