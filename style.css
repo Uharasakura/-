@@ -24,9 +24,13 @@
 
 .mini-games-panel.minimized {
   height: 50px !important;
+  overflow: hidden !important;
 }
 .mini-games-panel.minimized .panel-content,
 .mini-games-panel.minimized .game-iframe-container {
+  display: none !important;
+}
+.mini-games-panel.minimized .game-iframe {
   display: none !important;
 }
 
@@ -336,6 +340,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
