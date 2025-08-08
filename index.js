@@ -327,27 +327,11 @@ async function loadGame(url, name) {
           max-width: 100% !important;
           max-height: 100% !important;
           width: 100% !important;
-          height: auto !important;
+          height: 100% !important;
           display: block !important;
           margin: 0 auto !important;
           object-fit: contain !important;
-        }
-        
-        /* 横屏游戏特殊处理 */
-        ${
-          isLandscapeGame
-            ? `
-        canvas {
-          width: 100% !important;
-          height: 70vh !important;
-          max-height: 70vh !important;
-        }
-        .game-container, #game-container, .container {
-          height: 70vh !important;
-          max-height: 70vh !important;
-        }
-        `
-            : ''
+          box-sizing: border-box !important;
         }
         
         /* 处理固定尺寸的canvas */
@@ -395,27 +379,37 @@ async function loadGame(url, name) {
         (function() {
           function resizeGame() {
             const canvases = document.querySelectorAll('canvas');
+            const isLandscape = ${isLandscapeGame};
+            
             canvases.forEach(canvas => {
-              const rect = canvas.getBoundingClientRect();
-              const container = canvas.parentElement || document.body;
-              const containerRect = container.getBoundingClientRect();
+              // 获取iframe的实际可用尺寸
+              const iframeWidth = window.innerWidth;
+              const iframeHeight = window.innerHeight;
               
-              // 让canvas适应容器
-              if (containerRect.width > 0 && containerRect.height > 0) {
-                const scaleX = containerRect.width / (canvas.width || containerRect.width);
-                const scaleY = containerRect.height / (canvas.height || containerRect.height);
-                const scale = Math.min(scaleX, scaleY, 1);
-                
-                canvas.style.transform = 'scale(' + scale + ')';
-                canvas.style.transformOrigin = 'top left';
+              if (isLandscape) {
+                // 横屏游戏：限制高度，保持宽度
+                const maxHeight = Math.min(iframeHeight * 0.8, 350);
+                canvas.style.width = '100%';
+                canvas.style.height = maxHeight + 'px';
+                canvas.style.maxHeight = maxHeight + 'px';
+              } else {
+                // 竖屏游戏：适应容器
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.maxWidth = '100%';
+                canvas.style.maxHeight = '100%';
               }
             });
-          }
-          
-          // 监听容器尺寸变化
-          if (window.ResizeObserver) {
-            const observer = new ResizeObserver(resizeGame);
-            observer.observe(document.body);
+            
+            // 调整游戏容器
+            const containers = document.querySelectorAll('.game-container, #game-container, .container');
+            containers.forEach(container => {
+              if (isLandscape) {
+                const maxHeight = Math.min(window.innerHeight * 0.8, 350);
+                container.style.height = maxHeight + 'px';
+                container.style.maxHeight = maxHeight + 'px';
+              }
+            });
           }
           
           // 页面加载完成后调整
@@ -425,8 +419,12 @@ async function loadGame(url, name) {
             resizeGame();
           }
           
-          // 定期检查并调整
-          setInterval(resizeGame, 1000);
+          // 监听窗口大小变化
+          window.addEventListener('resize', resizeGame);
+          
+          // 延迟调整，确保游戏元素已加载
+          setTimeout(resizeGame, 500);
+          setTimeout(resizeGame, 1000);
         })();
       </script>
     `;
@@ -450,13 +448,13 @@ async function loadGame(url, name) {
           const screenWidth = window.innerWidth;
           const screenHeight = window.innerHeight;
           Object.assign(gamePanel.style, {
-            width: Math.min(screenWidth - 10, 450) + 'px',
-            height: Math.min(screenHeight - 40, 400) + 'px',
+            width: Math.min(screenWidth - 10, 480) + 'px',
+            height: Math.min(screenHeight - 40, 380) + 'px',
           });
         } else {
           Object.assign(gamePanel.style, {
-            width: '600px',
-            height: '450px',
+            width: '650px',
+            height: '420px',
           });
         }
       }
