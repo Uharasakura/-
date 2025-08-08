@@ -91,6 +91,8 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 /* 游戏网格 */
@@ -233,8 +235,11 @@
 
 .mobile-panel .panel-content {
   padding: 16px !important;
-  overflow: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior: contain !important;
 }
 
 .mobile-panel .games-grid {
@@ -337,6 +342,8 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
+
 
 
 
