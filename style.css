@@ -89,9 +89,8 @@
   padding: 20px;
   background: rgba(255, 255, 255, 0.95);
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 游戏网格 */
@@ -99,9 +98,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 16px;
-  flex: 1;
-  overflow-y: auto;
   padding: 8px;
+  margin-bottom: 16px;
 }
 
 /* 游戏项 */
@@ -235,19 +233,14 @@
 
 .mobile-panel .panel-content {
   padding: 16px !important;
-  overflow: hidden !important;
+  overflow: auto !important;
   -webkit-overflow-scrolling: touch !important;
-  display: flex !important;
-  flex-direction: column !important;
 }
 
 .mobile-panel .games-grid {
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
   gap: 16px !important;
   padding: 4px !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  max-height: calc(100vh - 200px) !important;
 }
 
 .mobile-panel .game-item {
@@ -344,6 +337,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
