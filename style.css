@@ -1,4 +1,4 @@
-/* 小游戏合集扩展样式 - 精简版 */
+/* 小游戏合集扩展样式 */
 
 /* 扩展按钮 */
 #mini-games-button {
@@ -182,7 +182,6 @@
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  justify-content: space-between;
 }
 
 .back-btn {
@@ -213,11 +212,12 @@
   border: none;
   background: white;
   min-height: 400px;
-  min-width: 350px;
+  min-width: 300px;
   overflow: hidden;
   display: block;
   touch-action: manipulation;
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
 /* 移动端优化 */
@@ -289,9 +289,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 300px !important;
-  min-width: 300px !important;
-  /* 移除固定高度限制，让游戏自适应 */
+  min-height: 450px !important;
+  min-width: 350px !important;
 }
 
 /* 响应式设计 */
