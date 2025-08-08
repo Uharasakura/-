@@ -228,29 +228,37 @@ async function loadGame(url, name) {
     const adaptCSS = `
       <style>
         html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; overflow: hidden !important; }
-        .game-container, #game-container, .container, main, #main { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }
-        canvas { width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: contain !important; }
-        [style*="100vh"], [style*="100vw"] { width: 100% !important; height: 100% !important; }
-        [style*="position: fixed"] { position: absolute !important; }
+        body { transform-origin: top left !important; }
+        * { max-width: 100% !important; max-height: 100% !important; box-sizing: border-box !important; }
       </style>
       <script>
         (function() {
-          function adapt() {
-            document.querySelectorAll('canvas, .game-container, #game-container').forEach(el => {
-              if (el) {
-                el.style.width = '100%';
-                el.style.height = '100%';
-                el.style.maxWidth = '100%';
-                el.style.maxHeight = '100%';
-              }
-            });
+          function scaleToFit() {
+            const iframe = window.frameElement;
+            if (!iframe) return;
+            
+            const iframeWidth = iframe.clientWidth;
+            const iframeHeight = iframe.clientHeight;
+            const bodyWidth = document.body.scrollWidth;
+            const bodyHeight = document.body.scrollHeight;
+            
+            if (bodyWidth > iframeWidth || bodyHeight > iframeHeight) {
+              const scaleX = iframeWidth / bodyWidth;
+              const scaleY = iframeHeight / bodyHeight;
+              const scale = Math.min(scaleX, scaleY, 1);
+              
+              document.body.style.transform = \`scale(\${scale})\`;
+              document.body.style.transformOrigin = 'top left';
+            }
           }
+          
           if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', adapt);
+            document.addEventListener('DOMContentLoaded', scaleToFit);
           } else {
-            adapt();
+            scaleToFit();
           }
-          setTimeout(adapt, 500);
+          setTimeout(scaleToFit, 500);
+          setTimeout(scaleToFit, 1000);
         })();
       </script>
     `;
@@ -354,6 +362,7 @@ function start() {
 }
 
 start();
+
 
 
 
