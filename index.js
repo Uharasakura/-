@@ -8,7 +8,6 @@ const extensionFolderPath = '/scripts/extensions/third-party/各种小游戏';
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
   panelSize: { width: 400, height: 500 }, // 更合理的默认大小
-  isMinimized: false,
   customGames: [],
 };
 
@@ -116,7 +115,7 @@ function createGamePanelHTML() {
     .join('');
 
   return `
-    <div id="mini-games-panel" class="mini-games-panel ${settings.isMinimized ? 'minimized' : ''}">
+    <div id="mini-games-panel" class="mini-games-panel">
       <div class="panel-header">
         <div class="panel-title">
           <span class="title-icon">🎮</span>
@@ -219,17 +218,14 @@ function handlePanelClick(event) {
   const addGameBtn = target.closest('.add-game-btn');
   const gameItem = target.closest('.game-item');
 
-  // 最小化按钮
+  // 最小化按钮 - 全新简单逻辑
   if (minimizeBtn) {
     event.preventDefault();
     event.stopPropagation();
 
-    // 重新获取最新的设置对象引用
-    settings = getSettings();
-
-    settings.isMinimized = !settings.isMinimized;
-    gamePanel.classList.toggle('minimized', settings.isMinimized);
-    saveSettings();
+    // 超级简单：直接toggle CSS class
+    gamePanel.classList.toggle('collapsed');
+    console.log('折叠状态切换，当前是否折叠:', gamePanel.classList.contains('collapsed'));
     return;
   }
 
@@ -397,17 +393,14 @@ function handlePanelTouch(event) {
   const addGameBtn = target.closest('.add-game-btn');
   const gameItem = target.closest('.game-item');
 
-  // 最小化按钮（移动端专用处理）
+  // 最小化按钮（移动端专用处理）- 全新简单逻辑
   if (minimizeBtn) {
     event.preventDefault();
     event.stopPropagation();
 
-    // 重新获取最新的设置对象引用
-    settings = getSettings();
-
-    settings.isMinimized = !settings.isMinimized;
-    gamePanel.classList.toggle('minimized', settings.isMinimized);
-    saveSettings();
+    // 超级简单：直接toggle CSS class
+    gamePanel.classList.toggle('collapsed');
+    console.log('移动端折叠状态切换，当前是否折叠:', gamePanel.classList.contains('collapsed'));
     return;
   }
 
@@ -510,6 +503,23 @@ window.miniGamesDebug = {
   showPanel: showGamePanel,
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
+  // 新增折叠调试功能
+  toggleCollapse: () => {
+    if (gamePanel) {
+      gamePanel.classList.toggle('collapsed');
+      console.log('手动切换折叠状态，当前是否折叠:', gamePanel.classList.contains('collapsed'));
+    } else {
+      console.log('面板不存在');
+    }
+  },
+  checkCollapse: () => {
+    if (gamePanel) {
+      console.log('当前折叠状态:', gamePanel.classList.contains('collapsed'));
+      console.log('面板class列表:', gamePanel.className);
+    } else {
+      console.log('面板不存在');
+    }
+  },
   // 新增游戏调试功能
   checkGame: () => {
     const iframe = document.querySelector('.game-iframe');
@@ -563,6 +573,8 @@ window.miniGamesDebug = {
     }
   },
 };
+
+
 
 
 
