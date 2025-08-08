@@ -191,6 +191,53 @@ function createGamePanel() {
   document.body.appendChild(gamePanel);
 }
 
+// 重置到游戏列表状态
+function resetToGameList() {
+  const $ = sel => gamePanel.querySelector(sel);
+
+  // 显示游戏列表，隐藏游戏界面
+  $('.panel-content').style.display = 'block';
+  $('.game-iframe-container').style.display = 'none';
+
+  // 清空游戏iframe内容，释放资源
+  const iframe = $('.game-iframe');
+  if (iframe) {
+    iframe.srcdoc = '';
+    iframe.src = 'about:blank';
+  }
+
+  // 重置面板大小到默认状态
+  resetPanelSize();
+
+  console.log('面板已重置到游戏列表状态');
+}
+
+// 重置面板大小
+function resetPanelSize() {
+  if (!gamePanel) return;
+
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    Object.assign(gamePanel.style, {
+      width: '90vw',
+      height: '80vh',
+      maxWidth: '400px',
+      maxHeight: '600px',
+      minWidth: '300px',
+      minHeight: '400px',
+    });
+  } else {
+    Object.assign(gamePanel.style, {
+      width: settings.panelSize.width + 'px',
+      height: settings.panelSize.height + 'px',
+      maxWidth: '800px',
+      maxHeight: '600px',
+      minWidth: '300px',
+      minHeight: '200px',
+    });
+  }
+}
+
 // 添加事件监听器
 function addEventListeners() {
   const $ = sel => gamePanel.querySelector(sel);
@@ -199,12 +246,16 @@ function addEventListeners() {
   $('.minimize-btn').onclick = () => {
     settings.isMinimized = !settings.isMinimized;
     gamePanel.classList.toggle('minimized', settings.isMinimized);
+
+    // 如果正在最小化，确保重置到游戏列表状态
+    if (settings.isMinimized) {
+      resetToGameList();
+    }
     saveSettings();
   };
   $('.close-btn').onclick = hideGamePanel;
   $('.back-btn').onclick = () => {
-    $('.panel-content').style.display = 'block';
-    $('.game-iframe-container').style.display = 'none';
+    resetToGameList();
   };
 
   // 游戏项点击
@@ -473,6 +524,7 @@ window.miniGamesDebug = {
     }
   },
 };
+
 
 
 
