@@ -181,14 +181,27 @@ function handleClick(event) {
     const isMinimized = panelContent.style.display === 'none' && gameContainer.style.display === 'none';
 
     if (isMinimized) {
-      // 展开
-      panelContent.style.display = '';
-      if (gameContainer.style.display !== 'none') gameContainer.style.display = 'block';
+      // 展开：恢复到之前的状态
+      const wasShowingGame = gameContainer.dataset.wasVisible === 'true';
+
+      if (wasShowingGame) {
+        // 如果之前在玩游戏，恢复游戏界面
+        panelContent.style.display = 'none';
+        gameContainer.style.display = 'block';
+      } else {
+        // 如果之前在菜单，恢复菜单界面
+        panelContent.style.display = 'block';
+        gameContainer.style.display = 'none';
+      }
+
       gamePanel.style.height = '';
       minimizeBtn.textContent = '−';
       minimizeBtn.title = '最小化';
     } else {
-      // 最小化
+      // 最小化：记住当前状态
+      const isShowingGame = gameContainer.style.display === 'block';
+      gameContainer.dataset.wasVisible = isShowingGame.toString();
+
       panelContent.style.display = 'none';
       gameContainer.style.display = 'none';
       gamePanel.style.height = '50px';
@@ -396,6 +409,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
