@@ -68,6 +68,50 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
+// 根据游戏调整面板大小
+function adjustPanelForGame(gameName) {
+  if (!gamePanel) return;
+
+  // 不同游戏的推荐尺寸
+  const gameConfig = {
+    贪吃蛇: { width: 450, height: 600, minWidth: 350, minHeight: 500 },
+    种田: { width: 600, height: 700, minWidth: 500, minHeight: 600 },
+    飞行棋: { width: 650, height: 650, minWidth: 500, minHeight: 500 },
+    'Nyan Cat': { width: 550, height: 400, minWidth: 450, minHeight: 350 },
+    扫雷: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
+    数独: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
+  };
+
+  const config = gameConfig[gameName] || { width: 500, height: 600, minWidth: 400, minHeight: 500 };
+
+  if (isMobile()) {
+    // 移动端：适应屏幕，但确保有足够空间
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    const panelWidth = Math.min(Math.max(config.minWidth, screenWidth - 40), config.width);
+    const panelHeight = Math.min(Math.max(config.minHeight, screenHeight - 100), config.height);
+
+    Object.assign(gamePanel.style, {
+      width: panelWidth + 'px',
+      height: panelHeight + 'px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+    });
+  } else {
+    // 桌面端：使用推荐尺寸，但不超过屏幕
+    const maxWidth = Math.min(window.innerWidth - 100, config.width);
+    const maxHeight = Math.min(window.innerHeight - 100, config.height);
+
+    Object.assign(gamePanel.style, {
+      width: maxWidth + 'px',
+      height: maxHeight + 'px',
+    });
+  }
+
+  console.log(`为游戏 ${gameName} 调整面板尺寸: ${gamePanel.style.width} x ${gamePanel.style.height}`);
+}
+
 // 创建面板HTML
 function createPanelHTML() {
   settings = getSettings();
@@ -262,9 +306,9 @@ async function loadGame(url, name) {
       <p style="color: #666; font-size: 14px;">${name}</p>
       <div style="margin-top: 20px;">
         <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-      </div>
+            </div>
       <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-    </div>
+        </div>
   `;
 
   try {
@@ -277,13 +321,64 @@ async function loadGame(url, name) {
     const usesJQuery = html.includes('$(') || html.includes('jQuery(');
     const hasJQuery = html.includes('jquery') || html.includes('jQuery');
 
+    // 处理jQuery依赖和iframe适配
+    const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+    let headContent = `<base href="${baseUrl}">`;
+
     if (usesJQuery && !hasJQuery) {
-      const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-      const head = `<base href="${baseUrl}"><script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
-      html = html.includes('<head>') ? html.replace('<head>', '<head>' + head) : head + html;
+      headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
+    }
+
+    // 添加iframe适配CSS，让游戏适应容器而不是全屏
+    headContent += `
+      <style>
+        /* iframe适配样式 - 覆盖游戏的全屏设置 */
+        html, body {
+          margin: 0 !important;
+          padding: 10px !important;
+          min-height: auto !important;
+          height: auto !important;
+          overflow: auto !important;
+          box-sizing: border-box !important;
+        }
+        
+        /* 让游戏容器适应iframe */
+        #game-container, .game-container, .container {
+          max-width: none !important;
+          width: 100% !important;
+          margin: 0 auto !important;
+          min-height: auto !important;
+        }
+        
+        /* 调整使用vmin/vh单位的元素 */
+        [style*="vmin"], [style*="vh"], [style*="vw"] {
+          max-width: 90% !important;
+          max-height: 80vh !important;
+        }
+        
+        /* 确保canvas等游戏元素不会太大 */
+        canvas {
+          max-width: 100% !important;
+          max-height: 70vh !important;
+        }
+      </style>
+    `;
+
+    // 注入到HTML
+    if (html.includes('<head>')) {
+      html = html.replace('<head>', '<head>' + headContent);
+    } else if (html.includes('<html>')) {
+      html = html.replace('<html>', '<html><head>' + headContent + '</head>');
+    } else {
+      html = headContent + html;
     }
 
     iframe.srcdoc = html;
+
+    // 动态调整面板大小以适应游戏内容
+    setTimeout(() => {
+      adjustPanelForGame(name);
+    }, 1000);
   } catch (error) {
     // 尝试备用CDN
     const backupUrls = [
@@ -409,6 +504,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
