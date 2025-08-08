@@ -68,6 +68,126 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
+// 根据游戏调整面板大小
+function adjustPanelForGame(gameName) {
+  if (!gamePanel) return;
+
+  // 不同游戏的推荐尺寸和特性
+  const gameConfig = {
+    贪吃蛇: {
+      width: 450,
+      height: 600,
+      minWidth: 350,
+      minHeight: 500,
+      aspectRatio: 0.75,
+      type: 'portrait',
+    },
+    种田: {
+      width: 600,
+      height: 700,
+      minWidth: 500,
+      minHeight: 600,
+      aspectRatio: 0.86,
+      type: 'portrait',
+    },
+    飞行棋: {
+      width: 650,
+      height: 650,
+      minWidth: 500,
+      minHeight: 500,
+      aspectRatio: 1.0,
+      type: 'square',
+    },
+    'Nyan Cat': {
+      width: 700,
+      height: 450,
+      minWidth: 550,
+      minHeight: 350,
+      aspectRatio: 1.56,
+      type: 'landscape',
+    },
+    扫雷: {
+      width: 500,
+      height: 600,
+      minWidth: 400,
+      minHeight: 500,
+      aspectRatio: 0.83,
+      type: 'portrait',
+    },
+    数独: {
+      width: 500,
+      height: 600,
+      minWidth: 400,
+      minHeight: 500,
+      aspectRatio: 0.83,
+      type: 'portrait',
+    },
+  };
+
+  const config = gameConfig[gameName] || {
+    width: 500,
+    height: 600,
+    minWidth: 400,
+    minHeight: 500,
+    aspectRatio: 0.83,
+    type: 'portrait',
+  };
+
+  if (isMobile()) {
+    // 移动端：适应屏幕，但保持游戏比例
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const availableWidth = screenWidth - 40;
+    const availableHeight = screenHeight - 120;
+
+    let panelWidth, panelHeight;
+
+    if (config.type === 'landscape') {
+      // 横屏游戏：优先考虑宽度
+      panelWidth = Math.min(availableWidth, config.width);
+      panelHeight = Math.min(panelWidth / config.aspectRatio, availableHeight);
+      panelWidth = panelHeight * config.aspectRatio;
+    } else {
+      // 竖屏游戏：优先考虑高度
+      panelHeight = Math.min(availableHeight, config.height);
+      panelWidth = Math.min(panelHeight * config.aspectRatio, availableWidth);
+      panelHeight = panelWidth / config.aspectRatio;
+    }
+
+    // 确保不小于最小尺寸
+    panelWidth = Math.max(panelWidth, config.minWidth);
+    panelHeight = Math.max(panelHeight, config.minHeight);
+
+    Object.assign(gamePanel.style, {
+      width: panelWidth + 'px',
+      height: panelHeight + 'px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+    });
+  } else {
+    // 桌面端：使用推荐尺寸，但适应屏幕
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const availableWidth = screenWidth - 100;
+    const availableHeight = screenHeight - 100;
+
+    let panelWidth = Math.min(config.width, availableWidth);
+    let panelHeight = Math.min(config.height, availableHeight);
+
+    // 保持宽高比
+    if (panelWidth / panelHeight > config.aspectRatio) {
+      panelWidth = panelHeight * config.aspectRatio;
+    } else {
+      panelHeight = panelWidth / config.aspectRatio;
+    }
+
+    Object.assign(gamePanel.style, {
+      width: panelWidth + 'px',
+      height: panelHeight + 'px',
+    });
+  }
+}
+
 // 创建面板HTML
 function createPanelHTML() {
   settings = getSettings();
@@ -104,7 +224,6 @@ function createPanelHTML() {
         <div class="iframe-header">
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
-
         </div>
         <iframe class="game-iframe" 
                 frameborder="0"
@@ -131,14 +250,14 @@ function createGamePanel() {
     const screenHeight = window.innerHeight;
     Object.assign(gamePanel.style, {
       position: 'fixed',
-      top: '20px',
+      top: '40px',
       left: '50%',
-      width: Math.min(screenWidth - 20, 400) + 'px',
-      height: Math.min(screenHeight - 60, 500) + 'px',
+      width: Math.min(screenWidth - 20, 420) + 'px',
+      height: Math.min(screenHeight - 80, 700) + 'px',
       transform: 'translateX(-50%)',
       zIndex: '999999',
       maxWidth: '95vw',
-      maxHeight: '80vh',
+      maxHeight: '85vh',
     });
     gamePanel.classList.add('mobile-panel');
   } else {
@@ -286,145 +405,221 @@ async function loadGame(url, name) {
       headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
     }
 
-    // 检测游戏类型
-    const isLandscapeGame =
-      name.toLowerCase().includes('nyan') ||
-      name.toLowerCase().includes('cat') ||
-      name.toLowerCase().includes('彩虹猫');
-
-    // 添加游戏自适应CSS - 让游戏响应iframe容器尺寸变化
+    // 添加iframe适配CSS和JavaScript，让游戏完全适应容器
     headContent += `
       <style>
-        /* 基础重置 - 让游戏适应容器而非全屏 */
+        /* iframe适配样式 - 让游戏完全适应容器 */
         html, body {
           margin: 0 !important;
           padding: 0 !important;
           width: 100% !important;
           height: 100% !important;
-          overflow: auto !important;
+          min-height: 100% !important;
+          max-height: 100% !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+          position: relative !important;
+        }
+        
+        /* 游戏容器自适应 */
+        .game-container, #game-container, .container, main, #main {
+          width: 100% !important;
+          height: 100% !important;
+          min-width: 100% !important;
+          min-height: 100% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          position: relative !important;
+          overflow: hidden !important;
           box-sizing: border-box !important;
         }
         
-        /* 强制游戏容器适应iframe */
-        .game-container, #game-container, .container, 
-        [style*="position: fixed"], [style*="position:fixed"],
-        [style*="inset: 0"], [style*="inset:0"] {
-          position: relative !important;
-          inset: unset !important;
-          top: unset !important;
-          left: unset !important;
-          right: unset !important;
-          bottom: unset !important;
-          width: 100% !important;
-          height: 100% !important;
-          max-width: 100% !important;
-          max-height: 100% !important;
-          overflow: visible !important;
-        }
-        
-        /* Canvas响应式处理 */
+        /* Canvas元素自适应 */
         canvas {
-          max-width: 100% !important;
-          max-height: 100% !important;
           width: 100% !important;
           height: 100% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          object-fit: contain !important;
           display: block !important;
           margin: 0 auto !important;
-          object-fit: contain !important;
+        }
+        
+        /* 覆盖使用视口单位的样式 */
+        [style*="100vh"], [style*="100vw"], [style*="100vmin"], [style*="100vmax"] {
+          width: 100% !important;
+          height: 100% !important;
+        }
+        
+        [style*="vh"], [style*="vw"], [style*="vmin"], [style*="vmax"] {
+          max-width: 100% !important;
+          max-height: 100% !important;
+        }
+        
+        /* 固定定位元素适配 */
+        [style*="position: fixed"], [style*="position:fixed"] {
+          position: absolute !important;
+        }
+        
+        /* 游戏控制界面适配 */
+        .controls, .control-panel, .ui, .hud, .header {
+          position: relative !important;
+          width: 100% !important;
+          max-width: 100% !important;
           box-sizing: border-box !important;
         }
         
-        /* 处理固定尺寸的canvas */
-        canvas[width][height] {
-          width: 100% !important;
-          height: auto !important;
-          aspect-ratio: attr(width) / attr(height) !important;
+        /* 特殊游戏适配 */
+        /* 彩虹猫游戏 */
+        #cat, .cat, .nyan-cat {
+          max-width: 15% !important;
+          max-height: 15% !important;
         }
         
-        /* JavaScript动态调整canvas尺寸 */
-        window.addEventListener('resize', function() {
-          const canvases = document.querySelectorAll('canvas');
-          canvases.forEach(canvas => {
-            const container = canvas.parentElement;
-            if (container) {
-              const containerWidth = container.clientWidth;
-              const containerHeight = container.clientHeight;
-              
-              // 保持游戏原始比例的情况下适应容器
-              if (canvas.width && canvas.height) {
-                const gameRatio = canvas.width / canvas.height;
-                const containerRatio = containerWidth / containerHeight;
+        /* 扫雷游戏 */
+        .minefield, #minefield, .board {
+          max-width: 100% !important;
+          max-height: 80% !important;
+          margin: 0 auto !important;
+          overflow: auto !important;
+        }
+        
+        /* 贪吃蛇游戏 */
+        .snake-game, #snake-game {
+          width: 100% !important;
+          height: 100% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+        }
+      </style>
+      
+      <script>
+        // 游戏自适应脚本
+        (function() {
+          let resizeTimeout;
+          
+          function adaptGameToContainer() {
+            const container = document.body;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // 查找主要游戏元素
+            const gameElements = [
+              document.querySelector('canvas'),
+              document.querySelector('.game-container'),
+              document.querySelector('#game-container'),
+              document.querySelector('.container'),
+              document.querySelector('main'),
+              document.querySelector('#main')
+            ].filter(el => el);
+            
+            gameElements.forEach(element => {
+              if (element) {
+                // 设置容器尺寸
+                element.style.width = '100%';
+                element.style.height = '100%';
+                element.style.maxWidth = '100%';
+                element.style.maxHeight = '100%';
                 
-                if (gameRatio > containerRatio) {
-                  // 游戏更宽，以宽度为准
-                  canvas.style.width = '100%';
-                  canvas.style.height = 'auto';
-                } else {
-                  // 游戏更高，以高度为准  
-                  canvas.style.height = '100%';
-                  canvas.style.width = 'auto';
+                // 如果是canvas，调整其实际尺寸
+                if (element.tagName === 'CANVAS') {
+                  const rect = element.getBoundingClientRect();
+                  const scale = Math.min(
+                    containerWidth / (element.width || rect.width || 800),
+                    containerHeight / (element.height || rect.height || 600)
+                  );
+                  
+                  if (scale < 1) {
+                    element.style.transform = \`scale(\${scale})\`;
+                    element.style.transformOrigin = 'center center';
+                  }
                 }
               }
-            }
-          });
-        });
-        
-        /* 立即执行一次resize */
-        document.addEventListener('DOMContentLoaded', function() {
-          window.dispatchEvent(new Event('resize'));
-        });
-      </style>
-      <script>
-        // 动态调整游戏尺寸的脚本
-        (function() {
-          function resizeGame() {
-            const canvases = document.querySelectorAll('canvas');
-            const isLandscape = ${isLandscapeGame};
+            });
             
-            canvases.forEach(canvas => {
-              // 获取iframe的实际可用尺寸
-              const iframeWidth = window.innerWidth;
-              const iframeHeight = window.innerHeight;
-              
-              if (isLandscape) {
-                // 横屏游戏：限制高度，保持宽度
-                const maxHeight = Math.min(iframeHeight * 0.8, 350);
-                canvas.style.width = '100%';
-                canvas.style.height = maxHeight + 'px';
-                canvas.style.maxHeight = maxHeight + 'px';
-              } else {
-                // 竖屏游戏：适应容器
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.maxWidth = '100%';
-                canvas.style.maxHeight = '100%';
+            // 处理固定定位元素
+            document.querySelectorAll('[style*="position: fixed"], [style*="position:fixed"]').forEach(el => {
+              el.style.position = 'absolute';
+            });
+            
+            // 处理视口单位
+            const vhElements = document.querySelectorAll('[style*="vh"], [style*="vw"]');
+            vhElements.forEach(el => {
+              const style = el.getAttribute('style') || '';
+              if (style.includes('100vh') || style.includes('100vw')) {
+                el.style.width = '100%';
+                el.style.height = '100%';
               }
             });
             
-            // 调整游戏容器
-            const containers = document.querySelectorAll('.game-container, #game-container, .container');
-            containers.forEach(container => {
-              if (isLandscape) {
-                const maxHeight = Math.min(window.innerHeight * 0.8, 350);
-                container.style.height = maxHeight + 'px';
-                container.style.maxHeight = maxHeight + 'px';
-              }
-            });
+            // 特殊游戏处理
+            adaptSpecificGames();
           }
           
-          // 页面加载完成后调整
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', resizeGame);
-          } else {
-            resizeGame();
+          function adaptSpecificGames() {
+            // 彩虹猫游戏特殊处理
+            const cat = document.querySelector('#cat, .cat, .nyan-cat');
+            if (cat) {
+              cat.style.maxWidth = '15%';
+              cat.style.maxHeight = '15%';
+            }
+            
+            // 扫雷游戏特殊处理
+            const minefield = document.querySelector('.minefield, #minefield, .board');
+            if (minefield) {
+              minefield.style.maxWidth = '100%';
+              minefield.style.maxHeight = '80%';
+              minefield.style.overflow = 'auto';
+              minefield.style.margin = '0 auto';
+            }
+            
+            // 如果有表格布局的游戏（如扫雷）
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+              table.style.maxWidth = '100%';
+              table.style.height = 'auto';
+              table.style.fontSize = 'clamp(10px, 2vw, 16px)';
+            });
           }
           
           // 监听窗口大小变化
-          window.addEventListener('resize', resizeGame);
+          function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(adaptGameToContainer, 100);
+          }
           
-          // 延迟调整，确保游戏元素已加载
-          setTimeout(resizeGame, 500);
-          setTimeout(resizeGame, 1000);
+          // 初始化
+          function init() {
+            adaptGameToContainer();
+            window.addEventListener('resize', handleResize);
+            
+            // 监听iframe大小变化（如果支持ResizeObserver）
+            if (window.ResizeObserver && document.body) {
+              const resizeObserver = new ResizeObserver(handleResize);
+              resizeObserver.observe(document.body);
+            }
+            
+            // 延迟执行，确保游戏元素已加载
+            setTimeout(adaptGameToContainer, 500);
+            setTimeout(adaptGameToContainer, 1000);
+            setTimeout(adaptGameToContainer, 2000);
+          }
+          
+          // 监听来自父窗口的适配消息
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'GAME_ADAPT') {
+              adaptGameToContainer();
+            }
+          });
+          
+          // 等待DOM加载完成
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+          } else {
+            init();
+          }
         })();
       </script>
     `;
@@ -440,25 +635,14 @@ async function loadGame(url, name) {
 
     iframe.srcdoc = html;
 
-    // 根据游戏类型调整面板尺寸
+    // 动态调整面板大小以适应游戏内容
     setTimeout(() => {
-      if (isLandscapeGame) {
-        // 横屏游戏：更宽更矮
-        if (isMobile()) {
-          const screenWidth = window.innerWidth;
-          const screenHeight = window.innerHeight;
-          Object.assign(gamePanel.style, {
-            width: Math.min(screenWidth - 10, 480) + 'px',
-            height: Math.min(screenHeight - 40, 380) + 'px',
-          });
-        } else {
-          Object.assign(gamePanel.style, {
-            width: '650px',
-            height: '420px',
-          });
-        }
-      }
-    }, 500);
+      adjustPanelForGame(name);
+      // 设置iframe大小变化监听
+      setupIframeResizeListener();
+      // 向iframe发送适配消息
+      sendAdaptationMessage(iframe, name);
+    }, 1000);
   } catch (error) {
     // 尝试备用CDN
     const backupUrls = [
@@ -561,6 +745,49 @@ function init() {
   createExtensionButton();
 }
 
+// 向iframe发送适配消息
+function sendAdaptationMessage(iframe, gameName) {
+  if (!iframe || !iframe.contentWindow) return;
+
+  try {
+    const message = {
+      type: 'GAME_ADAPT',
+      gameName: gameName,
+      containerSize: {
+        width: iframe.clientWidth,
+        height: iframe.clientHeight,
+      },
+    };
+
+    iframe.contentWindow.postMessage(message, '*');
+  } catch (error) {
+    // 静默处理错误
+  }
+}
+
+// 监听iframe大小变化并重新适配
+function setupIframeResizeListener() {
+  if (!gamePanel) return;
+
+  const iframe = gamePanel.querySelector('.game-iframe');
+  if (!iframe) return;
+
+  // 使用ResizeObserver监听iframe大小变化
+  if (window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        const currentGame = gamePanel.querySelector('.current-game-title')?.textContent;
+        if (currentGame && iframe.contentWindow) {
+          sendAdaptationMessage(iframe, currentGame);
+        }
+      }
+    });
+
+    resizeObserver.observe(iframe);
+  }
+}
+
 // 启动
 function start() {
   if (typeof SillyTavern === 'undefined') {
@@ -577,13 +804,6 @@ function start() {
 }
 
 start();
-
-// 调试接口
-window.miniGamesDebug = {
-  showPanel: showGamePanel,
-  hidePanel: hideGamePanel,
-  togglePanel: toggleGamePanel,
-};
 
 
 
