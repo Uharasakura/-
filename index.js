@@ -68,6 +68,96 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
+// 智能检测游戏类型
+function detectGameType(gameName, gameUrl) {
+  // 横屏游戏关键词
+  const landscapeKeywords = ['cat', 'nyan', '彩虹猫', 'runner', 'run', '跑', '飞', 'flight', 'race', '赛车', 'car'];
+  // 方形游戏关键词
+  const squareKeywords = ['chess', '棋', 'puzzle', '拼图', 'match', '消除', 'tetris', '俄罗斯方块'];
+
+  const lowerName = gameName.toLowerCase();
+  const lowerUrl = gameUrl.toLowerCase();
+
+  // 检查是否为横屏游戏
+  if (landscapeKeywords.some(keyword => lowerName.includes(keyword) || lowerUrl.includes(keyword))) {
+    return 'landscape';
+  }
+
+  // 检查是否为方形游戏
+  if (squareKeywords.some(keyword => lowerName.includes(keyword) || lowerUrl.includes(keyword))) {
+    return 'square';
+  }
+
+  // 默认为竖屏
+  return 'portrait';
+}
+
+// 根据游戏类型调整面板尺寸
+function adjustPanelForGameType(gameName, gameUrl) {
+  if (!gamePanel) return;
+
+  // 先查找是否有用户保存的游戏类型
+  let gameType = 'portrait'; // 默认
+
+  // 检查自定义游戏中是否有保存的类型
+  const customGame = settings.customGames.find(game => game.name === gameName);
+  if (customGame && customGame.type) {
+    gameType = customGame.type;
+  } else {
+    // 对内置游戏使用智能检测作为后备
+    gameType = detectGameType(gameName, gameUrl || '');
+  }
+
+  // 根据类型设置尺寸
+  let gameConfig;
+  if (gameType === 'landscape') {
+    gameConfig = { type: 'landscape', width: 500, height: 350 };
+  } else if (gameType === 'square') {
+    gameConfig = { type: 'square', width: 450, height: 450 };
+  } else {
+    gameConfig = { type: 'portrait', width: 380, height: 500 };
+  }
+
+  if (isMobile()) {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    let newWidth, newHeight;
+
+    if (gameConfig.type === 'landscape') {
+      // 横屏游戏：更宽更矮
+      newWidth = Math.min(screenWidth - 20, gameConfig.width);
+      newHeight = Math.min(screenHeight - 40, gameConfig.height);
+    } else if (gameConfig.type === 'square') {
+      // 方形游戏：保持正方形
+      const size = Math.min(screenWidth - 20, screenHeight - 60, gameConfig.width);
+      newWidth = size;
+      newHeight = size + 60; // 额外空间给头部
+    } else {
+      // 竖屏游戏：默认比例
+      newWidth = Math.min(screenWidth - 20, gameConfig.width);
+      newHeight = Math.min(screenHeight - 40, gameConfig.height);
+    }
+
+    Object.assign(gamePanel.style, {
+      width: newWidth + 'px',
+      height: newHeight + 'px',
+    });
+  } else {
+    // 桌面端也应用游戏类型的尺寸
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    const newWidth = Math.min(screenWidth - 100, gameConfig.width);
+    const newHeight = Math.min(screenHeight - 100, gameConfig.height);
+
+    Object.assign(gamePanel.style, {
+      width: newWidth + 'px',
+      height: newHeight + 'px',
+    });
+  }
+}
+
 // 创建面板HTML
 function createPanelHTML() {
   settings = getSettings();
@@ -104,7 +194,7 @@ function createPanelHTML() {
         <div class="iframe-header">
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
-
+          <button class="resize-btn" title="调整窗口大小">📏</button>
         </div>
         <iframe class="game-iframe" 
                 frameborder="0"
@@ -131,14 +221,14 @@ function createGamePanel() {
     const screenHeight = window.innerHeight;
     Object.assign(gamePanel.style, {
       position: 'fixed',
-      top: '40px',
+      top: '20px',
       left: '50%',
-      width: Math.min(screenWidth - 20, 420) + 'px',
-      height: Math.min(screenHeight - 80, 700) + 'px',
+      width: Math.min(screenWidth - 20, 380) + 'px',
+      height: Math.min(screenHeight - 40, 500) + 'px',
       transform: 'translateX(-50%)',
       zIndex: '999999',
       maxWidth: '95vw',
-      maxHeight: '85vh',
+      maxHeight: '90vh',
     });
     gamePanel.classList.add('mobile-panel');
   } else {
@@ -169,8 +259,9 @@ function handleClick(event) {
   const backBtn = target.closest('.back-btn');
   const addGameBtn = target.closest('.add-game-btn');
   const gameItem = target.closest('.game-item');
+  const resizeBtn = target.closest('.resize-btn');
 
-  if (!minimizeBtn && !closeBtn && !backBtn && !addGameBtn && !gameItem) return;
+  if (!minimizeBtn && !closeBtn && !backBtn && !addGameBtn && !gameItem && !resizeBtn) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -231,11 +322,57 @@ function handleClick(event) {
     const icon = prompt('游戏图标(emoji):');
     const url = prompt('游戏链接:');
     if (name && icon && url) {
-      settings.customGames.push({ name, icon, file: url, description: name });
+      // 智能检测游戏类型作为建议
+      const suggestedType = detectGameType(name, url);
+      let typeText = '竖屏游戏（默认）';
+      if (suggestedType === 'landscape') typeText = '横屏游戏（推荐）';
+      else if (suggestedType === 'square') typeText = '方形游戏（推荐）';
+
+      // 让用户选择游戏类型，显示智能建议
+      const typeChoice = prompt(
+        `检测到游戏可能是：${typeText}\n\n请选择游戏类型:\n1 - 横屏游戏（跑酷、赛车、飞行等）\n2 - 方形游戏（棋类、拼图、消除等）\n3 - 竖屏游戏（默认）\n\n请输入数字 1、2 或 3:`,
+        suggestedType === 'landscape' ? '1' : suggestedType === 'square' ? '2' : '3',
+      );
+
+      let gameType = 'portrait'; // 默认竖屏
+      if (typeChoice === '1') gameType = 'landscape';
+      else if (typeChoice === '2') gameType = 'square';
+
+      settings.customGames.push({
+        name,
+        icon,
+        file: url,
+        description: name,
+        type: gameType, // 保存用户选择的类型
+      });
       saveSettings();
       createGamePanel();
       if (isGamePanelVisible) gamePanel.style.display = 'block';
     }
+    return;
+  }
+
+  // 调整窗口大小按钮
+  if (resizeBtn) {
+    const gameName = gamePanel.querySelector('.current-game-title').textContent;
+    const typeChoice = prompt(
+      `当前游戏：${gameName}\n\n选择窗口类型:\n1 - 横屏窗口（宽屏）\n2 - 方形窗口（正方形）\n3 - 竖屏窗口（高屏）\n\n请输入数字 1、2 或 3:`,
+      '3',
+    );
+
+    let gameType = 'portrait';
+    if (typeChoice === '1') gameType = 'landscape';
+    else if (typeChoice === '2') gameType = 'square';
+
+    // 更新自定义游戏的类型（如果是自定义游戏）
+    const customGame = settings.customGames.find(game => game.name === gameName);
+    if (customGame) {
+      customGame.type = gameType;
+      saveSettings();
+    }
+
+    // 立即调整窗口大小
+    adjustPanelForGameType(gameName, '');
     return;
   }
 
@@ -254,6 +391,9 @@ async function loadGame(url, name) {
   titleEl.textContent = name;
   gamePanel.querySelector('.panel-content').style.display = 'none';
   gamePanel.querySelector('.game-iframe-container').style.display = 'block';
+
+  // 根据游戏类型调整面板尺寸
+  adjustPanelForGameType(name, url);
 
   // 显示加载动画
   iframe.srcdoc = `
@@ -543,6 +683,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
