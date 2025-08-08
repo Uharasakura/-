@@ -211,7 +211,8 @@
   height: 100%;
   border: none;
   background: white;
-  min-height: 300px;
+  min-height: 500px;
+  min-width: 400px;
   overflow: auto;
   display: block;
   /* 让iframe内容自适应 */
@@ -290,7 +291,8 @@
 }
 
 .mobile-panel .game-iframe {
-  min-height: 300px !important;
+  min-height: 450px !important;
+  min-width: 350px !important;
   /* 移除固定高度限制，让游戏自适应 */
 }
 
@@ -341,6 +343,7 @@
 .games-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
+
 
 
 
