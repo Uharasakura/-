@@ -72,44 +72,74 @@ const saveSettings = () => getContext().saveSettingsDebounced();
 function adjustPanelForGame(gameName) {
   if (!gamePanel) return;
 
-  // 不同游戏的推荐尺寸
+  // 不同游戏的推荐尺寸和比例
   const gameConfig = {
-    贪吃蛇: { width: 450, height: 600, minWidth: 350, minHeight: 500 },
-    种田: { width: 600, height: 700, minWidth: 500, minHeight: 600 },
-    飞行棋: { width: 650, height: 650, minWidth: 500, minHeight: 500 },
-    'Nyan Cat': { width: 550, height: 400, minWidth: 450, minHeight: 350 },
-    扫雷: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
-    数独: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
+    贪吃蛇: { width: 450, height: 600, minWidth: 350, minHeight: 500, aspectRatio: 'portrait' },
+    种田: { width: 600, height: 700, minWidth: 500, minHeight: 600, aspectRatio: 'portrait' },
+    飞行棋: { width: 650, height: 650, minWidth: 500, minHeight: 500, aspectRatio: 'square' },
+    'Nyan Cat': { width: 700, height: 500, minWidth: 600, minHeight: 400, aspectRatio: 'landscape' },
+    扫雷: { width: 500, height: 600, minWidth: 400, minHeight: 500, aspectRatio: 'portrait' },
+    数独: { width: 500, height: 600, minWidth: 400, minHeight: 500, aspectRatio: 'square' },
   };
 
-  const config = gameConfig[gameName] || { width: 500, height: 600, minWidth: 400, minHeight: 500 };
+  const config = gameConfig[gameName] || {
+    width: 500,
+    height: 600,
+    minWidth: 400,
+    minHeight: 500,
+    aspectRatio: 'portrait',
+  };
 
   if (isMobile()) {
-    // 移动端：适应屏幕，但确保有足够空间
+    // 移动端：根据屏幕方向和游戏类型优化
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
+    const isLandscapeScreen = screenWidth > screenHeight;
 
-    const panelWidth = Math.min(Math.max(config.minWidth, screenWidth - 40), config.width);
-    const panelHeight = Math.min(Math.max(config.minHeight, screenHeight - 100), config.height);
+    let panelWidth, panelHeight;
+
+    if (config.aspectRatio === 'landscape') {
+      // 横屏游戏：优先保证宽度，高度适配
+      panelWidth = Math.min(screenWidth - 20, config.width);
+      panelHeight = Math.min(screenHeight - 80, config.height);
+    } else if (config.aspectRatio === 'portrait') {
+      // 竖屏游戏：优先保证高度，宽度适配
+      panelHeight = Math.min(screenHeight - 60, config.height);
+      panelWidth = Math.min(screenWidth - 20, config.width);
+    } else {
+      // 方形游戏：保持正方形比例
+      const size = Math.min(screenWidth - 20, screenHeight - 80, config.width);
+      panelWidth = size;
+      panelHeight = size + 50; // 额外空间给控制栏
+    }
+
+    Object.assign(gamePanel.style, {
+      width: Math.max(panelWidth, config.minWidth) + 'px',
+      height: Math.max(panelHeight, config.minHeight) + 'px',
+      maxWidth: '98vw',
+      maxHeight: '95vh',
+    });
+  } else {
+    // 桌面端：使用推荐尺寸，但考虑屏幕限制
+    const availableWidth = window.innerWidth - 100;
+    const availableHeight = window.innerHeight - 100;
+
+    let panelWidth = Math.min(availableWidth, config.width);
+    let panelHeight = Math.min(availableHeight, config.height);
+
+    // 对于横屏游戏，确保有足够的宽度
+    if (config.aspectRatio === 'landscape') {
+      panelWidth = Math.max(panelWidth, config.minWidth);
+      panelHeight = Math.min(panelHeight, panelWidth * 0.7); // 保持宽屏比例
+    }
 
     Object.assign(gamePanel.style, {
       width: panelWidth + 'px',
       height: panelHeight + 'px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-    });
-  } else {
-    // 桌面端：使用推荐尺寸，但不超过屏幕
-    const maxWidth = Math.min(window.innerWidth - 100, config.width);
-    const maxHeight = Math.min(window.innerHeight - 100, config.height);
-
-    Object.assign(gamePanel.style, {
-      width: maxWidth + 'px',
-      height: maxHeight + 'px',
+      minWidth: config.minWidth + 'px',
+      minHeight: config.minHeight + 'px',
     });
   }
-
-  console.log(`为游戏 ${gameName} 调整面板尺寸: ${gamePanel.style.width} x ${gamePanel.style.height}`);
 }
 
 // 创建面板HTML
@@ -148,6 +178,12 @@ function createPanelHTML() {
         <div class="iframe-header">
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
+          <div class="game-controls">
+            <button class="scale-btn" data-scale="0.8" title="缩小">🔍-</button>
+            <button class="scale-btn" data-scale="1.0" title="正常大小">🔍</button>
+            <button class="scale-btn" data-scale="1.2" title="放大">🔍+</button>
+            <button class="fullscreen-btn" title="适应窗口">📱</button>
+          </div>
         </div>
         <iframe class="game-iframe" 
                 frameborder="0"
@@ -212,8 +248,10 @@ function handleClick(event) {
   const backBtn = target.closest('.back-btn');
   const addGameBtn = target.closest('.add-game-btn');
   const gameItem = target.closest('.game-item');
+  const scaleBtn = target.closest('.scale-btn');
+  const fullscreenBtn = target.closest('.fullscreen-btn');
 
-  if (!minimizeBtn && !closeBtn && !backBtn && !addGameBtn && !gameItem) return;
+  if (!minimizeBtn && !closeBtn && !backBtn && !addGameBtn && !gameItem && !scaleBtn && !fullscreenBtn) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -287,6 +325,47 @@ function handleClick(event) {
     loadGame(gameItem.dataset.game, gameItem.querySelector('.game-name').textContent);
     return;
   }
+
+  // 缩放按钮
+  if (scaleBtn) {
+    const scale = parseFloat(scaleBtn.dataset.scale);
+    const iframe = gamePanel.querySelector('.game-iframe');
+
+    // 移除其他按钮的active状态
+    gamePanel.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active'));
+    scaleBtn.classList.add('active');
+
+    // 应用缩放
+    iframe.style.transform = `scale(${scale})`;
+
+    // 调整iframe容器以适应缩放
+    const container = iframe.parentElement;
+    if (scale !== 1.0) {
+      container.style.overflow = 'auto';
+    } else {
+      container.style.overflow = 'hidden';
+    }
+    return;
+  }
+
+  // 适应窗口按钮
+  if (fullscreenBtn) {
+    const iframe = gamePanel.querySelector('.game-iframe');
+    const container = iframe.parentElement;
+
+    // 重置缩放
+    iframe.style.transform = 'scale(1)';
+    container.style.overflow = 'hidden';
+
+    // 移除缩放按钮的active状态
+    gamePanel.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active'));
+    gamePanel.querySelector('.scale-btn[data-scale="1.0"]').classList.add('active');
+
+    // 调整面板大小以更好地适应当前游戏
+    const gameName = gamePanel.querySelector('.current-game-title').textContent;
+    adjustPanelForGame(gameName);
+    return;
+  }
 }
 
 // 加载游戏（简化但保持功能完整）
@@ -297,6 +376,10 @@ async function loadGame(url, name) {
   titleEl.textContent = name;
   gamePanel.querySelector('.panel-content').style.display = 'none';
   gamePanel.querySelector('.game-iframe-container').style.display = 'block';
+
+  // 重置缩放控制状态
+  gamePanel.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active'));
+  gamePanel.querySelector('.scale-btn[data-scale="1.0"]').classList.add('active');
 
   // 显示加载动画
   iframe.srcdoc = `
@@ -335,31 +418,77 @@ async function loadGame(url, name) {
         /* iframe适配样式 - 覆盖游戏的全屏设置 */
         html, body {
           margin: 0 !important;
-          padding: 10px !important;
+          padding: 5px !important;
           min-height: auto !important;
           height: auto !important;
           overflow: auto !important;
           box-sizing: border-box !important;
+          background: #f8f9fa !important;
         }
         
-        /* 让游戏容器适应iframe */
-        #game-container, .game-container, .container {
-          max-width: none !important;
+        /* 让游戏容器适应iframe，而不是全屏 */
+        .game-container, #game-container, .container, [style*="position: fixed"], [style*="position:fixed"] {
+          position: relative !important;
+          inset: unset !important;
+          top: unset !important;
+          left: unset !important;
+          right: unset !important;
+          bottom: unset !important;
+          max-width: 100% !important;
           width: 100% !important;
           margin: 0 auto !important;
           min-height: auto !important;
+          height: auto !important;
+          max-height: 85vh !important;
+          overflow: visible !important;
         }
         
-        /* 调整使用vmin/vh单位的元素 */
-        [style*="vmin"], [style*="vh"], [style*="vw"] {
-          max-width: 90% !important;
-          max-height: 80vh !important;
-        }
-        
-        /* 确保canvas等游戏元素不会太大 */
+        /* 专门处理canvas元素 */
         canvas {
+          position: relative !important;
           max-width: 100% !important;
+          max-height: 75vh !important;
+          width: auto !important;
+          height: auto !important;
+          display: block !important;
+          margin: 0 auto !important;
+          box-sizing: border-box !important;
+        }
+        
+        /* 处理使用viewport单位的元素 */
+        [style*="100vh"], [style*="100vw"], [style*="100vmin"], [style*="100vmax"] {
+          width: 100% !important;
+          height: 75vh !important;
+          max-width: 100% !important;
+          max-height: 75vh !important;
+        }
+        
+        /* 调整使用vmin/vh单位的其他元素 */
+        [style*="vmin"], [style*="vh"], [style*="vw"] {
+          max-width: 95% !important;
           max-height: 70vh !important;
+        }
+        
+        /* 确保游戏控制界面可见 */
+        .game-ui, .ui, .controls, .score, .menu {
+          position: relative !important;
+          z-index: 1000 !important;
+        }
+        
+        /* 移动端特殊处理 */
+        @media (max-width: 768px) {
+          canvas {
+            max-height: 60vh !important;
+          }
+          
+          .game-container, #game-container, .container {
+            max-height: 70vh !important;
+          }
+        }
+        
+        /* 处理overflow hidden的问题 */
+        body[style*="overflow: hidden"], html[style*="overflow: hidden"] {
+          overflow: auto !important;
         }
       </style>
     `;
@@ -504,6 +633,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
