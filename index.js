@@ -56,8 +56,15 @@ let isGamePanelVisible = false;
 let settings = {};
 
 // 工具函数
-const isMobile = () =>
-  /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+const isMobile = () => {
+  const userAgent = navigator.userAgent;
+  const mobileRegex = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
+  const isMobileUA = mobileRegex.test(userAgent);
+  const isSmallScreen = window.innerWidth <= 768;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  return isMobileUA || (isSmallScreen && isTouchDevice);
+};
 const getContext = () => SillyTavern.getContext();
 const getSettings = () => {
   const { extensionSettings } = getContext();
@@ -95,6 +102,11 @@ function detectGameType(gameName, gameUrl) {
 // 根据游戏类型调整面板尺寸
 function adjustPanelForGameType(gameName, gameUrl) {
   if (!gamePanel) return;
+
+  // 确保settings已初始化
+  if (!settings) {
+    settings = getSettings();
+  }
 
   // 先查找是否有用户保存的游戏类型
   let gameType = 'portrait'; // 默认
@@ -426,7 +438,7 @@ async function loadGame(url, name) {
       headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
     }
 
-    // 添加游戏自适应CSS - 让游戏响应iframe容器尺寸变化
+    // 添加游戏自适应CSS和脚本 - 让游戏响应iframe容器尺寸变化
     headContent += `
       <style>
         /* 基础重置 - 让游戏适应容器而非全屏 */
@@ -435,7 +447,7 @@ async function loadGame(url, name) {
           padding: 0 !important;
           width: 100% !important;
           height: 100% !important;
-          overflow: auto !important;
+          overflow: hidden !important;
           box-sizing: border-box !important;
         }
         
@@ -453,97 +465,72 @@ async function loadGame(url, name) {
           height: 100% !important;
           max-width: 100% !important;
           max-height: 100% !important;
-          overflow: visible !important;
+          overflow: hidden !important;
         }
         
         /* Canvas响应式处理 */
         canvas {
           max-width: 100% !important;
           max-height: 100% !important;
-          width: 100% !important;
-          height: auto !important;
           display: block !important;
           margin: 0 auto !important;
           object-fit: contain !important;
         }
-        
-        /* 处理固定尺寸的canvas */
-        canvas[width][height] {
-          width: 100% !important;
-          height: auto !important;
-          aspect-ratio: attr(width) / attr(height) !important;
-        }
-        
-        /* JavaScript动态调整canvas尺寸 */
-        window.addEventListener('resize', function() {
-          const canvases = document.querySelectorAll('canvas');
-          canvases.forEach(canvas => {
-            const container = canvas.parentElement;
-            if (container) {
-              const containerWidth = container.clientWidth;
-              const containerHeight = container.clientHeight;
-              
-              // 保持游戏原始比例的情况下适应容器
+      </style>
+      <script>
+        // 游戏自适应脚本
+        (function() {
+          function adaptGame() {
+            const canvases = document.querySelectorAll('canvas');
+            const gameContainers = document.querySelectorAll('.game-container, #game-container, .container');
+            
+            // 获取iframe的实际尺寸
+            const iframeWidth = window.innerWidth;
+            const iframeHeight = window.innerHeight;
+            
+            // 处理canvas元素
+            canvases.forEach(canvas => {
               if (canvas.width && canvas.height) {
                 const gameRatio = canvas.width / canvas.height;
-                const containerRatio = containerWidth / containerHeight;
+                const containerRatio = iframeWidth / iframeHeight;
                 
                 if (gameRatio > containerRatio) {
                   // 游戏更宽，以宽度为准
                   canvas.style.width = '100%';
                   canvas.style.height = 'auto';
                 } else {
-                  // 游戏更高，以高度为准  
-                  canvas.style.height = '100%';
+                  // 游戏更高，以高度为准
                   canvas.style.width = 'auto';
+                  canvas.style.height = '100%';
                 }
+              } else {
+                // 如果没有固定尺寸，直接适应容器
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
               }
-            }
-          });
-        });
-        
-        /* 立即执行一次resize */
-        document.addEventListener('DOMContentLoaded', function() {
-          window.dispatchEvent(new Event('resize'));
-        });
-      </style>
-      <script>
-        // 动态调整游戏尺寸的脚本
-        (function() {
-          function resizeGame() {
-            const canvases = document.querySelectorAll('canvas');
-            canvases.forEach(canvas => {
-              const rect = canvas.getBoundingClientRect();
-              const container = canvas.parentElement || document.body;
-              const containerRect = container.getBoundingClientRect();
-              
-              // 让canvas适应容器
-              if (containerRect.width > 0 && containerRect.height > 0) {
-                const scaleX = containerRect.width / (canvas.width || containerRect.width);
-                const scaleY = containerRect.height / (canvas.height || containerRect.height);
-                const scale = Math.min(scaleX, scaleY, 1);
-                
-                canvas.style.transform = 'scale(' + scale + ')';
-                canvas.style.transformOrigin = 'top left';
-              }
+            });
+            
+            // 处理游戏容器
+            gameContainers.forEach(container => {
+              container.style.width = '100%';
+              container.style.height = '100%';
             });
           }
           
-          // 监听容器尺寸变化
-          if (window.ResizeObserver) {
-            const observer = new ResizeObserver(resizeGame);
-            observer.observe(document.body);
-          }
+          // 监听窗口尺寸变化
+          window.addEventListener('resize', adaptGame);
           
-          // 页面加载完成后调整
+          // 页面加载完成后立即调整
           if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', resizeGame);
+            document.addEventListener('DOMContentLoaded', adaptGame);
           } else {
-            resizeGame();
+            adaptGame();
           }
           
-          // 定期检查并调整
-          setInterval(resizeGame, 1000);
+          // 延迟调整，确保游戏元素已完全加载
+          setTimeout(adaptGame, 500);
+          setTimeout(adaptGame, 1000);
+          setTimeout(adaptGame, 2000);
         })();
       </script>
     `;
@@ -683,6 +670,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
