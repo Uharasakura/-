@@ -22,15 +22,17 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.mini-games-panel.minimized {
+/* 全新的简单折叠系统 */
+.mini-games-panel.collapsed {
   height: 50px !important;
   overflow: hidden !important;
 }
-.mini-games-panel.minimized .panel-content,
-.mini-games-panel.minimized .game-iframe-container {
+
+.mini-games-panel.collapsed .panel-content {
   display: none !important;
 }
-.mini-games-panel.minimized .game-iframe {
+
+.mini-games-panel.collapsed .game-iframe-container {
   display: none !important;
 }
 
