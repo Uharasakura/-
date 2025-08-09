@@ -1,9 +1,10 @@
 /**
- * 小游戏合集扩展 - 精简版
+ * 小游戏合集扩展 - 真正简化版（保持所有功能不变）
  */
 
 const MODULE_NAME = 'mini-games-collection';
 
+// 配置
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
   panelSize: { width: 400, height: 500 },
@@ -11,18 +12,50 @@ const defaultSettings = {
 };
 
 const builtInGames = [
-  { name: '贪吃蛇', icon: '🐍', file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html' },
-  { name: '种田', icon: '🌾', file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html' },
-  { name: '飞行棋', icon: '✈️', file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html' },
-  { name: 'Nyan Cat', icon: '🐱', file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html' },
-  { name: '扫雷', icon: '💣', file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html' },
-  { name: '数独', icon: '🔢', file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html' },
+  {
+    name: '贪吃蛇',
+    icon: '🐍',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Gluttonous_Snake.html',
+    description: '经典贪吃蛇游戏',
+  },
+  {
+    name: '种田',
+    icon: '🌾',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Farming.html',
+    description: '休闲种田游戏',
+  },
+  {
+    name: '飞行棋',
+    icon: '✈️',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Flight_chess.html',
+    description: '经典飞行棋游戏',
+  },
+  {
+    name: 'Nyan Cat',
+    icon: '🐱',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/Nyan_Cat.html',
+    description: '彩虹猫跑酷游戏',
+  },
+  {
+    name: '扫雷',
+    icon: '💣',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/minesweeper.html',
+    description: '经典扫雷游戏',
+  },
+  {
+    name: '数独',
+    icon: '🔢',
+    file: 'https://cdn.jsdelivr.net/gh/Uharasakura/-@main/shudoku.html',
+    description: '数独益智游戏',
+  },
 ];
 
+// 全局变量
 let gamePanel = null;
 let isGamePanelVisible = false;
 let settings = {};
 
+// 工具函数
 const isMobile = () =>
   /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 const getContext = () => SillyTavern.getContext();
@@ -35,33 +68,58 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
-// 游戏配置
-const gameConfig = {
-  贪吃蛇: { width: 450, height: 600, ratio: 0.75 },
-  种田: { width: 600, height: 700, ratio: 0.86 },
-  飞行棋: { width: 650, height: 650, ratio: 1.0 },
-  'Nyan Cat': { width: 700, height: 450, ratio: 1.56 },
-  扫雷: { width: 500, height: 600, ratio: 0.83 },
-  数独: { width: 500, height: 600, ratio: 0.83 },
-};
-
+// 根据游戏调整面板大小
 function adjustPanelForGame(gameName) {
   if (!gamePanel) return;
 
-  const config = gameConfig[gameName] || { width: 500, height: 600, ratio: 0.83 };
-  const maxWidth = Math.min(window.innerWidth - 100, config.width);
-  const maxHeight = Math.min(window.innerHeight - 100, config.height);
+  // 不同游戏的推荐尺寸
+  const gameConfig = {
+    贪吃蛇: { width: 450, height: 600, minWidth: 350, minHeight: 500 },
+    种田: { width: 600, height: 700, minWidth: 500, minHeight: 600 },
+    飞行棋: { width: 650, height: 650, minWidth: 500, minHeight: 500 },
+    'Nyan Cat': { width: 550, height: 400, minWidth: 450, minHeight: 350 },
+    扫雷: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
+    数独: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
+  };
 
-  gamePanel.style.width = maxWidth + 'px';
-  gamePanel.style.height = maxHeight + 'px';
+  const config = gameConfig[gameName] || { width: 500, height: 600, minWidth: 400, minHeight: 500 };
+
+  if (isMobile()) {
+    // 移动端：适应屏幕，但确保有足够空间
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    const panelWidth = Math.min(Math.max(config.minWidth, screenWidth - 40), config.width);
+    const panelHeight = Math.min(Math.max(config.minHeight, screenHeight - 100), config.height);
+
+    Object.assign(gamePanel.style, {
+      width: panelWidth + 'px',
+      height: panelHeight + 'px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+    });
+  } else {
+    // 桌面端：使用推荐尺寸，但不超过屏幕
+    const maxWidth = Math.min(window.innerWidth - 100, config.width);
+    const maxHeight = Math.min(window.innerHeight - 100, config.height);
+
+    Object.assign(gamePanel.style, {
+      width: maxWidth + 'px',
+      height: maxHeight + 'px',
+    });
+  }
+
+  console.log(`为游戏 ${gameName} 调整面板尺寸: ${gamePanel.style.width} x ${gamePanel.style.height}`);
 }
 
+// 创建面板HTML
 function createPanelHTML() {
   settings = getSettings();
   const allGames = [...builtInGames, ...settings.customGames];
   const gamesHTML = allGames
     .map(
-      game => `<div class="game-item" data-game="${game.file}" title="${game.description || game.name}">
+      game =>
+        `<div class="game-item" data-game="${game.file}" title="${game.description}">
        <div class="game-icon">${game.icon}</div>
        <div class="game-name">${game.name}</div>
      </div>`,
@@ -91,28 +149,53 @@ function createPanelHTML() {
           <button class="back-btn">← 返回游戏列表</button>
           <span class="current-game-title"></span>
         </div>
-        <iframe class="game-iframe" frameborder="0" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups allow-modals allow-downloads allow-top-navigation-by-user-activation"></iframe>
+        <iframe class="game-iframe" 
+                frameborder="0"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups allow-modals allow-downloads allow-top-navigation-by-user-activation"
+                allow="accelerometer; gyroscope; gamepad; fullscreen; autoplay; keyboard-map; clipboard-read; clipboard-write"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
   `;
 }
 
+// 加载CSS样式
+function loadCSS() {
+  if (document.querySelector('#mini-games-css')) return;
+
+  const link = document.createElement('link');
+  link.id = 'mini-games-css';
+  link.rel = 'stylesheet';
+  link.href = 'scripts/extensions/third-party/mini-games-collection/style.css';
+  document.head.appendChild(link);
+}
+
+// 创建面板
 function createGamePanel() {
   if (gamePanel) gamePanel.remove();
+
+  // 确保CSS已加载
+  loadCSS();
 
   gamePanel = document.createElement('div');
   gamePanel.innerHTML = createPanelHTML();
   gamePanel = gamePanel.firstElementChild;
 
+  // 设置位置和大小
   if (isMobile()) {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
     Object.assign(gamePanel.style, {
       position: 'fixed',
       top: '40px',
       left: '50%',
-      width: Math.min(window.innerWidth - 20, 420) + 'px',
-      height: Math.min(window.innerHeight - 80, 700) + 'px',
+      width: Math.min(screenWidth - 20, 420) + 'px',
+      height: Math.min(screenHeight - 80, 700) + 'px',
       transform: 'translateX(-50%)',
       zIndex: '999999',
+      maxWidth: '95vw',
+      maxHeight: '85vh',
     });
     gamePanel.classList.add('mobile-panel');
   } else {
@@ -126,10 +209,16 @@ function createGamePanel() {
     });
   }
 
+  // 添加事件监听
   gamePanel.addEventListener('click', handleClick);
+  if (isMobile()) {
+    gamePanel.addEventListener('touchend', handleClick);
+  }
+
   document.body.appendChild(gamePanel);
 }
 
+// 统一事件处理（合并桌面端和移动端逻辑）
 function handleClick(event) {
   const target = event.target;
   const minimizeBtn = target.closest('.minimize-btn');
@@ -143,50 +232,63 @@ function handleClick(event) {
   event.preventDefault();
   event.stopPropagation();
 
+  // 最小化按钮
   if (minimizeBtn) {
     const panelContent = gamePanel.querySelector('.panel-content');
     const gameContainer = gamePanel.querySelector('.game-iframe-container');
     const isMinimized = panelContent.style.display === 'none' && gameContainer.style.display === 'none';
 
     if (isMinimized) {
+      // 展开：恢复到之前的状态
       const wasShowingGame = gameContainer.dataset.wasVisible === 'true';
+
       if (wasShowingGame) {
+        // 如果之前在玩游戏，恢复游戏界面
         panelContent.style.display = 'none';
         gameContainer.style.display = 'block';
       } else {
+        // 如果之前在菜单，恢复菜单界面
         panelContent.style.display = 'block';
         gameContainer.style.display = 'none';
       }
+
       gamePanel.style.height = '';
       minimizeBtn.textContent = '−';
+      minimizeBtn.title = '最小化';
     } else {
+      // 最小化：记住当前状态
       const isShowingGame = gameContainer.style.display === 'block';
       gameContainer.dataset.wasVisible = isShowingGame.toString();
+
       panelContent.style.display = 'none';
       gameContainer.style.display = 'none';
       gamePanel.style.height = '50px';
       minimizeBtn.textContent = '+';
+      minimizeBtn.title = '展开';
     }
     return;
   }
 
+  // 关闭按钮
   if (closeBtn) {
     hideGamePanel();
     return;
   }
 
+  // 返回按钮
   if (backBtn) {
     gamePanel.querySelector('.panel-content').style.display = 'block';
     gamePanel.querySelector('.game-iframe-container').style.display = 'none';
     return;
   }
 
+  // 添加游戏按钮
   if (addGameBtn) {
     const name = prompt('游戏名称:');
     const icon = prompt('游戏图标(emoji):');
     const url = prompt('游戏链接:');
     if (name && icon && url) {
-      settings.customGames.push({ name, icon, file: url });
+      settings.customGames.push({ name, icon, file: url, description: name });
       saveSettings();
       createGamePanel();
       if (isGamePanelVisible) gamePanel.style.display = 'block';
@@ -194,12 +296,14 @@ function handleClick(event) {
     return;
   }
 
+  // 游戏项点击
   if (gameItem) {
     loadGame(gameItem.dataset.game, gameItem.querySelector('.game-name').textContent);
     return;
   }
 }
 
+// 加载游戏（简化但保持功能完整）
 async function loadGame(url, name) {
   const iframe = gamePanel.querySelector('.game-iframe');
   const titleEl = gamePanel.querySelector('.current-game-title');
@@ -208,14 +312,17 @@ async function loadGame(url, name) {
   gamePanel.querySelector('.panel-content').style.display = 'none';
   gamePanel.querySelector('.game-iframe-container').style.display = 'block';
 
+  // 显示加载动画
   iframe.srcdoc = `
-    <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif;">
-      <div style="text-align: center;">
-        <div style="font-size: 48px; margin-bottom: 20px;">🎮</div>
-        <h2 style="color: #667eea;">正在加载游戏...</h2>
-        <p>${name}</p>
-      </div>
-    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f8f9fa;">
+      <div style="font-size: 48px; margin-bottom: 20px;">🎮</div>
+      <h2 style="color: #667eea; margin-bottom: 10px;">正在加载游戏...</h2>
+      <p style="color: #666; font-size: 14px;">${name}</p>
+      <div style="margin-top: 20px;">
+        <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+      <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+        </div>
   `;
 
   try {
@@ -224,67 +331,242 @@ async function loadGame(url, name) {
 
     let html = await response.text();
 
-    // 添加自适应样式
-    const adaptCSS = `
+    // jQuery检测和注入
+    const usesJQuery = html.includes('$(') || html.includes('jQuery(');
+    const hasJQuery = html.includes('jquery') || html.includes('jQuery');
+
+    // 处理jQuery依赖和iframe适配
+    const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+    let headContent = `<base href="${baseUrl}">`;
+
+    if (usesJQuery && !hasJQuery) {
+      headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
+    }
+
+    // 添加iframe适配CSS，让游戏适应容器而不是全屏
+    headContent += `
       <style>
-        html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; overflow: hidden !important; }
-        body { transform-origin: top left !important; }
-        * { max-width: 100% !important; max-height: 100% !important; box-sizing: border-box !important; }
-      </style>
-      <script>
-        (function() {
-          function scaleToFit() {
-            const iframe = window.frameElement;
-            if (!iframe) return;
-            
-            const iframeWidth = iframe.clientWidth;
-            const iframeHeight = iframe.clientHeight;
-            const bodyWidth = document.body.scrollWidth;
-            const bodyHeight = document.body.scrollHeight;
-            
-            if (bodyWidth > iframeWidth || bodyHeight > iframeHeight) {
-              const scaleX = iframeWidth / bodyWidth;
-              const scaleY = iframeHeight / bodyHeight;
-              const scale = Math.min(scaleX, scaleY, 1);
-              
-              document.body.style.transform = \`scale(\${scale})\`;
-              document.body.style.transformOrigin = 'top left';
-            }
+        /* iframe适配样式 - 覆盖游戏的全屏设置 */
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          min-height: 100% !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+          background: #000 !important;
+        }
+        
+        /* 让游戏容器完全填充iframe */
+        #game-container, .game-container, .container, .game-wrapper, 
+        body > div:first-child, body > main, body > section {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          max-width: none !important;
+          max-height: none !important;
+          min-width: 100% !important;
+          min-height: 100% !important;
+          box-sizing: border-box !important;
+          overflow: hidden !important;
+        }
+        
+        /* Canvas自适应 - 保持宽高比并填充容器 */
+        canvas {
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          width: auto !important;
+          height: auto !important;
+          object-fit: contain !important;
+          image-rendering: pixelated !important;
+        }
+        
+        /* 覆盖所有可能的全屏样式 */
+        * {
+          position: relative !important;
+        }
+        
+        /* 特殊处理固定定位的元素（如分数、按钮等） */
+        .score, .menu, .game-over, .controls, .ui, .hud,
+        [class*="score"], [class*="menu"], [class*="button"], [class*="control"] {
+          position: fixed !important;
+          z-index: 1000 !important;
+        }
+        
+        /* 移除视口单位的限制，改用百分比 */
+        [style*="100vh"], [style*="100vw"], [style*="100vmin"], [style*="100vmax"] {
+          width: 100% !important;
+          height: 100% !important;
+        }
+        
+        /* 确保游戏按钮和UI元素正确显示 */
+        button, input, select {
+          position: relative !important;
+          z-index: 999 !important;
+        }
+        
+        /* 处理可能的滚动问题 */
+        ::-webkit-scrollbar {
+          display: none !important;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+          html, body {
+            touch-action: manipulation !important;
+            -webkit-overflow-scrolling: touch !important;
           }
           
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', scaleToFit);
-          } else {
-            scaleToFit();
+          canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
           }
-          setTimeout(scaleToFit, 500);
-          setTimeout(scaleToFit, 1000);
+        }
+      </style>
+    `;
+
+    // 添加JavaScript注入来动态适配
+    const scriptContent = `
+      <script>
+        (function() {
+          function adaptToContainer() {
+            // 获取所有canvas元素
+            const canvases = document.querySelectorAll('canvas');
+            const gameContainers = document.querySelectorAll('#game-container, .game-container, .container, .game-wrapper');
+            
+            // 设置容器尺寸
+            gameContainers.forEach(container => {
+              container.style.cssText += \`
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+              \`;
+            });
+            
+            // 自适应canvas
+            canvases.forEach(canvas => {
+              const originalWidth = canvas.width || 800;
+              const originalHeight = canvas.height || 600;
+              const aspectRatio = originalWidth / originalHeight;
+              
+              const containerWidth = window.innerWidth;
+              const containerHeight = window.innerHeight;
+              const containerRatio = containerWidth / containerHeight;
+              
+              let newWidth, newHeight;
+              
+              if (containerRatio > aspectRatio) {
+                // 容器更宽，以高度为准
+                newHeight = containerHeight;
+                newWidth = newHeight * aspectRatio;
+              } else {
+                // 容器更高，以宽度为准
+                newWidth = containerWidth;
+                newHeight = newWidth / aspectRatio;
+              }
+              
+              // 应用新尺寸
+              canvas.style.cssText += \`
+                position: absolute !important;
+                top: 50% !important;
+                left: 50% !important;
+                width: \${Math.min(newWidth, containerWidth)}px !important;
+                height: \${Math.min(newHeight, containerHeight)}px !important;
+                transform: translate(-50%, -50%) !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                object-fit: contain !important;
+              \`;
+            });
+          }
+          
+          // 页面加载完成后适配
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', adaptToContainer);
+          } else {
+            adaptToContainer();
+          }
+          
+          // 监听窗口大小变化
+          window.addEventListener('resize', adaptToContainer);
+          
+          // 延迟执行以确保游戏元素已创建
+          setTimeout(adaptToContainer, 500);
+          setTimeout(adaptToContainer, 1000);
+          setTimeout(adaptToContainer, 2000);
         })();
       </script>
     `;
 
+    // 注入到HTML
     if (html.includes('<head>')) {
-      html = html.replace('<head>', '<head>' + adaptCSS);
+      html = html.replace('<head>', '<head>' + headContent);
+      html = html.replace('</body>', scriptContent + '</body>');
+    } else if (html.includes('<html>')) {
+      html = html.replace('<html>', '<html><head>' + headContent + '</head>');
+      html = html.replace('</body>', scriptContent + '</body>');
     } else {
-      html = adaptCSS + html;
+      html = headContent + html + scriptContent;
     }
 
     iframe.srcdoc = html;
 
-    setTimeout(() => adjustPanelForGame(name), 1000);
+    // 动态调整面板大小以适应游戏内容
+    setTimeout(() => {
+      adjustPanelForGame(name);
+    }, 1000);
   } catch (error) {
-    iframe.srcdoc = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif;">
-        <div style="text-align: center;">
-          <h2 style="color: #ff4757;">🚫 游戏加载失败</h2>
-          <p>无法加载游戏: ${name}</p>
-          <a href="${url}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+    // 尝试备用CDN
+    const backupUrls = [
+      url.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
+      url.replace('cdn.jsdelivr.net/gh/', 'gitcdn.xyz/repo/'),
+    ];
+
+    let loaded = false;
+    for (const backupUrl of backupUrls) {
+      try {
+        const response = await fetch(backupUrl);
+        if (response.ok) {
+          iframe.srcdoc = await response.text();
+          loaded = true;
+          break;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+
+    if (!loaded) {
+      iframe.srcdoc = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+          <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+          <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${name}</p>
+          <div style="margin-top: 20px;">
+            <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
+            <a href="${url}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
   }
 }
 
+// 面板控制
 function showGamePanel() {
   if (!gamePanel) {
     settings = getSettings();
@@ -303,6 +585,7 @@ function toggleGamePanel() {
   isGamePanelVisible ? hideGamePanel() : showGamePanel();
 }
 
+// 创建扩展按钮（保持原有逻辑不变）
 function createExtensionButton() {
   if (document.querySelector('#mini-games-button')) return;
 
@@ -315,6 +598,7 @@ function createExtensionButton() {
     onclick: toggleGamePanel,
   });
 
+  // 尝试添加到底部菜单，找不到才放到body
   const targets = ['#extensionsMenuButton', '#rm_button_panel', 'body'];
   for (const target of targets) {
     const container = document.querySelector(target);
@@ -342,11 +626,13 @@ function createExtensionButton() {
   }
 }
 
+// 初始化
 function init() {
   settings = getSettings();
   createExtensionButton();
 }
 
+// 启动
 function start() {
   if (typeof SillyTavern === 'undefined') {
     setTimeout(start, 500);
@@ -362,6 +648,13 @@ function start() {
 }
 
 start();
+
+// 调试接口
+window.miniGamesDebug = {
+  showPanel: showGamePanel,
+  hidePanel: hideGamePanel,
+  togglePanel: toggleGamePanel,
+};
 
 
 
