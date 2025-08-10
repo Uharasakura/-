@@ -480,32 +480,38 @@
 
         // 响应式处理
         function handleResize() {
-          // 基于容器大小重新计算CSS变量
-          const root = document.documentElement;
-          const container = document.querySelector('.game-container');
-          if (container) {
-            const containerWidth = container.clientWidth;
-            const cellSize = Math.max(30, Math.min(containerWidth * 0.08, 60));
-            const fontSize = Math.max(14, Math.min(containerWidth * 0.03, 18));
-            const fontSizeLarge = Math.max(20, Math.min(containerWidth * 0.04, 24));
+          const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+          const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
 
-            root.style.setProperty('--cell-size', `${cellSize}px`);
-            root.style.setProperty('--font-size-normal', `${fontSize}px`);
-            root.style.setProperty('--font-size-large', `${fontSizeLarge}px`);
+          // 动态计算尺寸
+          const maxWidth = Math.min(vw - 40, 800);
+          const cellSize = Math.max(25, Math.min(maxWidth / 10, 60));
+          const fontSize = Math.max(12, Math.min(vw * 0.025, 18));
+          const fontSizeLarge = Math.max(16, Math.min(vw * 0.03, 24));
 
-            container.offsetHeight; // 强制重排
-          }
+          // 动态创建CSS样式
+          const style = document.createElement('style');
+          style.textContent = `
+            :root {
+              --cell-size: ${cellSize}px !important;
+              --font-size-normal: ${fontSize}px !important;
+              --font-size-large: ${fontSizeLarge}px !important;
+              --font-size-xlarge: ${Math.max(20, Math.min(vw * 0.04, 40))}px !important;
+            }
+            .game-container {
+              width: ${Math.min(95, (maxWidth / vw) * 100)}% !important;
+              max-width: ${maxWidth}px !important;
+            }
+          `;
+          document.head.appendChild(style);
         }
 
         $(window).on('resize', handleResize);
 
-        // 监听容器大小变化 (iframe 环境)
-        if (window.ResizeObserver) {
-          const resizeObserver = new ResizeObserver(handleResize);
-          const container = document.querySelector('.game-container');
-          if (container) {
-            resizeObserver.observe(container);
-          }
+        // iframe环境特殊处理
+        if (window.parent !== window) {
+          window.parent.addEventListener('resize', handleResize);
+          setInterval(handleResize, 1000);
         }
 
         // 初始化游戏
@@ -515,6 +521,7 @@
     </script>
   </body>
 </html>
+
 
 
 
