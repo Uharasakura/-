@@ -1,5 +1,5 @@
 /**
- * 小游戏合集扩展 - 真正简化版（保持所有功能不变）
+ * 小游戏合集扩展
  */
 
 const MODULE_NAME = 'mini-games-collection';
@@ -160,23 +160,9 @@ function createPanelHTML() {
   `;
 }
 
-// 加载CSS样式
-function loadCSS() {
-  if (document.querySelector('#mini-games-css')) return;
-
-  const link = document.createElement('link');
-  link.id = 'mini-games-css';
-  link.rel = 'stylesheet';
-  link.href = 'scripts/extensions/third-party/mini-games-collection/style.css';
-  document.head.appendChild(link);
-}
-
 // 创建面板
 function createGamePanel() {
   if (gamePanel) gamePanel.remove();
-
-  // 确保CSS已加载
-  loadCSS();
 
   gamePanel = document.createElement('div');
   gamePanel.innerHTML = createPanelHTML();
@@ -349,179 +335,42 @@ async function loadGame(url, name) {
         /* iframe适配样式 - 覆盖游戏的全屏设置 */
         html, body {
           margin: 0 !important;
-          padding: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          min-height: 100% !important;
-          overflow: hidden !important;
-          box-sizing: border-box !important;
-          background: #000 !important;
-        }
-        
-        /* 让游戏容器完全填充iframe */
-        #game-container, .game-container, .container, .game-wrapper, 
-        body > div:first-child, body > main, body > section {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          max-width: none !important;
-          max-height: none !important;
-          min-width: 100% !important;
-          min-height: 100% !important;
-          box-sizing: border-box !important;
-          overflow: hidden !important;
-        }
-        
-        /* Canvas自适应 - 保持宽高比并填充容器 */
-        canvas {
-          position: absolute !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          max-width: 100% !important;
-          max-height: 100% !important;
-          width: auto !important;
+          padding: 10px !important;
+          min-height: auto !important;
           height: auto !important;
-          object-fit: contain !important;
-          image-rendering: pixelated !important;
+          overflow: auto !important;
+          box-sizing: border-box !important;
         }
         
-        /* 覆盖所有可能的全屏样式 */
-        * {
-          position: relative !important;
-        }
-        
-        /* 特殊处理固定定位的元素（如分数、按钮等） */
-        .score, .menu, .game-over, .controls, .ui, .hud,
-        [class*="score"], [class*="menu"], [class*="button"], [class*="control"] {
-          position: fixed !important;
-          z-index: 1000 !important;
-        }
-        
-        /* 移除视口单位的限制，改用百分比 */
-        [style*="100vh"], [style*="100vw"], [style*="100vmin"], [style*="100vmax"] {
+        /* 让游戏容器适应iframe */
+        #game-container, .game-container, .container {
+          max-width: none !important;
           width: 100% !important;
-          height: 100% !important;
+          margin: 0 auto !important;
+          min-height: auto !important;
         }
         
-        /* 确保游戏按钮和UI元素正确显示 */
-        button, input, select {
-          position: relative !important;
-          z-index: 999 !important;
+        /* 调整使用vmin/vh单位的元素 */
+        [style*="vmin"], [style*="vh"], [style*="vw"] {
+          max-width: 90% !important;
+          max-height: 80vh !important;
         }
         
-        /* 处理可能的滚动问题 */
-        ::-webkit-scrollbar {
-          display: none !important;
-        }
-        
-        /* 移动端适配 */
-        @media (max-width: 768px) {
-          html, body {
-            touch-action: manipulation !important;
-            -webkit-overflow-scrolling: touch !important;
-          }
-          
-          canvas {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain !important;
-          }
+        /* 确保canvas等游戏元素不会太大 */
+        canvas {
+          max-width: 100% !important;
+          max-height: 70vh !important;
         }
       </style>
-    `;
-
-    // 添加JavaScript注入来动态适配
-    const scriptContent = `
-      <script>
-        (function() {
-          function adaptToContainer() {
-            // 获取所有canvas元素
-            const canvases = document.querySelectorAll('canvas');
-            const gameContainers = document.querySelectorAll('#game-container, .game-container, .container, .game-wrapper');
-            
-            // 设置容器尺寸
-            gameContainers.forEach(container => {
-              container.style.cssText += \`
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important;
-              \`;
-            });
-            
-            // 自适应canvas
-            canvases.forEach(canvas => {
-              const originalWidth = canvas.width || 800;
-              const originalHeight = canvas.height || 600;
-              const aspectRatio = originalWidth / originalHeight;
-              
-              const containerWidth = window.innerWidth;
-              const containerHeight = window.innerHeight;
-              const containerRatio = containerWidth / containerHeight;
-              
-              let newWidth, newHeight;
-              
-              if (containerRatio > aspectRatio) {
-                // 容器更宽，以高度为准
-                newHeight = containerHeight;
-                newWidth = newHeight * aspectRatio;
-              } else {
-                // 容器更高，以宽度为准
-                newWidth = containerWidth;
-                newHeight = newWidth / aspectRatio;
-              }
-              
-              // 应用新尺寸
-              canvas.style.cssText += \`
-                position: absolute !important;
-                top: 50% !important;
-                left: 50% !important;
-                width: \${Math.min(newWidth, containerWidth)}px !important;
-                height: \${Math.min(newHeight, containerHeight)}px !important;
-                transform: translate(-50%, -50%) !important;
-                max-width: 100% !important;
-                max-height: 100% !important;
-                object-fit: contain !important;
-              \`;
-            });
-          }
-          
-          // 页面加载完成后适配
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', adaptToContainer);
-          } else {
-            adaptToContainer();
-          }
-          
-          // 监听窗口大小变化
-          window.addEventListener('resize', adaptToContainer);
-          
-          // 延迟执行以确保游戏元素已创建
-          setTimeout(adaptToContainer, 500);
-          setTimeout(adaptToContainer, 1000);
-          setTimeout(adaptToContainer, 2000);
-        })();
-      </script>
     `;
 
     // 注入到HTML
     if (html.includes('<head>')) {
       html = html.replace('<head>', '<head>' + headContent);
-      html = html.replace('</body>', scriptContent + '</body>');
     } else if (html.includes('<html>')) {
       html = html.replace('<html>', '<html><head>' + headContent + '</head>');
-      html = html.replace('</body>', scriptContent + '</body>');
     } else {
-      html = headContent + html + scriptContent;
+      html = headContent + html;
     }
 
     iframe.srcdoc = html;
@@ -655,6 +504,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
