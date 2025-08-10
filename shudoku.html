@@ -525,11 +525,41 @@
         }
       });
 
+      // 响应式处理
+      function handleResize() {
+        // 基于容器大小重新计算CSS变量
+        const root = document.documentElement;
+        const container = document.querySelector('.game-container');
+        if (container) {
+          const containerWidth = container.clientWidth;
+          const cellSize = Math.max(30, Math.min(containerWidth * 0.08, 50));
+          const fontSize = Math.max(12, Math.min(containerWidth * 0.025, 16));
+
+          root.style.setProperty('--cell-size', `${cellSize}px`);
+          root.style.setProperty('--font-size-normal', `${fontSize}px`);
+
+          container.offsetHeight; // 强制重排
+        }
+      }
+
+      window.addEventListener('resize', handleResize);
+
+      // 监听容器大小变化 (iframe 环境)
+      if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(handleResize);
+        const container = document.querySelector('.game-container');
+        if (container) {
+          resizeObserver.observe(container);
+        }
+      }
+
       // 初始化游戏
       newGame();
+      handleResize(); // 初始化时设置正确的尺寸
     </script>
   </body>
 </html>
+
 
 
 
