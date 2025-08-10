@@ -105,126 +105,119 @@
         border-color: var(--border-color);
       }
 
-      /* 响应式样式 */
-      @media (max-width: 600px) {
-        body {
-          padding: 10px;
-          font-size: 12px;
-        }
-
-        #game-container {
-          max-width: 100%;
-          padding: 15px;
-        }
-
-        #status-bar {
-          flex-wrap: wrap;
-          gap: 10px;
-          padding: 8px;
-        }
-
-        .status-item {
-          font-size: 12px;
-          flex: 1 1 auto;
-          min-width: 70px;
-        }
-
-        #story-text {
-          min-height: 150px;
-          padding: 12px;
-          font-size: 13px;
-          line-height: 1.4;
-        }
-
-        .choice-btn {
-          padding: 10px 12px;
-          font-size: 12px;
-        }
+      /* 动态响应式样式 - 使用JavaScript检测容器大小 */
+      .compact-mode {
+        font-size: 12px;
       }
 
-      @media (max-width: 450px) {
-        body {
-          padding: 5px;
-          font-size: 11px;
-        }
-
-        #game-container {
-          padding: 10px;
-        }
-
-        #status-bar {
-          gap: 8px;
-          padding: 6px;
-        }
-
-        .status-item {
-          font-size: 10px;
-          min-width: 60px;
-        }
-
-        #story-text {
-          min-height: 120px;
-          padding: 10px;
-          font-size: 11px;
-        }
-
-        #choices {
-          gap: 8px;
-        }
-
-        .choice-btn {
-          padding: 8px 10px;
-          font-size: 10px;
-          line-height: 1.2;
-        }
-
-        .choice-btn:hover {
-          transform: translateX(2px);
-        }
+      .compact-mode body {
+        padding: 10px;
       }
 
-      @media (max-width: 350px) {
-        body {
-          padding: 3px;
-          font-size: 10px;
-        }
-
-        #game-container {
-          padding: 8px;
-        }
-
-        #status-bar {
-          gap: 6px;
-          padding: 5px;
-        }
-
-        .status-item {
-          font-size: 9px;
-          min-width: 50px;
-        }
-
-        #story-text {
-          min-height: 100px;
-          padding: 8px;
-          font-size: 10px;
-        }
-
-        #choices {
-          gap: 6px;
-        }
-
-        .choice-btn {
-          padding: 6px 8px;
-          font-size: 9px;
-          line-height: 1.1;
-        }
+      .compact-mode #game-container {
+        padding: 15px;
       }
 
-      /* 容器宽度自适应 */
-      @media (max-width: 800px) {
-        #game-container {
-          max-width: 95vw;
-        }
+      .compact-mode #status-bar {
+        gap: 10px;
+        padding: 8px;
+      }
+
+      .compact-mode .status-item {
+        font-size: 12px;
+        min-width: 70px;
+      }
+
+      .compact-mode #story-text {
+        min-height: 150px;
+        padding: 12px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .compact-mode .choice-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .small-mode {
+        font-size: 11px;
+      }
+
+      .small-mode body {
+        padding: 5px;
+      }
+
+      .small-mode #game-container {
+        padding: 10px;
+      }
+
+      .small-mode #status-bar {
+        gap: 8px;
+        padding: 6px;
+      }
+
+      .small-mode .status-item {
+        font-size: 10px;
+        min-width: 60px;
+      }
+
+      .small-mode #story-text {
+        min-height: 120px;
+        padding: 10px;
+        font-size: 11px;
+      }
+
+      .small-mode #choices {
+        gap: 8px;
+      }
+
+      .small-mode .choice-btn {
+        padding: 8px 10px;
+        font-size: 10px;
+        line-height: 1.2;
+      }
+
+      .small-mode .choice-btn:hover {
+        transform: translateX(2px);
+      }
+
+      .tiny-mode {
+        font-size: 10px;
+      }
+
+      .tiny-mode body {
+        padding: 3px;
+      }
+
+      .tiny-mode #game-container {
+        padding: 8px;
+      }
+
+      .tiny-mode #status-bar {
+        gap: 6px;
+        padding: 5px;
+      }
+
+      .tiny-mode .status-item {
+        font-size: 9px;
+        min-width: 50px;
+      }
+
+      .tiny-mode #story-text {
+        min-height: 100px;
+        padding: 8px;
+        font-size: 10px;
+      }
+
+      .tiny-mode #choices {
+        gap: 6px;
+      }
+
+      .tiny-mode .choice-btn {
+        padding: 6px 8px;
+        font-size: 9px;
+        line-height: 1.1;
       }
     </style>
   </head>
@@ -254,42 +247,42 @@
     </div>
 
     <script>
-      function adaptUI() {
+      // 响应式布局检测函数
+      function updateResponsiveLayout() {
         const container = document.getElementById('game-container');
-        const baseWidth = 800;  // 设计稿宽度
-        const currentWidth = window.innerWidth > baseWidth ? baseWidth : window.innerWidth * 0.95; // 最大到设计宽
+        const body = document.body;
+        const containerWidth = container ? container.offsetWidth : window.innerWidth;
 
-        const scale = currentWidth / baseWidth;
+        // 移除所有模式类
+        body.classList.remove('compact-mode', 'small-mode', 'tiny-mode');
 
-        // 缩放容器宽度
-        container.style.width = currentWidth + 'px';
-
-        // 缩放状态栏字体
-        document.querySelectorAll('#status-bar .status-item').forEach(el => {
-          el.style.fontSize = (14 * scale) + 'px';
-          el.style.setProperty('font-size', el.style.fontSize, 'important');
-        });
-
-        // 缩放故事文本字体和内边距
-        const storyText = document.getElementById('story-text');
-        storyText.style.fontSize = (16 * scale) + 'px';
-        storyText.style.padding = (15 * scale) + 'px';
-        storyText.style.setProperty('font-size', storyText.style.fontSize, 'important');
-
-        // 缩放按钮字体和内边距
-        document.querySelectorAll('.choice-btn').forEach(btn => {
-          btn.style.fontSize = (14 * scale) + 'px';
-          btn.style.padding = (12 * scale) + 'px ' + (15 * scale) + 'px';
-          btn.style.setProperty('font-size', btn.style.fontSize, 'important');
-          btn.style.setProperty('padding', btn.style.padding, 'important');
-        });
-  }
-
-  // 初始化和窗口调整都调用
-  window.addEventListener('resize', adaptUI);
-  window.addEventListener('load', adaptUI);
+        // 根据容器宽度添加相应的类
+        if (containerWidth <= 350) {
+          body.classList.add('tiny-mode');
+        } else if (containerWidth <= 450) {
+          body.classList.add('small-mode');
+        } else if (containerWidth <= 600) {
+          body.classList.add('compact-mode');
+        }
+      }
 
       $(document).ready(function () {
+        // 初始化布局
+        updateResponsiveLayout();
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', updateResponsiveLayout);
+
+        // 监听容器大小变化（使用ResizeObserver）
+        if (window.ResizeObserver) {
+          const container = document.getElementById('game-container');
+          if (container) {
+            const resizeObserver = new ResizeObserver(entries => {
+              updateResponsiveLayout();
+            });
+            resizeObserver.observe(container);
+          }
+        }
         // 游戏状态
         let gameState = {
           energy: 100,
