@@ -1,5 +1,6 @@
 /* 小游戏合集面板样式 */
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -358,6 +359,32 @@ html, body {
 .panel-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+
+/* 最小化状态样式 */
+.mini-games-panel.minimized {
+  transition: all 0.3s ease;
+  min-width: auto;
+  min-height: auto;
+  overflow: visible;
+  resize: none;
+}
+
+.mini-games-panel.minimized .panel-header {
+  border-bottom: none;
+}
+
+.mini-games-panel.minimized .panel-title .title-text {
+  display: none;
+}
+
+.mini-games-panel.minimized .minimize-btn {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.mini-games-panel.minimized .minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
 
 
 
