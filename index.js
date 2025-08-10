@@ -68,50 +68,6 @@ const getSettings = () => {
 };
 const saveSettings = () => getContext().saveSettingsDebounced();
 
-// 根据游戏调整面板大小
-function adjustPanelForGame(gameName) {
-  if (!gamePanel) return;
-
-  // 不同游戏的推荐尺寸
-  const gameConfig = {
-    贪吃蛇: { width: 450, height: 600, minWidth: 350, minHeight: 500 },
-    种田: { width: 600, height: 700, minWidth: 500, minHeight: 600 },
-    飞行棋: { width: 650, height: 650, minWidth: 500, minHeight: 500 },
-    'Nyan Cat': { width: 550, height: 400, minWidth: 450, minHeight: 350 },
-    扫雷: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
-    数独: { width: 500, height: 600, minWidth: 400, minHeight: 500 },
-  };
-
-  const config = gameConfig[gameName] || { width: 500, height: 600, minWidth: 400, minHeight: 500 };
-
-  if (isMobile()) {
-    // 移动端：适应屏幕，但确保有足够空间
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-
-    const panelWidth = Math.min(Math.max(config.minWidth, screenWidth - 40), config.width);
-    const panelHeight = Math.min(Math.max(config.minHeight, screenHeight - 100), config.height);
-
-    Object.assign(gamePanel.style, {
-      width: panelWidth + 'px',
-      height: panelHeight + 'px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-    });
-  } else {
-    // 桌面端：使用推荐尺寸，但不超过屏幕
-    const maxWidth = Math.min(window.innerWidth - 100, config.width);
-    const maxHeight = Math.min(window.innerHeight - 100, config.height);
-
-    Object.assign(gamePanel.style, {
-      width: maxWidth + 'px',
-      height: maxHeight + 'px',
-    });
-  }
-
-  console.log(`为游戏 ${gameName} 调整面板尺寸: ${gamePanel.style.width} x ${gamePanel.style.height}`);
-}
-
 // 创建面板HTML
 function createPanelHTML() {
   settings = getSettings();
@@ -348,6 +304,27 @@ async function loadGame(url, name) {
   `;
 
   try {
+    iframe.src = url;
+    iframe.onload = function () {
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      const style = doc.createElement('style');
+      style.textContent = `
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          overflow: hidden !important;
+        }
+        canvas {
+          width: 100% !important;
+          height: auto !important;
+        }
+      `;
+      doc.head.appendChild(style);
+    };
+
+    /*
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -368,7 +345,6 @@ async function loadGame(url, name) {
     // 添加iframe适配CSS，让游戏适应容器而不是全屏
     headContent += `
       <style>
-        /* iframe适配样式 - 覆盖游戏的全屏设置 */
         html, body {
           margin: 0 !important;
           padding: 10px !important;
@@ -378,7 +354,6 @@ async function loadGame(url, name) {
           box-sizing: border-box !important;
         }
         
-        /* 让游戏容器适应iframe */
         #game-container, .game-container, .container {
           max-width: none !important;
           width: 100% !important;
@@ -386,13 +361,11 @@ async function loadGame(url, name) {
           min-height: auto !important;
         }
         
-        /* 调整使用vmin/vh单位的元素 */
         [style*="vmin"], [style*="vh"], [style*="vw"] {
           max-width: 90% !important;
           max-height: 80vh !important;
         }
         
-        /* 确保canvas等游戏元素不会太大 */
         canvas {
           max-width: 100% !important;
           max-height: 70vh !important;
@@ -410,12 +383,9 @@ async function loadGame(url, name) {
     }
 
     iframe.srcdoc = html;
-
-    // 动态调整面板大小以适应游戏内容
-    setTimeout(() => {
-      adjustPanelForGame(name);
-    }, 1000);
+    */
   } catch (error) {
+    /*
     // 尝试备用CDN
     const backupUrls = [
       url.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
@@ -448,6 +418,16 @@ async function loadGame(url, name) {
         </div>
       `;
     }
+    */
+    iframe.srcdoc = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
+        <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
+        <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${name}</p>
+        <div style="margin-top: 20px;">
+          <a href="${url}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -540,6 +520,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
