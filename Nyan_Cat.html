@@ -213,7 +213,7 @@
 
         // 游戏状态
         let gameState = {
-          catY: (document.getElementById('gameCanvas')?.parentElement?.clientHeight || window.innerHeight) / 2,
+          catY: Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight) / 2,
           velocity: 0,
           gravity: 0.4,
           flyForce: -0.3,
@@ -237,10 +237,8 @@
 
         // 游戏尺寸计算
         function calculateGameDimensions() {
-          const canvas = document.getElementById('gameCanvas');
-          const container = canvas ? canvas.parentElement : document.body;
-          const vw = container.clientWidth;
-          const vh = container.clientHeight;
+          const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+          const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
           const isMobile = vw <= 768;
           const scale = Math.min(1, Math.max(0.5, Math.min(vw / 1920, vh / 1080)));
           const catSize = isMobile
@@ -262,9 +260,8 @@
         class Obstacle {
           constructor() {
             const dims = calculateGameDimensions();
-            const canvas = document.getElementById('gameCanvas');
-            const container = canvas ? canvas.parentElement : document.body;
-            const isMobile = container.clientWidth <= 768;
+            const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+            const isMobile = vw <= 768;
             this.width = dims.obstacleWidth;
 
             // 优化障碍物高度
@@ -320,9 +317,8 @@
 
           checkCollision(catX, catY) {
             const dims = calculateGameDimensions();
-            const canvas = document.getElementById('gameCanvas');
-            const container = canvas ? canvas.parentElement : document.body;
-            const catSize = dims.catSize * (container.clientWidth <= 768 ? 0.7 : 0.6);
+            const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+            const catSize = dims.catSize * (vw <= 768 ? 0.7 : 0.6);
             return (
               catX + catSize * 0.7 > this.x &&
               catX + catSize * 0.3 < this.x + this.width &&
@@ -405,19 +401,29 @@
           });
 
           function resizeCanvas() {
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
+            const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+            const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
+            canvas.width = vw;
+            canvas.height = vh;
             const dims = calculateGameDimensions();
-            document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
+
+            // 动态更新CSS变量
+            const style = document.createElement('style');
+            style.textContent = `
+              :root {
+                --cat-size: ${dims.catSize}px;
+                --control-size: ${Math.max(40, dims.catSize * 0.8)}px;
+              }
+            `;
+            document.head.appendChild(style);
           }
 
           window.addEventListener('resize', resizeCanvas);
 
-          // 监听容器大小变化 (iframe 环境)
-          if (window.ResizeObserver) {
-            const resizeObserver = new ResizeObserver(resizeCanvas);
-            resizeObserver.observe(canvas.parentElement);
+          // 针对iframe环境的特殊处理
+          if (window.parent !== window) {
+            window.parent.addEventListener('resize', resizeCanvas);
+            setInterval(resizeCanvas, 1000); // 定期检查尺寸变化
           }
         }
 
@@ -546,7 +552,7 @@
 
         window.restartGame = function () {
           gameState = {
-            catY: (document.getElementById('gameCanvas')?.parentElement?.clientHeight || window.innerHeight) / 2,
+            catY: Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight) / 2,
             velocity: 0,
             gravity: 0.4,
             flyForce: -0.3,
@@ -592,9 +598,10 @@
         };
 
         // 初始化
-        const container = canvas.parentElement;
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
+        const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+        const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
+        canvas.width = vw;
+        canvas.height = vh;
         nyanCat.style.display = 'none';
         bgm.volume = 1.0;
         bgm.load();
