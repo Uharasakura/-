@@ -1,165 +1,76 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>像素种田生活 - 响应式改造</title>
-  <style>
-    :root {
-      --main-bg-dark: #1a2f1a;
-      --main-bg-light: #2c4a2c;
-      --text-color: #9ab973;
-      --border-color: #4a5f3c;
-      --highlight: #c5d6a2;
-      --button-bg: #3d4f32;
-      --button-hover: #4d633f;
-      --container-bg: rgba(26, 47, 26, 0.6);
-      --font-family: 'Press Start 2P', monospace;
-    }
-
-    /* 重置 */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: var(--font-family);
-      color: var(--text-color);
-    }
-
-    html, body {
-      height: 100%;
-      background: linear-gradient(135deg, var(--main-bg-dark), var(--main-bg-light));
-      padding: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #game-container {
-      display: flex;
-      flex-direction: column;
-      width: 90vw;
-      max-width: 800px;
-      height: 80vh;
-      background: var(--container-bg);
-      border: 2px solid var(--border-color);
-      border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      user-select: none;
-    }
-
-    /* 状态栏 */
-    #status-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
-      font-size: 1.1rem;
-      text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-    }
-
-    .status-item {
-      flex: 1 1 100px;
-      min-width: 80px;
-    }
-
-    /* 文字故事区域 - 关键撑满剩余空间，支持滚动 */
-    #story-text {
-      flex-grow: 1;
-      margin: 14px 0;
-      padding: 12px;
-      background: linear-gradient(180deg, rgba(26,47,26,0.6), rgba(44,74,44,0.6));
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      color: var(--highlight);
-      font-size: 1rem;
-      line-height: 1.5;
-      overflow-y: auto;
-      text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-      white-space: pre-wrap;
-    }
-
-    /* 按钮区域 */
-    #choices {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-    }
-
-    .choice-btn {
-      flex: 1 1 45%;
-      min-width: 140px;
-      padding: 14px 16px;
-      background: linear-gradient(90deg, var(--button-bg), rgba(61,79,50,0.9));
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      cursor: pointer;
-      border-radius: 6px;
-      font-size: 1rem;
-      text-align: center;
-      text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-      transition: all 0.25s ease;
-      user-select: none;
-    }
-
-    .choice-btn:hover {
-      background: linear-gradient(90deg, var(--button-hover), rgba(77,99,63,0.9));
-      color: var(--highlight);
-      transform: translateX(5px);
-    }
-
-    /* 响应式微调 */
-    @media (max-width: 600px) {
-      #choices {
-        gap: 8px;
-      }
-      .choice-btn {
-        flex: 1 1 100%;
-        min-width: unset;
-      }
-      #status-bar {
-        font-size: 0.9rem;
-      }
-      #story-text {
-        font-size: 0.9rem;
-      }
-    }
-
-    @media (max-height: 500px) {
-      #game-container {
-        height: 90vh;
-      }
-      #story-text {
-        font-size: 0.9rem;
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>种田极简版</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; background: #1a2f1a; color: #9ab973;
+    font-family: monospace; font-size: 10px; /* 字号极小 */
+    overflow: hidden;
+    height: 100vh; width: 100vw;
+  }
+  #container {
+    padding: 4px;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    background: #2c4a2c;
+  }
+  #status {
+    font-size: 9px;
+    border-bottom: 1px solid #4a5f3c;
+    padding-bottom: 3px;
+    margin-bottom: 3px;
+  }
+  #status span {
+    display: inline-block;
+    width: 48%;
+    margin-bottom: 2px;
+  }
+  #story {
+    white-space: pre-wrap;
+    margin-bottom: 6px;
+  }
+  button {
+    width: 100%;
+    margin-bottom: 4px;
+    padding: 3px;
+    font-size: 9px;
+    background: #3d4f32;
+    border: none;
+    color: #9ab973;
+    cursor: pointer;
+  }
+  button:active {
+    background: #4d633f;
+  }
+</style>
 </head>
 <body>
-  <div id="game-container">
-    <div id="status-bar">
-      <div class="status-item">体力: <span id="energy">100</span></div>
-      <div class="status-item">金币: <span id="money">100</span></div>
-      <div class="status-item">季节: <span id="season">春</span></div>
-      <div class="status-item">天数: <span id="day">1</span></div>
+  <div id="container">
+    <div id="status">
+      <span>体力: 100</span>
+      <span>金币: 100</span>
+      <span>季节: 春</span>
+      <span>天数: 1</span>
     </div>
-    <div id="story-text" tabindex="0">
-      这是你的农田。目前杂草丛生，需要清理后才能开始耕种。你可以种植不同的作物，每种作物的生长周期和收益都不同：  
-      - 萝卜：种植5金币，5天成熟，售价15金币  
-      - 白菜：种植10金币，7天成熟，售价25金币  
-      - 土豆：种植15金币，10天成熟，售价40金币
+    <div id="story">
+这是你的农田。  
+杂草丛生，需清理后才能耕种。  
+作物：  
+- 萝卜：5金币，5天成熟，售价15金币  
+- 白菜：10金币，7天成熟，售价25金币  
+- 土豆：15金币，10天成熟，售价40金币  
     </div>
-    <div id="choices">
-      <button class="choice-btn" onclick="makeChoice('clear')">清理土地 (-20体力)</button>
-      <button class="choice-btn" onclick="makeChoice('plant')">种植作物 (-10体力)</button>
-      <button class="choice-btn" onclick="makeChoice('water')">浇水 (-5体力)</button>
-      <button class="choice-btn" onclick="makeChoice('harvest')">收获作物 (-10体力)</button>
-      <button class="choice-btn" onclick="makeChoice('rest')">休息 (+30体力)</button>
-      <button class="choice-btn" onclick="makeChoice('nextDay')">结束当天</button>
-    </div>
+    <button>清理土地 (-20体力)</button>
+    <button>种植作物 (-10体力)</button>
+    <button>浇水 (-5体力)</button>
+    <button>收获作物 (-10体力)</button>
+    <button>休息 (+30体力)</button>
+    <button>结束当天</button>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
