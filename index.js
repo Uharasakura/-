@@ -227,19 +227,8 @@ function handleClick(event) {
     if (isMinimized) {
       // 展开：恢复到之前的状态
       gamePanel.classList.remove('minimized');
-      const wasShowingGame = gameContainer.dataset.wasVisible === 'true';
 
-      if (wasShowingGame) {
-        // 如果之前在玩游戏，恢复游戏界面
-        panelContent.style.display = 'none';
-        gameContainer.style.display = 'block';
-      } else {
-        // 如果之前在菜单，恢复菜单界面
-        panelContent.style.display = 'block';
-        gameContainer.style.display = 'none';
-      }
-
-      // 恢复原始尺寸
+      // 先恢复尺寸，然后显示内容
       if (isMobile()) {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
@@ -250,6 +239,25 @@ function handleClick(event) {
         gamePanel.style.height = settings.panelSize.height + 'px';
       }
 
+      // 延迟显示内容，让尺寸动画先执行
+      setTimeout(() => {
+        const wasShowingGame = gameContainer.dataset.wasVisible === 'true';
+
+        if (wasShowingGame) {
+          // 如果之前在玩游戏，恢复游戏界面
+          panelContent.style.display = 'none';
+          gameContainer.style.display = 'block';
+          gameContainer.style.opacity = '1';
+          gameContainer.style.transform = 'scale(1)';
+        } else {
+          // 如果之前在菜单，恢复菜单界面
+          panelContent.style.display = 'block';
+          panelContent.style.opacity = '1';
+          panelContent.style.transform = 'scale(1)';
+          gameContainer.style.display = 'none';
+        }
+      }, 200);
+
       minimizeBtn.textContent = '−';
       minimizeBtn.title = '最小化';
     } else {
@@ -257,13 +265,25 @@ function handleClick(event) {
       const isShowingGame = gameContainer.style.display === 'block';
       gameContainer.dataset.wasVisible = isShowingGame.toString();
 
-      gamePanel.classList.add('minimized');
-      panelContent.style.display = 'none';
-      gameContainer.style.display = 'none';
+      // 先淡出内容
+      if (isShowingGame) {
+        gameContainer.style.opacity = '0';
+        gameContainer.style.transform = 'scale(0.95)';
+      } else {
+        panelContent.style.opacity = '0';
+        panelContent.style.transform = 'scale(0.95)';
+      }
 
-      // 设置最小化尺寸
-      gamePanel.style.width = isMobile() ? '200px' : '250px';
-      gamePanel.style.height = '50px';
+      // 延迟添加最小化类和隐藏内容
+      setTimeout(() => {
+        gamePanel.classList.add('minimized');
+        panelContent.style.display = 'none';
+        gameContainer.style.display = 'none';
+
+        // 设置最小化尺寸
+        gamePanel.style.width = isMobile() ? '200px' : '250px';
+        gamePanel.style.height = '50px';
+      }, 150);
 
       minimizeBtn.textContent = '+';
       minimizeBtn.title = '展开';
@@ -520,6 +540,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
