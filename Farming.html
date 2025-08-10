@@ -297,27 +297,45 @@
 
         // 响应式处理
         function handleResize() {
-          // 触发CSS重新计算
-          const container = document.getElementById('game-container');
-          if (container) {
-            container.style.fontSize = '';
-            container.offsetHeight; // 强制重排
-          }
+          const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
+          const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
+
+          // 动态计算尺寸
+          const maxWidth = Math.min(vw - 40, 800);
+          const fontSize = Math.max(12, Math.min(vw * 0.025, 16));
+          const padding = Math.max(10, Math.min(vw * 0.02, 20));
+
+          // 动态创建CSS样式
+          const style = document.createElement('style');
+          style.textContent = `
+            #game-container {
+              max-width: ${maxWidth}px !important;
+              width: ${Math.min(95, (maxWidth / vw) * 100)}% !important;
+              padding: ${padding}px !important;
+              font-size: ${fontSize}px !important;
+            }
+            .crop-info, .action-buttons {
+              font-size: ${Math.max(11, fontSize * 0.9)}px !important;
+            }
+            button {
+              padding: ${Math.max(8, padding * 0.6)}px ${Math.max(12, padding * 0.8)}px !important;
+              font-size: ${Math.max(11, fontSize * 0.9)}px !important;
+            }
+          `;
+          document.head.appendChild(style);
         }
 
         $(window).on('resize', handleResize);
 
-        // 监听容器大小变化 (iframe 环境)
-        if (window.ResizeObserver) {
-          const resizeObserver = new ResizeObserver(handleResize);
-          const container = document.getElementById('game-container');
-          if (container) {
-            resizeObserver.observe(container);
-          }
+        // iframe环境特殊处理
+        if (window.parent !== window) {
+          window.parent.addEventListener('resize', handleResize);
+          setInterval(handleResize, 1000);
         }
 
         // 初始化游戏
         updateStatus();
+        handleResize(); // 初始化时设置正确的尺寸
       });
     </script>
   </body>
