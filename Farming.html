@@ -139,6 +139,61 @@
 
     <script>
       $(document).ready(function () {
+        // 动态计算并应用响应式样式
+        function applyDynamicSizing() {
+          const windowWidth = window.innerWidth;
+          const windowHeight = window.innerHeight;
+
+          // 基于窗口大小计算基础字体大小
+          const baseFontSize = Math.max(10, Math.min(16, windowWidth * 0.025));
+          const padding = Math.max(5, windowWidth * 0.02);
+          const buttonPadding = Math.max(8, windowWidth * 0.015);
+
+          // 创建动态样式
+          const style = document.createElement('style');
+          style.textContent = `
+            body {
+              font-size: ${baseFontSize}px !important;
+              padding: ${padding}px !important;
+            }
+            #game-container {
+              padding: ${padding * 1.5}px !important;
+            }
+            #status-bar {
+              gap: ${padding}px !important;
+              padding: ${padding}px !important;
+              margin-bottom: ${padding * 1.5}px !important;
+            }
+            .status-item {
+              font-size: ${baseFontSize * 0.9}px !important;
+            }
+            #story-text {
+              font-size: ${baseFontSize * 0.85}px !important;
+              padding: ${padding * 1.2}px !important;
+              margin-bottom: ${padding * 1.5}px !important;
+              min-height: ${Math.max(80, windowHeight * 0.2)}px !important;
+            }
+            #choices {
+              gap: ${padding * 0.8}px !important;
+              grid-template-columns: ${windowWidth < 400 ? '1fr' : 'repeat(auto-fit, minmax(40%, 1fr))'} !important;
+            }
+            .choice-btn {
+              font-size: ${baseFontSize * 0.75}px !important;
+              padding: ${buttonPadding}px ${buttonPadding * 1.2}px !important;
+              line-height: 1.2 !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
+        // 初始化时应用动态样式
+        applyDynamicSizing();
+
+        // 窗口大小改变时重新计算
+        $(window).resize(function () {
+          applyDynamicSizing();
+        });
+
         // 游戏状态
         let gameState = {
           energy: 100,
