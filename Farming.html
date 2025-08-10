@@ -31,12 +31,17 @@
       body {
         background: linear-gradient(135deg, var(--main-bg-dark) 0%, var(--main-bg-light) 100%);
         color: var(--text-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
         padding: 20px;
         line-height: 1.6;
-        height: 100%;
       }
 
       #game-container {
+        position: relative;
         width: 100%;
         margin: 0 auto;
         background: linear-gradient(180deg, var(--container-bg) 0%, rgba(26, 47, 26, 0.8) 100%);
