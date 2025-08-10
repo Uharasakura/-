@@ -308,7 +308,18 @@ async function loadGame(url, name) {
     const html = await response.text();
 
     const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-    const styleContent = `<base href="${baseUrl}"><style>
+
+    // 检测是否需要jQuery
+    const needsJQuery = html.includes('$(') || html.includes('jQuery(') || html.includes('$.');
+
+    let headContent = `<base href="${baseUrl}">`;
+
+    // 如果需要jQuery就注入
+    if (needsJQuery) {
+      headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
+    }
+
+    headContent += `<style>
       html, body {
         margin: 0 !important;
         padding: 0 !important;
@@ -324,11 +335,11 @@ async function loadGame(url, name) {
 
     let finalHtml = html;
     if (html.includes('<head>')) {
-      finalHtml = html.replace('<head>', '<head>' + styleContent);
+      finalHtml = html.replace('<head>', '<head>' + headContent);
     } else if (html.includes('<html>')) {
-      finalHtml = html.replace('<html>', '<html><head>' + styleContent + '</head>');
+      finalHtml = html.replace('<html>', '<html><head>' + headContent + '</head>');
     } else {
-      finalHtml = styleContent + html;
+      finalHtml = headContent + html;
     }
 
     iframe.srcdoc = finalHtml;
