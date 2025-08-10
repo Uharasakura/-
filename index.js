@@ -222,10 +222,11 @@ function handleClick(event) {
   if (minimizeBtn) {
     const panelContent = gamePanel.querySelector('.panel-content');
     const gameContainer = gamePanel.querySelector('.game-iframe-container');
-    const isMinimized = panelContent.style.display === 'none' && gameContainer.style.display === 'none';
+    const isMinimized = gamePanel.classList.contains('minimized');
 
     if (isMinimized) {
       // 展开：恢复到之前的状态
+      gamePanel.classList.remove('minimized');
       const wasShowingGame = gameContainer.dataset.wasVisible === 'true';
 
       if (wasShowingGame) {
@@ -238,17 +239,32 @@ function handleClick(event) {
         gameContainer.style.display = 'none';
       }
 
-      gamePanel.style.height = '';
+      // 恢复原始尺寸
+      if (isMobile()) {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        gamePanel.style.width = Math.min(screenWidth - 20, 420) + 'px';
+        gamePanel.style.height = Math.min(screenHeight - 80, 700) + 'px';
+      } else {
+        gamePanel.style.width = settings.panelSize.width + 'px';
+        gamePanel.style.height = settings.panelSize.height + 'px';
+      }
+
       minimizeBtn.textContent = '−';
       minimizeBtn.title = '最小化';
     } else {
-      // 最小化：记住当前状态
+      // 最小化：记住当前状态并折叠
       const isShowingGame = gameContainer.style.display === 'block';
       gameContainer.dataset.wasVisible = isShowingGame.toString();
 
+      gamePanel.classList.add('minimized');
       panelContent.style.display = 'none';
       gameContainer.style.display = 'none';
+
+      // 设置最小化尺寸
+      gamePanel.style.width = isMobile() ? '200px' : '250px';
       gamePanel.style.height = '50px';
+
       minimizeBtn.textContent = '+';
       minimizeBtn.title = '展开';
     }
@@ -504,6 +520,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
