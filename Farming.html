@@ -254,6 +254,41 @@
     </div>
 
     <script>
+      function adaptUI() {
+        const container = document.getElementById('game-container');
+        const baseWidth = 800;  // 设计稿宽度
+        const currentWidth = window.innerWidth > baseWidth ? baseWidth : window.innerWidth * 0.95; // 最大到设计宽
+
+        const scale = currentWidth / baseWidth;
+
+        // 缩放容器宽度
+        container.style.width = currentWidth + 'px';
+
+        // 缩放状态栏字体
+        document.querySelectorAll('#status-bar .status-item').forEach(el => {
+          el.style.fontSize = (14 * scale) + 'px';
+          el.style.setProperty('font-size', el.style.fontSize, 'important');
+        });
+
+        // 缩放故事文本字体和内边距
+        const storyText = document.getElementById('story-text');
+        storyText.style.fontSize = (16 * scale) + 'px';
+        storyText.style.padding = (15 * scale) + 'px';
+        storyText.style.setProperty('font-size', storyText.style.fontSize, 'important');
+
+        // 缩放按钮字体和内边距
+        document.querySelectorAll('.choice-btn').forEach(btn => {
+          btn.style.fontSize = (14 * scale) + 'px';
+          btn.style.padding = (12 * scale) + 'px ' + (15 * scale) + 'px';
+          btn.style.setProperty('font-size', btn.style.fontSize, 'important');
+          btn.style.setProperty('padding', btn.style.padding, 'important');
+        });
+  }
+
+  // 初始化和窗口调整都调用
+  window.addEventListener('resize', adaptUI);
+  window.addEventListener('load', adaptUI);
+
       $(document).ready(function () {
         // 游戏状态
         let gameState = {
