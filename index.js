@@ -304,121 +304,35 @@ async function loadGame(url, name) {
   `;
 
   try {
-    iframe.src = url;
-    iframe.onload = function () {
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      const style = doc.createElement('style');
-      style.textContent = `
-        html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          overflow: hidden !important;
-        }
-        canvas {
-          width: 100% !important;
-          height: auto !important;
-        }
-      `;
-      doc.head.appendChild(style);
-    };
-
-    /*
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const html = await response.text();
 
-    let html = await response.text();
-
-    // jQuery检测和注入
-    const usesJQuery = html.includes('$(') || html.includes('jQuery(');
-    const hasJQuery = html.includes('jquery') || html.includes('jQuery');
-
-    // 处理jQuery依赖和iframe适配
     const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-    let headContent = `<base href="${baseUrl}">`;
-
-    if (usesJQuery && !hasJQuery) {
-      headContent += `<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>`;
-    }
-
-    // 添加iframe适配CSS，让游戏适应容器而不是全屏
-    headContent += `
-      <style>
-        html, body {
-          margin: 0 !important;
-          padding: 10px !important;
-          min-height: auto !important;
-          height: auto !important;
-          overflow: auto !important;
-          box-sizing: border-box !important;
-        }
-        
-        #game-container, .game-container, .container {
-          max-width: none !important;
-          width: 100% !important;
-          margin: 0 auto !important;
-          min-height: auto !important;
-        }
-        
-        [style*="vmin"], [style*="vh"], [style*="vw"] {
-          max-width: 90% !important;
-          max-height: 80vh !important;
-        }
-        
-        canvas {
-          max-width: 100% !important;
-          max-height: 70vh !important;
-        }
-      </style>
-    `;
-
-    // 注入到HTML
-    if (html.includes('<head>')) {
-      html = html.replace('<head>', '<head>' + headContent);
-    } else if (html.includes('<html>')) {
-      html = html.replace('<html>', '<html><head>' + headContent + '</head>');
-    } else {
-      html = headContent + html;
-    }
-
-    iframe.srcdoc = html;
-    */
-  } catch (error) {
-    /*
-    // 尝试备用CDN
-    const backupUrls = [
-      url.replace('cdn.jsdelivr.net/gh/', 'raw.githack.com/'),
-      url.replace('cdn.jsdelivr.net/gh/', 'gitcdn.xyz/repo/'),
-    ];
-
-    let loaded = false;
-    for (const backupUrl of backupUrls) {
-      try {
-        const response = await fetch(backupUrl);
-        if (response.ok) {
-          iframe.srcdoc = await response.text();
-          loaded = true;
-          break;
-        }
-      } catch (e) {
-        continue;
+    const styleContent = `<base href="${baseUrl}"><style>
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
       }
+      canvas {
+        width: 100% !important;
+        height: auto !important;
+      }
+    </style>`;
+
+    let finalHtml = html;
+    if (html.includes('<head>')) {
+      finalHtml = html.replace('<head>', '<head>' + styleContent);
+    } else if (html.includes('<html>')) {
+      finalHtml = html.replace('<html>', '<html><head>' + styleContent + '</head>');
+    } else {
+      finalHtml = styleContent + html;
     }
 
-    if (!loaded) {
-      iframe.srcdoc = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
-          <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
-          <p style="color: #666; margin-bottom: 10px;">无法加载游戏: ${name}</p>
-          <div style="margin-top: 20px;">
-            <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">刷新重试</button>
-            <a href="${url}" target="_blank" style="padding: 10px 20px; background: #48dbfb; color: white; text-decoration: none; border-radius: 5px;">新窗口打开</a>
-          </div>
-        </div>
-      `;
-    }
-    */
+    iframe.srcdoc = finalHtml;
+  } catch (error) {
     iframe.srcdoc = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5;">
         <h2 style="color: #ff4757; margin-bottom: 20px;">🚫 游戏加载失败</h2>
