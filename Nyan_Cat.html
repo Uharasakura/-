@@ -241,9 +241,10 @@
           const vh = document.documentElement.clientHeight;
           const isMobile = vw <= 768;
           const scale = Math.min(1, Math.max(0.5, Math.min(vw / 1920, vh / 1080)));
-          const catSize = isMobile
-            ? Math.max(80, Math.min(vw * 0.15, vh * 0.15))
-            : Math.max(120, Math.min(vw * 0.2, vh * 0.2));
+
+          // 使用vmin单位确保在小窗口中猫咪不会太小
+          const viewportMin = Math.min(vw, vh);
+          const catSize = Math.max(60, Math.min(120, viewportMin * 0.12));
 
           return {
             catSize,
@@ -472,14 +473,29 @@
 
           // 优化障碍物生成
           const lastObstacle = gameState.obstacles[gameState.obstacles.length - 1];
-          const minGap = dims.obstacleGap * 1.2; // 增加最小间距
+          const minGap = dims.obstacleGap * 0.8; // 减少最小间距，增加密度
 
           if (!lastObstacle || lastObstacle.x + lastObstacle.width < canvas.width - minGap) {
-            // 根据分数调整生成概率
-            const baseChance = 0.01;
-            const scoreMultiplier = Math.min(1 + Math.floor(gameState.score / 1000) * 0.1, 2);
-            if (Math.random() < baseChance * scoreMultiplier) {
+            // 根据分数调整生成概率 - 提高基础概率
+            const baseChance = 0.015; // 从0.01提高到0.015
+            const scoreMultiplier = Math.min(1 + Math.floor(gameState.score / 500) * 0.15, 2.5); // 更快增长
+
+            // 添加连续生成机制
+            const shouldGenerate = Math.random() < baseChance * scoreMultiplier;
+            const isEarlyGame = gameState.score < 2000;
+            const forceGenerate = isEarlyGame && gameState.obstacles.length === 0 && Math.random() < 0.3;
+
+            if (shouldGenerate || forceGenerate) {
               gameState.obstacles.push(new Obstacle());
+
+              // 有概率连续生成第二个障碍物（增加挑战性）
+              if (gameState.score > 1000 && Math.random() < 0.25) {
+                setTimeout(() => {
+                  if (gameState.isGameStarted && !gameState.isGameOver) {
+                    gameState.obstacles.push(new Obstacle());
+                  }
+                }, 800 + Math.random() * 600); // 0.8-1.4秒后生成
+              }
             }
           }
 
