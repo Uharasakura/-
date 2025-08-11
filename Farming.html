@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>像素种田生活</title>
+    <title>像素农场模拟器</title>
     <style>
       @font-face {
         font-family: 'PixelFont';
@@ -19,6 +19,15 @@
         --button-bg: #3d4f32;
         --button-hover: #4d633f;
         --container-bg: rgba(26, 47, 26, 0.6);
+
+        /* 农田颜色 */
+        --soil-brown: #8b4513;
+        --soil-dark: #654321;
+        --grass-green: #228b22;
+        --crop-carrot: #ff6347;
+        --crop-cabbage: #32cd32;
+        --crop-potato: #deb887;
+        --water-blue: #4169e1;
       }
 
       * {
@@ -65,16 +74,94 @@
         min-width: min(80px, 12vmin);
       }
 
-      #story-text {
-        min-height: min(200px, 30vmin);
+      /* 农田可视化区域 */
+      #farm-visual {
+        min-height: min(250px, 35vmin);
         margin-bottom: min(20px, 3vmin);
         padding: min(15px, 2.5vmin);
         background: linear-gradient(180deg, rgba(26, 47, 26, 0.6) 0%, rgba(44, 74, 44, 0.6) 100%);
         border: 1px solid var(--border-color);
-        color: var(--highlight);
         border-radius: 4px;
-        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-        font-size: min(14px, 2.2vmin);
+        position: relative;
+        overflow: hidden;
+      }
+
+      #farm-svg {
+        width: 100%;
+        height: 100%;
+        min-height: min(220px, 30vmin);
+        shape-rendering: crispEdges;
+      }
+
+      /* 农田网格样式 */
+      .field-plot {
+        fill: var(--soil-brown);
+        stroke: var(--soil-dark);
+        stroke-width: 2;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .field-plot:hover {
+        fill: var(--soil-dark);
+        stroke-width: 3;
+      }
+
+      .field-plot.cleared {
+        fill: var(--soil-dark);
+      }
+
+      .field-plot.planted {
+        fill: var(--grass-green);
+      }
+
+      /* 作物图标 */
+      .crop-icon {
+        pointer-events: none;
+      }
+
+      .crop-carrot {
+        fill: var(--crop-carrot);
+      }
+
+      .crop-cabbage {
+        fill: var(--crop-cabbage);
+      }
+
+      .crop-potato {
+        fill: var(--crop-potato);
+      }
+
+      /* 水滴效果 */
+      .water-drop {
+        fill: var(--water-blue);
+        opacity: 0.7;
+        animation: water-glow 2s infinite;
+      }
+
+      @keyframes water-glow {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+
+      /* 信息提示 */
+      #info-display {
+        position: absolute;
+        bottom: min(10px, 1.5vmin);
+        left: min(15px, 2.5vmin);
+        right: min(15px, 2.5vmin);
+        background: rgba(0, 0, 0, 0.7);
+        color: var(--highlight);
+        padding: min(8px, 1.2vmin);
+        border-radius: 4px;
+        font-size: min(12px, 1.8vmin);
+        text-align: center;
+        border: 1px solid var(--border-color);
       }
 
       #choices {
@@ -102,10 +189,77 @@
         transform: translateX(5px);
       }
 
+      .choice-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
       .pixel-border {
         border-style: solid;
         border-width: 2px;
         border-color: var(--border-color);
+      }
+
+      /* 作物选择弹窗 */
+      #crop-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background: linear-gradient(180deg, var(--container-bg) 0%, rgba(26, 47, 26, 0.9) 100%);
+        padding: min(20px, 3vmin);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        max-width: min(400px, 90vw);
+        text-align: center;
+      }
+
+      .crop-selection {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(120px, 20vmin), 1fr));
+        gap: min(15px, 2vmin);
+        margin: min(15px, 2vmin) 0;
+      }
+
+      .crop-option {
+        background: var(--button-bg);
+        border: 1px solid var(--border-color);
+        padding: min(15px, 2.5vmin);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+      }
+
+      .crop-option:hover {
+        background: var(--button-hover);
+        transform: translateY(-2px);
+      }
+
+      .crop-icon-large {
+        font-size: min(24px, 4vmin);
+        margin-bottom: min(8px, 1.2vmin);
+        display: block;
+      }
+
+      .crop-name {
+        font-size: min(12px, 1.8vmin);
+        margin-bottom: min(4px, 0.6vmin);
+      }
+
+      .crop-cost {
+        font-size: min(10px, 1.5vmin);
+        color: var(--highlight);
       }
     </style>
   </head>
@@ -118,22 +272,69 @@
         <div class="status-item">天数: <span id="day">1</span></div>
       </div>
 
-      <div id="story-text" class="pixel-border">
-        这是你的农田。目前杂草丛生，需要清理后才能开始耕种。 你可以种植不同的作物，每种作物的生长周期和收益都不同： -
-        萝卜：种植5金币，5天成熟，售价15金币 - 白菜：种植10金币，7天成熟，售价25金币 -
-        土豆：种植15金币，10天成熟，售价40金币
+      <div id="farm-visual" class="pixel-border">
+        <svg id="farm-svg" viewBox="0 0 400 200">
+          <!-- 农田背景 -->
+          <rect width="400" height="200" fill="#2F4F2F" />
+
+          <!-- 4x2 农田网格 -->
+          <g id="farm-grid">
+            <!-- 第一行 -->
+            <rect class="field-plot" id="plot-0" x="20" y="20" width="80" height="80" data-plot="0" />
+            <rect class="field-plot" id="plot-1" x="120" y="20" width="80" height="80" data-plot="1" />
+            <rect class="field-plot" id="plot-2" x="220" y="20" width="80" height="80" data-plot="2" />
+            <rect class="field-plot" id="plot-3" x="320" y="20" width="80" height="80" data-plot="3" />
+
+            <!-- 第二行 -->
+            <rect class="field-plot" id="plot-4" x="20" y="120" width="80" height="80" data-plot="4" />
+            <rect class="field-plot" id="plot-5" x="120" y="120" width="80" height="80" data-plot="5" />
+            <rect class="field-plot" id="plot-6" x="220" y="120" width="80" height="80" data-plot="6" />
+            <rect class="field-plot" id="plot-7" x="320" y="120" width="80" height="80" data-plot="7" />
+          </g>
+
+          <!-- 作物和装饰层 -->
+          <g id="crops-layer"></g>
+          <g id="effects-layer"></g>
+        </svg>
+
+        <div id="info-display">点击农田格子进行操作。先清理土地，然后种植作物！</div>
       </div>
 
       <div id="choices" class="pixel-border">
-        <button class="choice-btn" onclick="makeChoice('clear')">清理土地 (-20体力)</button>
-        <button class="choice-btn" onclick="makeChoice('plant')">种植作物 (-10体力)</button>
-        <button class="choice-btn" onclick="makeChoice('water')">浇水 (-5体力)</button>
-        <button class="choice-btn" onclick="makeChoice('harvest')">收获作物 (-10体力)</button>
-        <button class="choice-btn" onclick="makeChoice('rest')">休息 (+30体力)</button>
-        <button class="choice-btn" onclick="makeChoice('nextDay')">结束当天</button>
+        <button class="choice-btn" onclick="showHelp()">📖 查看作物信息</button>
+        <button class="choice-btn" onclick="makeChoice('water')">💧 浇水 (-5体力)</button>
+        <button class="choice-btn" onclick="makeChoice('harvest')">🌾 收获成熟作物 (-10体力)</button>
+        <button class="choice-btn" onclick="makeChoice('rest')">😴 休息 (+30体力)</button>
+        <button class="choice-btn" onclick="makeChoice('nextDay')">🌅 结束当天</button>
       </div>
     </div>
 
+    <!-- 作物选择弹窗 -->
+    <div id="crop-modal">
+      <div class="modal-content">
+        <h3 style="color: var(--highlight); margin-bottom: min(15px, 2vmin)">选择要种植的作物</h3>
+        <div class="crop-selection">
+          <div class="crop-option" onclick="selectCrop('carrot')">
+            <span class="crop-icon-large">🥕</span>
+            <div class="crop-name">萝卜</div>
+            <div class="crop-cost">5金币 | 5天</div>
+          </div>
+          <div class="crop-option" onclick="selectCrop('cabbage')">
+            <span class="crop-icon-large">🥬</span>
+            <div class="crop-name">白菜</div>
+            <div class="crop-cost">10金币 | 7天</div>
+          </div>
+          <div class="crop-option" onclick="selectCrop('potato')">
+            <span class="crop-icon-large">🥔</span>
+            <div class="crop-name">土豆</div>
+            <div class="crop-cost">15金币 | 10天</div>
+          </div>
+        </div>
+        <button class="choice-btn" onclick="closeCropModal()" style="margin-top: min(15px, 2vmin)">取消</button>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(document).ready(function () {
         // 游戏状态
@@ -142,14 +343,20 @@
           money: 100,
           season: '春',
           day: 1,
-          crops: [],
-          maxCrops: 4, // 最多同时种植4块地
-          clearedLand: 0, // 已清理的土地数量
+          plots: Array(8)
+            .fill()
+            .map(() => ({
+              cleared: false,
+              crop: null,
+              daysGrown: 0,
+              watered: false,
+            })),
           cropTypes: {
-            carrot: { name: '萝卜', growthTime: 5, price: 15, cost: 5 },
-            cabbage: { name: '白菜', growthTime: 7, price: 25, cost: 10 },
-            potato: { name: '土豆', growthTime: 10, price: 40, cost: 15 },
+            carrot: { name: '萝卜', growthTime: 5, price: 15, cost: 5, icon: '🥕', color: 'crop-carrot' },
+            cabbage: { name: '白菜', growthTime: 7, price: 25, cost: 10, icon: '🥬', color: 'crop-cabbage' },
+            potato: { name: '土豆', growthTime: 10, price: 40, cost: 15, icon: '🥔', color: 'crop-potato' },
           },
+          selectedPlot: -1,
         };
 
         // 更新状态显示
@@ -160,149 +367,229 @@
           $('#day').text(gameState.day);
         }
 
+        // 更新农田显示
+        function updateFarmDisplay() {
+          const cropsLayer = document.getElementById('crops-layer');
+          const effectsLayer = document.getElementById('effects-layer');
+
+          // 清空图层
+          cropsLayer.innerHTML = '';
+          effectsLayer.innerHTML = '';
+
+          gameState.plots.forEach((plot, index) => {
+            const plotElement = document.getElementById(`plot-${index}`);
+            const x = 20 + (index % 4) * 100;
+            const y = 20 + Math.floor(index / 4) * 100;
+
+            // 更新地块状态
+            plotElement.className = 'field-plot';
+            if (plot.cleared) {
+              plotElement.classList.add('cleared');
+              if (plot.crop) {
+                plotElement.classList.add('planted');
+              }
+            }
+
+            // 绘制作物
+            if (plot.crop) {
+              const cropType = gameState.cropTypes[plot.crop];
+              const growthProgress = plot.daysGrown / cropType.growthTime;
+              const size = Math.max(20, 40 * growthProgress);
+              const mature = plot.daysGrown >= cropType.growthTime;
+
+              // 作物基础形状
+              const cropGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+              cropGroup.classList.add('crop-icon');
+
+              // 作物主体 (简化的像素风格)
+              const cropBody = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+              cropBody.setAttribute('x', x + 40 - size / 2);
+              cropBody.setAttribute('y', y + 60 - size / 2);
+              cropBody.setAttribute('width', size);
+              cropBody.setAttribute('height', size / 2);
+              cropBody.classList.add(cropType.color);
+
+              // 成熟发光效果
+              if (mature) {
+                cropBody.style.filter = 'drop-shadow(0 0 5px gold)';
+              }
+
+              cropGroup.appendChild(cropBody);
+
+              // 作物茎叶
+              const stem = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+              stem.setAttribute('x', x + 38);
+              stem.setAttribute('y', y + 40);
+              stem.setAttribute('width', 4);
+              stem.setAttribute('height', 20);
+              stem.setAttribute('fill', '#228B22');
+              cropGroup.appendChild(stem);
+
+              cropsLayer.appendChild(cropGroup);
+
+              // 浇水效果
+              if (plot.watered) {
+                const waterDrop = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                waterDrop.setAttribute('cx', x + 65);
+                waterDrop.setAttribute('cy', y + 35);
+                waterDrop.setAttribute('r', 3);
+                waterDrop.classList.add('water-drop');
+                effectsLayer.appendChild(waterDrop);
+              }
+            }
+          });
+        }
+
+        // 处理农田点击
+        $('.field-plot').click(function () {
+          const plotIndex = parseInt($(this).data('plot'));
+          const plot = gameState.plots[plotIndex];
+
+          if (!plot.cleared) {
+            // 清理土地
+            if (gameState.energy >= 20) {
+              gameState.energy -= 20;
+              plot.cleared = true;
+              updateInfo(`清理了第${plotIndex + 1}块土地！`);
+              updateFarmDisplay();
+              updateStatus();
+            } else {
+              updateInfo('体力不足，需要休息！');
+            }
+          } else if (!plot.crop) {
+            // 种植作物
+            if (gameState.energy >= 10) {
+              gameState.selectedPlot = plotIndex;
+              $('#crop-modal').show();
+            } else {
+              updateInfo('体力不足，需要休息！');
+            }
+          } else {
+            // 显示作物信息
+            const cropType = gameState.cropTypes[plot.crop];
+            const daysLeft = Math.max(0, cropType.growthTime - plot.daysGrown);
+            const status = plot.daysGrown >= cropType.growthTime ? '已成熟！' : `还需${daysLeft}天成熟`;
+            const waterStatus = plot.watered ? '已浇水' : '未浇水';
+            updateInfo(`${cropType.name}: ${status} (${waterStatus})`);
+          }
+        });
+
+        // 选择作物种植
+        window.selectCrop = function (cropType) {
+          const cost = gameState.cropTypes[cropType].cost;
+          if (gameState.money >= cost) {
+            gameState.money -= cost;
+            gameState.energy -= 10;
+            const plot = gameState.plots[gameState.selectedPlot];
+            plot.crop = cropType;
+            plot.daysGrown = 0;
+            plot.watered = false;
+
+            updateInfo(`种下了${gameState.cropTypes[cropType].name}！`);
+            updateFarmDisplay();
+            updateStatus();
+            closeCropModal();
+          } else {
+            updateInfo('金币不足！');
+          }
+        };
+
+        // 关闭作物选择弹窗
+        window.closeCropModal = function () {
+          $('#crop-modal').hide();
+          gameState.selectedPlot = -1;
+        };
+
+        // 显示帮助信息
+        window.showHelp = function () {
+          let helpText = '作物信息：<br>';
+          Object.values(gameState.cropTypes).forEach(crop => {
+            helpText += `${crop.icon} ${crop.name}: ${crop.cost}金币, ${crop.growthTime}天成熟, 售价${crop.price}金币<br>`;
+          });
+          updateInfo(helpText);
+        };
+
+        // 更新信息显示
+        function updateInfo(message) {
+          $('#info-display').html(message);
+        }
+
         // 处理选择
         window.makeChoice = function (action) {
           switch (action) {
-            case 'clear':
-              if (gameState.energy >= 20 && gameState.clearedLand < gameState.maxCrops) {
-                gameState.energy -= 20;
-                gameState.clearedLand++;
-                $('#story-text').html(`
-                                你清理了一块土地！现在可以种植作物了。<br>
-                                已清理的土地：${gameState.clearedLand}/${gameState.maxCrops}块
-                            `);
-              } else if (gameState.clearedLand >= gameState.maxCrops) {
-                $('#story-text').html('所有土地都已经清理完毕了！');
-              } else {
-                $('#story-text').html('体力不足，需要休息！');
-              }
-              break;
-
-            case 'plant':
-              if (gameState.clearedLand > 0 && gameState.energy >= 10) {
-                let plantMenu = `
-                                <div>选择要种植的作物：</div>
-                                <button class="choice-btn" onclick="plantCrop('carrot')">种植萝卜 (5金币)</button>
-                                <button class="choice-btn" onclick="plantCrop('cabbage')">种植白菜 (10金币)</button>
-                                <button class="choice-btn" onclick="plantCrop('potato')">种植土豆 (15金币)</button>
-                            `;
-                $('#choices').html(plantMenu);
-              } else if (gameState.clearedLand === 0) {
-                $('#story-text').html('需要先清理土地才能种植！');
-              } else {
-                $('#story-text').html('体力不足，需要休息！');
-              }
-              break;
-
             case 'water':
-              if (gameState.energy >= 5 && gameState.crops.length > 0) {
-                gameState.energy -= 5;
-                gameState.crops.forEach(crop => {
-                  if (!crop.watered) {
-                    crop.watered = true;
+              if (gameState.energy >= 5) {
+                let wateredCount = 0;
+                gameState.plots.forEach(plot => {
+                  if (plot.crop && !plot.watered) {
+                    plot.watered = true;
+                    wateredCount++;
                   }
                 });
-                $('#story-text').html('你给所有作物都浇了水！');
-              } else if (gameState.crops.length === 0) {
-                $('#story-text').html('没有需要浇水的作物！');
+                if (wateredCount > 0) {
+                  gameState.energy -= 5;
+                  updateInfo(`给${wateredCount}块农田浇了水！`);
+                  updateFarmDisplay();
+                } else {
+                  updateInfo('没有需要浇水的作物！');
+                }
               } else {
-                $('#story-text').html('体力不足，需要休息！');
+                updateInfo('体力不足，需要休息！');
               }
               break;
 
             case 'harvest':
               if (gameState.energy >= 10) {
                 let harvestedCount = 0;
-                gameState.crops = gameState.crops.filter(crop => {
-                  if (crop.daysGrown >= gameState.cropTypes[crop.type].growthTime) {
+                let totalEarnings = 0;
+                gameState.plots.forEach(plot => {
+                  if (plot.crop && plot.daysGrown >= gameState.cropTypes[plot.crop].growthTime) {
                     harvestedCount++;
-                    gameState.money += gameState.cropTypes[crop.type].price;
-                    return false;
+                    totalEarnings += gameState.cropTypes[plot.crop].price;
+                    plot.crop = null;
+                    plot.daysGrown = 0;
+                    plot.watered = false;
                   }
-                  return true;
                 });
                 if (harvestedCount > 0) {
                   gameState.energy -= 10;
-                  $('#story-text').html(`收获了${harvestedCount}个作物！`);
+                  gameState.money += totalEarnings;
+                  updateInfo(`收获了${harvestedCount}个作物，获得${totalEarnings}金币！`);
+                  updateFarmDisplay();
                 } else {
-                  $('#story-text').html('没有可以收获的作物！');
+                  updateInfo('没有可以收获的作物！');
                 }
               } else {
-                $('#story-text').html('体力不足，需要休息！');
+                updateInfo('体力不足，需要休息！');
               }
               break;
 
             case 'rest':
               gameState.energy = Math.min(100, gameState.energy + 30);
-              $('#story-text').html('休息后恢复了一些体力！');
+              updateInfo('休息后恢复了30点体力！');
               break;
 
             case 'nextDay':
               gameState.day++;
               gameState.energy = 100;
               // 更新作物生长状态
-              gameState.crops.forEach(crop => {
-                if (crop.watered) {
-                  crop.daysGrown++;
-                  crop.watered = false;
+              gameState.plots.forEach(plot => {
+                if (plot.crop && plot.watered) {
+                  plot.daysGrown++;
+                  plot.watered = false;
                 }
               });
-              updateCropStatus();
+              updateInfo(`第${gameState.day}天开始了！`);
+              updateFarmDisplay();
               break;
           }
           updateStatus();
         };
 
-        // 种植作物
-        window.plantCrop = function (cropType) {
-          let cost = gameState.cropTypes[cropType].cost;
-          if (gameState.money >= cost) {
-            gameState.money -= cost;
-            gameState.energy -= 10;
-            gameState.crops.push({
-              type: cropType,
-              daysGrown: 0,
-              watered: false,
-            });
-            $('#story-text').html(`种下了一颗${gameState.cropTypes[cropType].name}！`);
-            // 恢复主选项菜单
-            showMainMenu();
-          } else {
-            $('#story-text').html('金币不足！');
-          }
-          updateStatus();
-        };
-
-        // 显示主菜单
-        function showMainMenu() {
-          $('#choices').html(`
-                    <button class="choice-btn" onclick="makeChoice('clear')">清理土地 (-20体力)</button>
-                    <button class="choice-btn" onclick="makeChoice('plant')">种植作物 (-10体力)</button>
-                    <button class="choice-btn" onclick="makeChoice('water')">浇水 (-5体力)</button>
-                    <button class="choice-btn" onclick="makeChoice('harvest')">收获作物 (-10体力)</button>
-                    <button class="choice-btn" onclick="makeChoice('rest')">休息 (+30体力)</button>
-                    <button class="choice-btn" onclick="makeChoice('nextDay')">结束当天</button>
-                `);
-        }
-
-        // 更新作物状态显示
-        function updateCropStatus() {
-          let status = '当前农田状态：<br>';
-          if (gameState.crops.length === 0) {
-            status += '没有正在生长的作物。';
-          } else {
-            gameState.crops.forEach((crop, index) => {
-              let cropInfo = gameState.cropTypes[crop.type];
-              status += `${cropInfo.name}: 已生长${crop.daysGrown}/${cropInfo.growthTime}天 ${
-                crop.watered ? '(已浇水)' : '(未浇水)'
-              }<br>`;
-            });
-          }
-          $('#story-text').html(status);
-        }
-
         // 初始化游戏
         updateStatus();
+        updateFarmDisplay();
+        updateInfo('欢迎来到像素农场！点击农田格子开始清理土地吧！');
       });
     </script>
   </body>
