@@ -55,8 +55,17 @@ body {
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: move;
+  cursor: grab;
   user-select: none;
+}
+
+.draggable-handle {
+  cursor: grab;
+  user-select: none;
+}
+
+.draggable-handle:active {
+  cursor: grabbing;
 }
 
 .panel-title {
