@@ -7,7 +7,7 @@ const MODULE_NAME = 'mini-games-collection';
 // 配置
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
-  panelSize: { width: 400, height: 650 },
+  panelSize: { width: 400, height: 750 },
   customGames: [],
 };
 
@@ -578,6 +578,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
