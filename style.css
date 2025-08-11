@@ -37,6 +37,7 @@ body {
   backdrop-filter: blur(10px);
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  resize: both;
   overflow: hidden;
   min-width: 320px;
   min-height: 400px;
@@ -67,51 +68,31 @@ body {
   cursor: grabbing;
 }
 
-/* 调整大小手柄 */
-.resize-handle {
+/* 手机端调整大小手柄 */
+.resize-handle.mobile-resize {
   position: absolute;
   bottom: 0;
   right: 0;
   width: 20px;
   height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 12px 0 12px 0;
   cursor: se-resize;
-  background: linear-gradient(
-    -45deg,
-    transparent 0%,
-    transparent 30%,
-    rgba(255, 255, 255, 0.3) 30%,
-    rgba(255, 255, 255, 0.3) 40%,
-    transparent 40%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.3) 60%,
-    rgba(255, 255, 255, 0.3) 70%,
-    transparent 70%,
-    transparent 100%
-  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  touch-action: none;
   z-index: 10;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
 }
 
-.resize-handle:hover {
-  opacity: 1;
+.resize-handle.mobile-resize:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.resize-handle:active {
-  opacity: 1;
-  background: linear-gradient(
-    -45deg,
-    transparent 0%,
-    transparent 30%,
-    rgba(255, 255, 255, 0.6) 30%,
-    rgba(255, 255, 255, 0.6) 40%,
-    transparent 40%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.6) 60%,
-    rgba(255, 255, 255, 0.6) 70%,
-    transparent 70%,
-    transparent 100%
-  );
+.resize-handle.mobile-resize:active {
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .panel-title {
