@@ -7,7 +7,7 @@ const MODULE_NAME = 'mini-games-collection';
 // 配置
 const defaultSettings = {
   panelPosition: { x: 20, y: 50 },
-  panelSize: { width: 400, height: 500 },
+  panelSize: { width: 400, height: 650 },
   customGames: [],
 };
 
@@ -141,12 +141,14 @@ function createGamePanel() {
     });
     gamePanel.classList.add('mobile-panel');
   } else {
+    // 电脑端也根据屏幕高度动态调整
+    const maxHeight = Math.min(window.innerHeight - 100, settings.panelSize.height);
     Object.assign(gamePanel.style, {
       position: 'fixed',
       left: settings.panelPosition.x + 'px',
       top: settings.panelPosition.y + 'px',
       width: settings.panelSize.width + 'px',
-      height: settings.panelSize.height + 'px',
+      height: maxHeight + 'px',
       zIndex: '10000',
     });
   }
@@ -191,8 +193,9 @@ function handleClick(event) {
         gamePanel.style.width = Math.min(screenWidth - 20, 420) + 'px';
         gamePanel.style.height = Math.min(screenHeight - 80, 700) + 'px';
       } else {
+        const maxHeight = Math.min(window.innerHeight - 100, settings.panelSize.height);
         gamePanel.style.width = settings.panelSize.width + 'px';
-        gamePanel.style.height = settings.panelSize.height + 'px';
+        gamePanel.style.height = maxHeight + 'px';
       }
 
       // 延迟显示内容，让尺寸动画先执行
@@ -445,6 +448,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
