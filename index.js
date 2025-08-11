@@ -84,7 +84,7 @@ function createPanelHTML() {
 
   return `
     <div id="mini-games-panel" class="mini-games-panel">
-      <div class="panel-header">
+      <div class="panel-header draggable-handle">
         <div class="panel-title">
           <span class="title-icon">🎮</span>
           <span class="title-text">小游戏合集</span>
@@ -152,6 +152,9 @@ function createGamePanel() {
       zIndex: '10000',
     });
   }
+
+  // 添加拖拽功能
+  setupDragging(gamePanel);
 
   // 添加事件监听
   gamePanel.addEventListener('click', handleClick);
@@ -359,6 +362,133 @@ async function loadGame(url, name) {
   }
 }
 
+// 拖拽功能
+function setupDragging(panel) {
+  const handle = panel.querySelector('.draggable-handle');
+  if (!handle) return;
+
+  let isDragging = false;
+  let startX, startY, initialX, initialY;
+
+  // 鼠标事件
+  handle.addEventListener('mousedown', startDrag);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', stopDrag);
+
+  // 触摸事件（移动端）
+  handle.addEventListener('touchstart', startDragTouch, { passive: false });
+  document.addEventListener('touchmove', dragTouch, { passive: false });
+  document.addEventListener('touchend', stopDrag);
+
+  function startDrag(e) {
+    // 不要在按钮上开始拖拽
+    if (e.target.closest('.control-btn')) return;
+
+    isDragging = true;
+    handle.style.cursor = 'grabbing';
+    panel.style.userSelect = 'none';
+
+    startX = e.clientX;
+    startY = e.clientY;
+    initialX = panel.offsetLeft;
+    initialY = panel.offsetTop;
+
+    e.preventDefault();
+  }
+
+  function startDragTouch(e) {
+    // 不要在按钮上开始拖拽
+    if (e.target.closest('.control-btn')) return;
+
+    isDragging = true;
+    handle.style.cursor = 'grabbing';
+    panel.style.userSelect = 'none';
+
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    initialX = panel.offsetLeft;
+    initialY = panel.offsetTop;
+
+    e.preventDefault();
+  }
+
+  function drag(e) {
+    if (!isDragging) return;
+
+    e.preventDefault();
+
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+    let newX = initialX + deltaX;
+    let newY = initialY + deltaY;
+
+    // 边界检测
+    const panelRect = panel.getBoundingClientRect();
+    const maxX = window.innerWidth - panelRect.width;
+    const maxY = window.innerHeight - panelRect.height;
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
+    panel.style.left = newX + 'px';
+    panel.style.top = newY + 'px';
+
+    // 移动端居中变换要清除
+    if (isMobile()) {
+      panel.style.transform = 'none';
+    }
+  }
+
+  function dragTouch(e) {
+    if (!isDragging) return;
+
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
+    let newX = initialX + deltaX;
+    let newY = initialY + deltaY;
+
+    // 边界检测
+    const panelRect = panel.getBoundingClientRect();
+    const maxX = window.innerWidth - panelRect.width;
+    const maxY = window.innerHeight - panelRect.height;
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
+    panel.style.left = newX + 'px';
+    panel.style.top = newY + 'px';
+
+    // 移动端居中变换要清除
+    if (isMobile()) {
+      panel.style.transform = 'none';
+    }
+  }
+
+  function stopDrag() {
+    if (!isDragging) return;
+
+    isDragging = false;
+    handle.style.cursor = 'grab';
+    panel.style.userSelect = '';
+
+    // 保存新位置到设置（只在电脑端保存）
+    if (!isMobile()) {
+      settings.panelPosition.x = panel.offsetLeft;
+      settings.panelPosition.y = panel.offsetTop;
+      saveSettings();
+    }
+  }
+
+  // 初始样式
+  handle.style.cursor = 'grab';
+}
+
 // 面板控制
 function showGamePanel() {
   if (!gamePanel) {
@@ -448,6 +578,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
