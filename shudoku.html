@@ -6,14 +6,14 @@
     <title>护眼数独</title>
     <style>
       :root {
-        --cell-size: clamp(30px, 8vw, 50px);
-        --font-size-small: clamp(12px, 2.5vw, 14px);
-        --font-size-normal: clamp(14px, 3vw, 16px);
-        --font-size-large: clamp(18px, 4vw, 20px);
-        --font-size-xlarge: clamp(20px, 5vw, 24px);
-        --spacing-small: clamp(5px, 1.5vw, 8px);
-        --spacing-normal: clamp(8px, 2vw, 10px);
-        --spacing-large: clamp(15px, 3vw, 20px);
+        --cell-size: clamp(25px, 6vmin, 50px);
+        --font-size-small: clamp(10px, 1.8vmin, 14px);
+        --font-size-normal: clamp(12px, 2.2vmin, 16px);
+        --font-size-large: clamp(14px, 2.8vmin, 20px);
+        --font-size-xlarge: clamp(16px, 3.5vmin, 24px);
+        --spacing-small: clamp(4px, 1vmin, 8px);
+        --spacing-normal: clamp(6px, 1.5vmin, 10px);
+        --spacing-large: clamp(10px, 2.5vmin, 20px);
       }
 
       * {
@@ -39,7 +39,7 @@
         padding: var(--spacing-large);
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        width: min(95%, 600px);
+        width: min(95vw, 600px);
         margin: 0 auto;
       }
 
@@ -525,54 +525,12 @@
         }
       });
 
-      // 响应式处理
-      function handleResize() {
-        const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-        const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
-
-        // 动态计算尺寸
-        const maxWidth = Math.min(vw - 40, 600);
-        const cellSize = Math.max(25, Math.min(maxWidth / 12, 50));
-        const fontSize = Math.max(10, Math.min(vw * 0.02, 16));
-
-        // 动态创建CSS样式
-        const style = document.createElement('style');
-        style.textContent = `
-          :root {
-            --cell-size: ${cellSize}px !important;
-            --font-size-normal: ${fontSize}px !important;
-          }
-          .game-container {
-            width: ${Math.min(95, (maxWidth / vw) * 100)}% !important;
-            max-width: ${maxWidth}px !important;
-          }
-          .sudoku-grid {
-            grid-template-columns: repeat(9, ${cellSize}px) !important;
-            grid-template-rows: repeat(9, ${cellSize}px) !important;
-          }
-          .cell {
-            width: ${cellSize}px !important;
-            height: ${cellSize}px !important;
-            font-size: ${Math.max(10, cellSize * 0.6)}px !important;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
-      window.addEventListener('resize', handleResize);
-
-      // iframe环境特殊处理
-      if (window.parent !== window) {
-        window.parent.addEventListener('resize', handleResize);
-        setInterval(handleResize, 1000);
-      }
-
       // 初始化游戏
       newGame();
-      handleResize(); // 初始化时设置正确的尺寸
     </script>
   </body>
 </html>
+
 
 
 
