@@ -112,7 +112,7 @@ function createPanelHTML() {
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
-      <div class="resize-handle" title="拖拽调整大小"></div>
+      ${isMobile() ? '<div class="resize-handle mobile-resize" title="拖拽调整大小">⌟</div>' : ''}
     </div>
   `;
 }
@@ -129,37 +129,17 @@ function createGamePanel() {
   if (isMobile()) {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-
-    // 如果有保存的设置，使用保存的；否则使用默认居中
-    const useDefaultPosition = settings.panelPosition.x === 20 && settings.panelPosition.y === 50;
-
-    if (useDefaultPosition) {
-      // 默认居中
-      Object.assign(gamePanel.style, {
-        position: 'fixed',
-        top: '40px',
-        left: '50%',
-        width: Math.min(screenWidth - 20, 420) + 'px',
-        height: Math.min(screenHeight - 80, 700) + 'px',
-        transform: 'translateX(-50%)',
-        zIndex: '999999',
-        maxWidth: '95vw',
-        maxHeight: '85vh',
-      });
-    } else {
-      // 使用保存的位置和大小
-      Object.assign(gamePanel.style, {
-        position: 'fixed',
-        left: settings.panelPosition.x + 'px',
-        top: settings.panelPosition.y + 'px',
-        width: settings.panelSize.width + 'px',
-        height: settings.panelSize.height + 'px',
-        transform: 'none',
-        zIndex: '999999',
-        maxWidth: '95vw',
-        maxHeight: '85vh',
-      });
-    }
+    Object.assign(gamePanel.style, {
+      position: 'fixed',
+      top: '40px',
+      left: '50%',
+      width: Math.min(screenWidth - 20, 420) + 'px',
+      height: Math.min(screenHeight - 80, 700) + 'px',
+      transform: 'translateX(-50%)',
+      zIndex: '999999',
+      maxWidth: '95vw',
+      maxHeight: '85vh',
+    });
     gamePanel.classList.add('mobile-panel');
   } else {
     // 电脑端也根据屏幕高度动态调整
@@ -212,16 +192,10 @@ function handleClick(event) {
 
       // 先恢复尺寸，然后显示内容
       if (isMobile()) {
-        const useDefaultPosition = settings.panelPosition.x === 20 && settings.panelPosition.y === 50;
-        if (useDefaultPosition) {
-          const screenWidth = window.innerWidth;
-          const screenHeight = window.innerHeight;
-          gamePanel.style.width = Math.min(screenWidth - 20, 420) + 'px';
-          gamePanel.style.height = Math.min(screenHeight - 80, 700) + 'px';
-        } else {
-          gamePanel.style.width = settings.panelSize.width + 'px';
-          gamePanel.style.height = settings.panelSize.height + 'px';
-        }
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        gamePanel.style.width = Math.min(screenWidth - 20, 420) + 'px';
+        gamePanel.style.height = Math.min(screenHeight - 80, 700) + 'px';
       } else {
         const maxHeight = Math.min(window.innerHeight - 100, settings.panelSize.height);
         gamePanel.style.width = settings.panelSize.width + 'px';
@@ -403,17 +377,16 @@ function setupDragging(panel) {
   handle.addEventListener('mousedown', startDrag);
   handle.addEventListener('touchstart', startDragTouch, { passive: false });
 
-  // 调整大小事件
-  if (resizeHandle) {
-    resizeHandle.addEventListener('mousedown', startResize);
-    resizeHandle.addEventListener('touchstart', startResizeTouch, { passive: false });
+  // 调整大小事件（仅手机端）
+  if (resizeHandle && isMobile()) {
+    resizeHandle.addEventListener('touchstart', startResize, { passive: false });
   }
 
   // 全局事件
   document.addEventListener('mousemove', handleMove);
-  document.addEventListener('mouseup', stopDragResize);
+  document.addEventListener('mouseup', stopAll);
   document.addEventListener('touchmove', handleMoveTouch, { passive: false });
-  document.addEventListener('touchend', stopDragResize);
+  document.addEventListener('touchend', stopAll);
 
   function startDrag(e) {
     // 不要在按钮上开始拖拽
@@ -452,19 +425,6 @@ function setupDragging(panel) {
     isResizing = true;
     panel.style.userSelect = 'none';
 
-    startX = e.clientX;
-    startY = e.clientY;
-    initialWidth = panel.offsetWidth;
-    initialHeight = panel.offsetHeight;
-
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function startResizeTouch(e) {
-    isResizing = true;
-    panel.style.userSelect = 'none';
-
     const touch = e.touches[0];
     startX = touch.clientX;
     startY = touch.clientY;
@@ -478,8 +438,6 @@ function setupDragging(panel) {
   function handleMove(e) {
     if (isDragging) {
       drag(e);
-    } else if (isResizing) {
-      resize(e);
     }
   }
 
@@ -487,7 +445,7 @@ function setupDragging(panel) {
     if (isDragging) {
       dragTouch(e);
     } else if (isResizing) {
-      resizeTouch(e);
+      resize(e);
     }
   }
 
@@ -518,6 +476,8 @@ function setupDragging(panel) {
   }
 
   function dragTouch(e) {
+    if (!isDragging) return;
+
     e.preventDefault();
 
     const touch = e.touches[0];
@@ -547,28 +507,6 @@ function setupDragging(panel) {
   function resize(e) {
     e.preventDefault();
 
-    const deltaX = e.clientX - startX;
-    const deltaY = e.clientY - startY;
-
-    let newWidth = initialWidth + deltaX;
-    let newHeight = initialHeight + deltaY;
-
-    // 最小和最大尺寸限制
-    const minWidth = 320;
-    const minHeight = 400;
-    const maxWidth = window.innerWidth * 0.9;
-    const maxHeight = window.innerHeight * 0.9;
-
-    newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
-    newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
-
-    panel.style.width = newWidth + 'px';
-    panel.style.height = newHeight + 'px';
-  }
-
-  function resizeTouch(e) {
-    e.preventDefault();
-
     const touch = e.touches[0];
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
@@ -576,10 +514,10 @@ function setupDragging(panel) {
     let newWidth = initialWidth + deltaX;
     let newHeight = initialHeight + deltaY;
 
-    // 最小和最大尺寸限制
-    const minWidth = 320;
+    // 最小和最大尺寸限制（手机端）
+    const minWidth = 300;
     const minHeight = 400;
-    const maxWidth = window.innerWidth * 0.9;
+    const maxWidth = window.innerWidth * 0.95;
     const maxHeight = window.innerHeight * 0.9;
 
     newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
@@ -589,21 +527,14 @@ function setupDragging(panel) {
     panel.style.height = newHeight + 'px';
   }
 
-  function stopDragResize() {
+  function stopAll() {
     if (isDragging) {
       isDragging = false;
       handle.style.cursor = 'grab';
       panel.style.userSelect = '';
 
-      // 保存新位置到设置
-      if (isMobile()) {
-        // 移动端也保存位置和大小
-        settings.panelPosition.x = panel.offsetLeft;
-        settings.panelPosition.y = panel.offsetTop;
-        settings.panelSize.width = panel.offsetWidth;
-        settings.panelSize.height = panel.offsetHeight;
-        saveSettings();
-      } else {
+      // 保存新位置到设置（只在电脑端保存）
+      if (!isMobile()) {
         settings.panelPosition.x = panel.offsetLeft;
         settings.panelPosition.y = panel.offsetTop;
         saveSettings();
@@ -613,11 +544,7 @@ function setupDragging(panel) {
     if (isResizing) {
       isResizing = false;
       panel.style.userSelect = '';
-
-      // 保存新尺寸到设置
-      settings.panelSize.width = panel.offsetWidth;
-      settings.panelSize.height = panel.offsetHeight;
-      saveSettings();
+      // 手机端调整大小后不保存到设置，保持响应式
     }
   }
 
@@ -714,6 +641,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
