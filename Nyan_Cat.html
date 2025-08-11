@@ -595,6 +595,11 @@
         // 初始化
         canvas.width = document.documentElement.clientWidth;
         canvas.height = document.documentElement.clientHeight;
+
+        // 初始化时也要更新CSS变量，确保猫咪在小窗口中大小合适
+        const dims = calculateGameDimensions();
+        document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
+
         nyanCat.style.display = 'none';
         bgm.volume = 1.0;
         bgm.load();
