@@ -6,10 +6,10 @@
     <title>飞行棋小游戏</title>
     <style>
       :root {
-        --cell-size: clamp(30px, 8vw, 60px);
-        --font-size-normal: clamp(14px, 3vw, 18px);
-        --font-size-large: clamp(20px, 4vw, 24px);
-        --font-size-xlarge: clamp(30px, 6vw, 40px);
+        --cell-size: clamp(30px, 8vmin, 60px);
+        --font-size-normal: clamp(12px, 2.5vmin, 18px);
+        --font-size-large: clamp(16px, 3.5vmin, 24px);
+        --font-size-xlarge: clamp(20px, 5vmin, 40px);
       }
 
       body {
@@ -23,10 +23,9 @@
       }
 
       .game-container {
-        width: 95%;
-        max-width: 800px;
-        margin: 10px auto;
-        padding: clamp(10px, 3vw, 20px);
+        width: min(95vw, 800px);
+        margin: min(10px, 1.5vmin) auto;
+        padding: clamp(10px, 2.5vmin, 20px);
         background: #f5f5f5;
         border-radius: 10px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -36,8 +35,8 @@
       .board {
         display: grid;
         grid-template-columns: repeat(8, 1fr);
-        gap: clamp(2px, 1vw, 5px);
-        margin: clamp(10px, 3vw, 20px) 0;
+        gap: clamp(2px, 0.8vmin, 5px);
+        margin: clamp(10px, 2.5vmin, 20px) 0;
         justify-content: center;
       }
 
@@ -478,49 +477,13 @@
           initBoard();
         });
 
-        // 响应式处理
-        function handleResize() {
-          const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-          const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
-
-          // 动态计算尺寸
-          const maxWidth = Math.min(vw - 40, 800);
-          const cellSize = Math.max(25, Math.min(maxWidth / 10, 60));
-          const fontSize = Math.max(12, Math.min(vw * 0.025, 18));
-          const fontSizeLarge = Math.max(16, Math.min(vw * 0.03, 24));
-
-          // 动态创建CSS样式
-          const style = document.createElement('style');
-          style.textContent = `
-            :root {
-              --cell-size: ${cellSize}px !important;
-              --font-size-normal: ${fontSize}px !important;
-              --font-size-large: ${fontSizeLarge}px !important;
-              --font-size-xlarge: ${Math.max(20, Math.min(vw * 0.04, 40))}px !important;
-            }
-            .game-container {
-              width: ${Math.min(95, (maxWidth / vw) * 100)}% !important;
-              max-width: ${maxWidth}px !important;
-            }
-          `;
-          document.head.appendChild(style);
-        }
-
-        $(window).on('resize', handleResize);
-
-        // iframe环境特殊处理
-        if (window.parent !== window) {
-          window.parent.addEventListener('resize', handleResize);
-          setInterval(handleResize, 1000);
-        }
-
         // 初始化游戏
         initBoard();
-        handleResize(); // 初始化时设置正确的尺寸
       });
     </script>
   </body>
 </html>
+
 
 
 
