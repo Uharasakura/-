@@ -7,16 +7,16 @@
     <style>
       :root {
         /* 基础尺寸变量 */
-        --viewport-scale: min(1, max(0.5, calc(100vw / 1920)));
-        --cat-size: clamp(100px, min(18vw, 18vh), min(22vw, 22vh));
-        --font-size-small: clamp(12px, 2.5vw, 14px);
-        --font-size-normal: clamp(14px, 3vw, 18px);
-        --font-size-large: clamp(20px, 4vw, 24px);
-        --font-size-xlarge: clamp(24px, 6vw, 36px);
-        --spacing-small: clamp(5px, 1.5vw, 8px);
-        --spacing-normal: clamp(10px, 2vw, 20px);
-        --spacing-large: clamp(20px, 5vw, 40px);
-        --control-size: clamp(35px, 8vw, 45px);
+        --viewport-scale: min(1, max(0.5, calc(100vmin / 800)));
+        --cat-size: clamp(60px, 12vmin, 120px);
+        --font-size-small: clamp(10px, 1.8vmin, 14px);
+        --font-size-normal: clamp(12px, 2.2vmin, 18px);
+        --font-size-large: clamp(16px, 3vmin, 24px);
+        --font-size-xlarge: clamp(20px, 4.5vmin, 36px);
+        --spacing-small: clamp(4px, 1vmin, 8px);
+        --spacing-normal: clamp(8px, 1.5vmin, 20px);
+        --spacing-large: clamp(15px, 3vmin, 40px);
+        --control-size: clamp(30px, 6vmin, 45px);
       }
 
       /* 重置和基础样式 */
@@ -213,7 +213,7 @@
 
         // 游戏状态
         let gameState = {
-          catY: Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight) / 2,
+          catY: window.innerHeight / 2,
           velocity: 0,
           gravity: 0.4,
           flyForce: -0.3,
@@ -237,13 +237,13 @@
 
         // 游戏尺寸计算
         function calculateGameDimensions() {
-          const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-          const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
+          const vw = document.documentElement.clientWidth;
+          const vh = document.documentElement.clientHeight;
           const isMobile = vw <= 768;
           const scale = Math.min(1, Math.max(0.5, Math.min(vw / 1920, vh / 1080)));
           const catSize = isMobile
-            ? Math.max(30, Math.min(vw * 0.1, vh * 0.1))
-            : Math.max(50, Math.min(vw * 0.08, vh * 0.08));
+            ? Math.max(80, Math.min(vw * 0.15, vh * 0.15))
+            : Math.max(120, Math.min(vw * 0.2, vh * 0.2));
 
           return {
             catSize,
@@ -260,8 +260,7 @@
         class Obstacle {
           constructor() {
             const dims = calculateGameDimensions();
-            const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-            const isMobile = vw <= 768;
+            const isMobile = window.innerWidth <= 768;
             this.width = dims.obstacleWidth;
 
             // 优化障碍物高度
@@ -317,8 +316,7 @@
 
           checkCollision(catX, catY) {
             const dims = calculateGameDimensions();
-            const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-            const catSize = dims.catSize * (vw <= 768 ? 0.7 : 0.6);
+            const catSize = dims.catSize * (window.innerWidth <= 768 ? 0.7 : 0.6);
             return (
               catX + catSize * 0.7 > this.x &&
               catX + catSize * 0.3 < this.x + this.width &&
@@ -400,31 +398,12 @@
             }
           });
 
-          function resizeCanvas() {
-            const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-            const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
-            canvas.width = vw;
-            canvas.height = vh;
+          window.addEventListener('resize', () => {
+            canvas.width = document.documentElement.clientWidth;
+            canvas.height = document.documentElement.clientHeight;
             const dims = calculateGameDimensions();
-
-            // 动态更新CSS变量
-            const style = document.createElement('style');
-            style.textContent = `
-              :root {
-                --cat-size: ${dims.catSize}px;
-                --control-size: ${Math.max(40, dims.catSize * 0.8)}px;
-              }
-            `;
-            document.head.appendChild(style);
-          }
-
-          window.addEventListener('resize', resizeCanvas);
-
-          // 针对iframe环境的特殊处理
-          if (window.parent !== window) {
-            window.parent.addEventListener('resize', resizeCanvas);
-            setInterval(resizeCanvas, 1000); // 定期检查尺寸变化
-          }
+            document.documentElement.style.setProperty('--cat-size', `${dims.catSize}px`);
+          });
         }
 
         // 简化的星星系统
@@ -552,7 +531,7 @@
 
         window.restartGame = function () {
           gameState = {
-            catY: Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight) / 2,
+            catY: window.innerHeight / 2,
             velocity: 0,
             gravity: 0.4,
             flyForce: -0.3,
@@ -598,10 +577,8 @@
         };
 
         // 初始化
-        const vw = Math.min(window.innerWidth, window.parent?.innerWidth || window.innerWidth);
-        const vh = Math.min(window.innerHeight, window.parent?.innerHeight || window.innerHeight);
-        canvas.width = vw;
-        canvas.height = vh;
+        canvas.width = document.documentElement.clientWidth;
+        canvas.height = document.documentElement.clientHeight;
         nyanCat.style.display = 'none';
         bgm.volume = 1.0;
         bgm.load();
