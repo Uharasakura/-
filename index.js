@@ -142,7 +142,7 @@ function createGamePanel() {
     gamePanel.classList.add('mobile-panel');
   } else {
     // 电脑端也根据屏幕高度动态调整
-    const maxHeight = Math.min(window.innerHeight - 100, settings.panelSize.height);
+    const maxHeight = Math.min(window.innerHeight - 20, settings.panelSize.height);
     Object.assign(gamePanel.style, {
       position: 'fixed',
       left: settings.panelPosition.x + 'px',
@@ -196,7 +196,7 @@ function handleClick(event) {
         gamePanel.style.width = Math.min(screenWidth - 20, 420) + 'px';
         gamePanel.style.height = Math.min(screenHeight - 80, 700) + 'px';
       } else {
-        const maxHeight = Math.min(window.innerHeight - 100, settings.panelSize.height);
+        const maxHeight = Math.min(window.innerHeight - 20, settings.panelSize.height);
         gamePanel.style.width = settings.panelSize.width + 'px';
         gamePanel.style.height = maxHeight + 'px';
       }
@@ -578,6 +578,7 @@ window.miniGamesDebug = {
   hidePanel: hideGamePanel,
   togglePanel: toggleGamePanel,
 };
+
 
 
 
