@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>经典俄罗斯方块</title>
+    <style>
+        :root {
+            --board-bg: #1a1a2e;
+            --border-color: #e94560;
+            --text-color: #f0f0f0;
+            --game-bg: #16213e;
+            --score-bg: #0f3460;
+            --control-bg: rgba(15, 52, 96, 0.8);
+            --control-active-bg: #e94560;
+            --block-size: 4vmin;
+        }
+
+        body {
+            background-color: var(--game-bg);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2vh;
+        }
+
+        .game-container {
+            position: relative;
+            display: flex;
+            width: 80vmin;
+            margin: 5px auto;
+            padding: calc(var(--block-size) * 0.5);
+            overflow: hidden; 
+            align-items: flex-start;
+            gap: calc(var(--block-size) * 0.8);
+            border: 3px solid var(--border-color);
+            padding: calc(var(--block-size) * 0.5);
+            background-color: var(--board-bg);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        /* --- 关键修复：为游戏板创建独立容器 --- */
+        .board-wrapper {
+            position: relative; /* 让遮罩层相对于此容器定位 */
+        }
+        
+        #game-board {
+            max-width: 100%;
+            height: 100%;
+            border: 2px solid var(--border-color);
+            background-color: #000;
+            display: block; /* 避免 canvas 下方有空隙 */
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--block-size) * 0.5);
+            width: calc(var(--block-size) * 6);
+        }
+
+        .info-box {
+            background-color: var(--score-bg);
+            padding: calc(var(--block-size) * 0.4);
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+        }
+        .info-box h2 {
+            margin: 0 0 calc(var(--block-size) * 0.2) 0;
+            text-align: center;
+            font-size: min(3.5vmin, 22px);
+            color: var(--border-color);
+        }
+        .info-box p {
+            margin: 0;
+            text-align: center;
+            font-weight: bold;
+            font-size: min(4vmin, 26px);
+        }
+
+        #next-piece-canvas {
+            width: 100%;
+            height: auto;
+            background-color: var(--score-bg);
+            border: 1px solid var(--border-color);
+            border-radius: inherit; 
+        }
+
+        #game-control-btn {
+            width: 100%;
+            padding: calc(var(--block-size) * 0.25);
+            font-size: min(3vmin, 20px);
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            background-color: var(--score-bg);
+            color: var(--text-color);
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+        #game-control-btn:hover:not(:disabled) {
+            background-color: var(--border-color);
+            color: var(--board-bg);
+        }
+        #game-control-btn:disabled {
+            background-color: #555;
+            border-color: #777;
+            cursor: not-allowed;
+            color: #999;
+        }
+
+        /* --- 关键修复：遮罩层现在只覆盖游戏板 --- */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: none; flex-direction: column; align-items: center;
+            justify-content: center; color: white; text-align: center; z-index: 10;
+        }
+        .overlay h1 { font-size: min(10vmin, 80px); }
+        #game-over-overlay h1 { color: #ff4757; text-shadow: 0 0 10px #ff4757; }
+        #pause-overlay h1 { color: #45e9e0; font-size: min(8vmin, 60px); text-shadow: 0 0 10px #45e9e0; }
+        .overlay p { font-size: min(4vmin, 30px); }
+        #game-over-overlay button {
+            font-size: min(3vmin, 24px); padding: 10px 20px; margin-top: 20px;
+            cursor: pointer; border: 2px solid var(--border-color);
+            background-color: var(--score-bg); color: var(--text-color); border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        #game-over-overlay button:hover { background-color: var(--border-color); color: var(--board-bg); }
+
+        .virtual-controls-container {
+            padding: 2vh 0; display: grid; grid-template-areas: ". rotate ." "left down right" ". drop .";
+            gap: 1.5vh; justify-content: center; align-items: center; width: 100%;
+        }
+        .v-btn {
+            width: 16vmin; height: 16vmin; max-width: 80px; max-height: 80px;
+            background: var(--control-bg); border: 2px solid var(--border-color);
+            border-radius: 50%; color: var(--text-color); font-size: 6vmin;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+            transition: transform 0.1s ease;
+        }
+        .v-btn:active { background-color: var(--control-active-bg); transform: scale(0.92); }
+        #v-rotate { grid-area: rotate; } #v-left { grid-area: left; } #v-right { grid-area: right; }
+        #v-down { grid-area: down; } #v-drop { grid-area: drop; border-radius: 20px; width: 20vmin; height: 14vmin; max-width: 100px; max-height: 70px; }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="game-container">
+            <div class="board-wrapper">
+                <canvas id="game-board"></canvas>
+                <div id="game-over-overlay" class="overlay">
+                    <h1>游戏结束</h1><p>最终分数: <span id="final-score">0</span></p>
+                    <button onclick="startGame()">重新开始</button>
+                </div>
+                <div id="pause-overlay" class="overlay"><h1>已暂停</h1></div>
+            </div>
+            <div class="sidebar">
+                <div class="info-box"><h2>分数</h2><p id="score">0</p></div>
+                <div class="info-box"><h2>等级</h2><p id="level">1</p></div>
+                <div class="info-box"><h2>行数</h2><p id="lines">0</p></div>
+                <div class="info-box"><h2>下一个</h2><canvas id="next-piece-canvas"></canvas></div>
+                <button id="game-control-btn">开始游戏</button>
+            </div>
+        </div>
+        <div class="virtual-controls-container">
+            <button id="v-rotate" class="v-btn">↻</button>
+            <button id="v-left" class="v-btn">←</button>
+            <button id="v-down" class="v-btn">↓</button>
+            <button id="v-right" class="v-btn">→</button>
+            <button id="v-drop" class="v-btn">⚡</button>
+        </div>
+    </div>
+
+    <script>
+        const boardCanvas = document.getElementById('game-board'), boardCtx = boardCanvas.getContext('2d');
+        const nextCanvas = document.getElementById('next-piece-canvas'), nextCtx = nextCanvas.getContext('2d');
+        const scoreElement = document.getElementById('score'), levelElement = document.getElementById('level'), linesElement = document.getElementById('lines');
+        const gameOverOverlay = document.getElementById('game-over-overlay'), finalScoreElement = document.getElementById('final-score');
+        const pauseOverlay = document.getElementById('pause-overlay'), gameControlButton = document.getElementById('game-control-btn');
+        const vControls = {
+            rotate: document.getElementById('v-rotate'), left: document.getElementById('v-left'),
+            right: document.getElementById('v-right'), down: document.getElementById('v-down'), drop: document.getElementById('v-drop')
+        };
+        const COLS = 10, ROWS = 20;
+        let BLOCK_SIZE = 4 * Math.min(window.innerWidth, window.innerHeight) / 100;
+        const COLORS = [null, '#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'];
+        const SHAPES = [[], [[1, 1, 1], [0, 1, 0]], [[2, 2, 2, 2]], [[3, 3], [3, 3]], [[0, 4, 0], [0, 4, 0], [4, 4, 0]], [[0, 5, 0], [0, 5, 0], [0, 5, 5]], [[0, 6, 6], [6, 6, 0]], [[7, 7, 0], [0, 7, 7]]];
+        let board, currentPiece, nextPiece;
+        let score, level, lines;
+        let dropCounter, dropInterval;
+        let lastTime, animationFrameId;
+        let gameState = 'idle'; // 'idle', 'running', 'paused', 'over'
+
+        function createEmptyBoard() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
+        function getRandomPiece() {
+            const i = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
+            return { shape: SHAPES[i], color: COLORS[i], x: Math.floor(COLS / 2) - Math.floor(SHAPES[i][0].length / 2), y: 0 };
+        }
+        function drawBlock(ctx, x, y, color) {
+            ctx.fillStyle = color; ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2;
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+        function drawBoard() {
+            boardCtx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
+            board.forEach((row, y) => row.forEach((val, x) => val && drawBlock(boardCtx, x, y, COLORS[val])));
+        }
+        function drawPiece(p, ctx, offset = {x:0, y:0}) { p.shape.forEach((row, y) => row.forEach((val, x) => val && drawBlock(ctx, p.x + x + offset.x, p.y + y + offset.y, p.color))); }
+        function drawNextPiece() {
+            nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+            if (!nextPiece) return;
+            const p = nextPiece, oX = (nextCanvas.width/BLOCK_SIZE - p.shape[0].length)/2, oY = (nextCanvas.height/BLOCK_SIZE - p.shape.length)/2;
+            drawPiece({...p, x:0, y:0}, nextCtx, {x:oX, y:oY});
+        }
+        function isValidMove(p, oX, oY) {
+            for(let y=0; y<p.shape.length; y++) for(let x=0; x<p.shape[y].length; x++) if(p.shape[y][x]) {
+                const nX = p.x+x+oX, nY = p.y+y+oY;
+                if (nX < 0 || nX >= COLS || nY >= ROWS || (nY >= 0 && board[nY][nX])) return false;
+            } return true;
+        }
+        function lockPiece() { currentPiece.shape.forEach((row, y) => row.forEach((val, x) => val && (board[currentPiece.y+y][currentPiece.x+x] = val))); }
+        function clearLines() {
+            let cleared = 0;
+            for (let y = ROWS - 1; y >= 0; y--) {
+                if(board[y].every(v => v)) {
+                    board.splice(y, 1); board.unshift(Array(COLS).fill(0));
+                    y++; cleared++;
+                }
+            }
+            if (cleared) {
+                score += [0,100,300,500,800][cleared] * level; lines += cleared;
+                level = Math.floor(lines/10)+1; dropInterval = Math.max(100, 1000-(level-1)*50);
+                updateUI();
+            }
+        }
+        function rotatePiece() {
+            const oShape = currentPiece.shape; currentPiece.shape = oShape[0].map((_, c) => oShape.map(r => r[c]).reverse());
+            let offset = 1;
+            while(!isValidMove(currentPiece, 0, 0)) {
+                currentPiece.x += offset; offset = -(offset + (offset>0?1:-1));
+                if (Math.abs(offset) > currentPiece.shape[0].length) { currentPiece.shape = oShape; currentPiece.x -= (offset>0?offset-1:offset+1); return; }
+            }
+        }
+        function spawnNewPiece() {
+            currentPiece = nextPiece; nextPiece = getRandomPiece();
+            if (!isValidMove(currentPiece, 0, 0)) { gameOver(); } else { drawNextPiece(); }
+        }
+        function pieceDrop() {
+            if (!isValidMove(currentPiece, 0, 1)) { lockPiece(); clearLines(); if(gameState === 'running') spawnNewPiece(); }
+            else { currentPiece.y++; }
+        }
+        function hardDrop() { while (isValidMove(currentPiece, 0, 1)) { currentPiece.y++; } pieceDrop(); }
+        function updateUI() { scoreElement.textContent = score; levelElement.textContent = level; linesElement.textContent = lines; }
+        
+        function setupInitialState() {
+            board = createEmptyBoard(); drawBoard();
+            score = 0; level = 1; lines = 0; updateUI();
+            nextPiece = null; drawNextPiece();
+            gameControlButton.textContent = '开始游戏'; gameControlButton.disabled = false;
+        }
+
+        function startGame() {
+            gameState = 'running';
+            board = createEmptyBoard(); score=0; level=1; lines=0;
+            dropInterval=1000; dropCounter=0;
+            updateUI();
+            nextPiece = getRandomPiece(); spawnNewPiece();
+            gameOverOverlay.style.display='none'; pauseOverlay.style.display='none';
+            gameControlButton.textContent='暂停'; gameControlButton.disabled=false;
+            lastTime = performance.now();
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            gameLoop();
+        }
+
+        function pauseGame() {
+            if (gameState !== 'running') return;
+            gameState = 'paused';
+            cancelAnimationFrame(animationFrameId);
+            pauseOverlay.style.display = 'flex';
+            gameControlButton.textContent = '继续';
+        }
+
+        function continueGame() {
+            if (gameState !== 'paused') return;
+            gameState = 'running';
+            pauseOverlay.style.display = 'none';
+            gameControlButton.textContent = '暂停';
+            lastTime = performance.now();
+            gameLoop();
+        }
+        
+        function gameOver() {
+            gameState = 'over'; cancelAnimationFrame(animationFrameId);
+            finalScoreElement.textContent = score; gameOverOverlay.style.display = 'flex';
+            gameControlButton.textContent = '游戏结束'; gameControlButton.disabled = true;
+        }
+
+        function gameLoop(time = 0) {
+            if (gameState !== 'running') return;
+            const deltaTime = time-lastTime; lastTime = time;
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) { pieceDrop(); dropCounter=0; }
+            drawBoard(); drawPiece(currentPiece, boardCtx);
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function handleInput(action) {
+            if (gameState !== 'running') return;
+            switch(action) {
+                case 'left': if (isValidMove(currentPiece, -1, 0)) currentPiece.x--; break;
+                case 'right': if (isValidMove(currentPiece, 1, 0)) currentPiece.x++; break;
+                case 'down': pieceDrop(); dropCounter=0; break;
+                case 'rotate': rotatePiece(); break;
+                case 'drop': hardDrop(); break;
+            }
+            if(gameState === 'running') { drawBoard(); drawPiece(currentPiece, boardCtx); }
+        }
+
+        function handleGameControlButtonClick() {
+            switch(gameState) {
+                case 'idle':
+                case 'over':
+                    startGame(); break;
+                case 'running':
+                    pauseGame(); break;
+                case 'paused':
+                    continueGame(); break;
+            }
+        }
+        
+        function initLayout() {
+            BLOCK_SIZE = 4 * Math.min(window.innerWidth, window.innerHeight) / 100;
+            boardCanvas.width = COLS * BLOCK_SIZE; boardCanvas.height = ROWS * BLOCK_SIZE;
+            const sidebarWidth = document.querySelector('.sidebar').getBoundingClientRect().width;
+            nextCanvas.width = sidebarWidth; nextCanvas.height = sidebarWidth * 0.8;
+            setupInitialState();
+        }
+
+        document.addEventListener('keydown', e => {
+            const keyMap = { 'KeyA': 'left', 'KeyD': 'right', 'KeyS': 'down', 'KeyW': 'rotate' };
+            if (keyMap[e.code]) handleInput(keyMap[e.code]);
+            if (e.code === 'Space') { e.preventDefault(); handleInput('drop'); }
+        });
+        gameControlButton.addEventListener('click', handleGameControlButtonClick);
+        vControls.left.addEventListener('click', () => handleInput('left'));
+        vControls.right.addEventListener('click', () => handleInput('right'));
+        vControls.down.addEventListener('click', () => handleInput('down'));
+        vControls.rotate.addEventListener('click', () => handleInput('rotate'));
+        vControls.drop.addEventListener('click', () => handleInput('drop'));
+        window.addEventListener('resize', initLayout);
+        
+        initLayout();
+    </script>
+</body>
+</html>
